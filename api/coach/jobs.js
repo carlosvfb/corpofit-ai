@@ -438,6 +438,8 @@ async function execute(job) {
     if (!attempt.ok) {
       // Cancelled by a forget, not failed by the provider: the log must not blame the job budget.
       const errorClass = ctl.signal.aborted ? 'forgotten' : attempt.errorClass;
+      // O motivo exato (status e mensagem do provedor, nunca a chave) vai para o log do servidor.
+      console.error('coach job failed', job.id, errorClass, String(attempt.detail || whyUnusable(attempt.errors) || '').slice(0, 300));
       return finish(job, { outcome: 'failed', errorClass, detail: attempt.detail || whyUnusable(attempt.errors), usage: sumUsage(usageSink), model: cfgStore.modelFor(cfg) });
     }
     if (attempt.nochange) {
