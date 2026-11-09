@@ -19,10 +19,11 @@ import { PrismaBillingRepository } from './asaas/repository.js';
 import * as admin from './admin.js';
 import * as org from './org/service.js';
 import * as trainers from './org/trainers.js';
+import * as privacy from './org/privacy.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
-export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser, aiGate, asaasClient }) {
+export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser, aiGate, asaasClient, readState }) {
   const client = () => asaasClient || AsaasClient.fromEnv();
   // Em modo Vercel o estado dos limites atravessa requisições e instâncias (store/ephemeral.js).
   const checkoutWindow = scoped('saas:checkout', () => createWindow({ max: 6, windowMs: 10 * 60_000 }), limiterCodec);
@@ -204,6 +205,43 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       const user = session(req, res); if (!user) return;
       const b = await readBody(req);
       json(res, 201, await trainers.addComment(user, b.assignmentId, b.body));
+    }),
+
+    /* ------------------- privacidade e compartilhamento ------------------- */
+    'GET /api/privacy/categories': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, privacy.categories());
+    }),
+    'GET /api/privacy/permissions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await privacy.myPermissions(user));
+    }),
+    'PUT /api/privacy/permissions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await privacy.setPermission(user, b.trainerId, b.category, b.level));
+    }),
+    'POST /api/privacy/revoke': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await privacy.revokeAll(user, b.trainerId));
+    }),
+    'GET /api/privacy/history': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await privacy.consentHistory(user, new URL(req.url, 'http://x').searchParams.get('trainer')));
+    }),
+    'GET /api/privacy/access-log': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await privacy.accessLog(user));
+    }),
+    'GET /api/trainer/shared': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await privacy.sharedWithMe(user));
+    }),
+    'GET /api/trainer/student': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await privacy.studentData(user, u.get('link'), u.get('category'), async id => readState(id)));
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

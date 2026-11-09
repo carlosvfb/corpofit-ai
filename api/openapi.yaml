@@ -4189,6 +4189,105 @@ paths:
         '403': { description: Not allowed for the caller's side of the link. }
         '404': { description: Not found, or the caller is not a party to it. }
 
+  /api/privacy/categories:
+    get:
+      tags: [saas]
+      operationId: listShareCategories
+      summary: The categories a student can share and which are available
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/privacy/permissions:
+    get:
+      tags: [saas]
+      operationId: getMySharing
+      summary: What I share with each linked trainer, per category
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+    put:
+      tags: [saas]
+      operationId: setSharing
+      summary: Grant, change or revoke one category for one trainer (levels OFF, SEE, SUGGEST)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/privacy/revoke:
+    post:
+      tags: [saas]
+      operationId: revokeAllSharing
+      summary: Revoke everything shared with one trainer
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/privacy/history:
+    get:
+      tags: [saas]
+      operationId: getConsentHistory
+      summary: My consent history (grants, changes and revocations)
+      parameters:
+        - { name: trainer, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/privacy/access-log:
+    get:
+      tags: [saas]
+      operationId: getAccessLog
+      summary: Who read which category of my data, and when
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/shared:
+    get:
+      tags: [saas]
+      operationId: listSharedWithMe
+      summary: What each of my students shares with me
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/student:
+    get:
+      tags: [saas]
+      operationId: readStudentData
+      summary: Read one category of a student data set; the grant is checked on every read and the read is logged
+      parameters:
+        - { name: link, in: query, required: true, schema: { type: string } }
+        - { name: category, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed (no active link, or the student has not shared this category). }
+        '404': { description: Not found, or the caller is not a party to it. }
+
   /api/billing/status:
     get:
       tags: [saas]

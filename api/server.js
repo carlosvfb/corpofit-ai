@@ -2214,7 +2214,7 @@ const saas = SAAS_MODE
   ? await (await import('./saas/index.js')).createSaas({
     json, readBody, readSession, requireAdmin,
     findUser: id => db.users.find(u => u.id === id) || null,
-    cfgStore: coachConfig, jobs: coachJobs
+    cfgStore: coachConfig, jobs: coachJobs, readState
   })
   : null;
 

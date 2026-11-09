@@ -374,6 +374,9 @@ model Assignment {
   title     String
   note      String           @default("")
   bundle    Json
+  /// ASSIGNMENT (treino novo) ou SUGGESTION (sugestão para uma rotina do aluno; exige permissão SUGGEST).
+  kind      String           @default("ASSIGNMENT")
+  target    String           @default("")
   status    AssignmentStatus @default(ASSIGNED)
   revision  Int              @default(1)
   history   Json             @default("[]")
@@ -397,4 +400,67 @@ model AssignmentComment {
   assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   @@index([assignmentId, createdAt])
+}
+
+// ===== Privacidade e compartilhamento (fase 5) =====
+// O aluno decide, por personal e por categoria, o que o personal pode ver (SEE) ou sugerir (SUGGEST). O
+// servidor confere a permissão a CADA leitura (revogar vale na hora), registra o acesso para o aluno
+// e guarda cada mudança de consentimento. CHANGE_DIRECTLY existe no tipo, mas ainda não pode ser
+// concedido: alterar diretamente a conta do aluno não está implementado.
+
+enum ShareCategory {
+  WORKOUTS
+  ROUTINES
+  EXERCISE_HISTORY
+  BODY_WEIGHT
+  MEASUREMENTS
+  PHOTOS
+  NOTES
+  ACTIVITY
+  WELLBEING
+}
+
+enum ShareLevel {
+  OFF
+  SEE
+  SUGGEST
+  CHANGE_DIRECTLY
+}
+
+model SharingPermission {
+  id        String        @id @default(cuid())
+  studentId String
+  trainerId String
+  category  ShareCategory
+  level     ShareLevel    @default(OFF)
+  updatedAt DateTime      @updatedAt
+
+  @@unique([studentId, trainerId, category])
+  @@index([trainerId])
+}
+
+/// Histórico imutável: toda concessão, mudança e revogação, com quem fez e quando.
+model ConsentRecord {
+  id            String        @id @default(cuid())
+  studentId     String
+  trainerId     String
+  category      ShareCategory
+  previousLevel ShareLevel
+  level         ShareLevel
+  action        String
+  actorUserId   String
+  createdAt     DateTime      @default(now())
+
+  @@index([studentId, createdAt])
+}
+
+/// Cada leitura de dados do aluno por um personal (para o aluno ver quem acessou o quê).
+model AccessLog {
+  id        String        @id @default(cuid())
+  studentId String
+  actorId   String
+  category  ShareCategory
+  createdAt DateTime      @default(now())
+
+  @@index([studentId, createdAt])
 }

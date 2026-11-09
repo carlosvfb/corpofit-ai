@@ -52,6 +52,17 @@ export const answerAssignment = (id, status) => put('/api/trainer/assignments', 
 export const assignmentComments = id => api('/api/trainer/comments' + qs('assignment', id))
 export const addAssignmentComment = (assignmentId, body) => post('/api/trainer/comments', { assignmentId, body })
 
+// Privacidade e compartilhamento: o aluno decide o que cada personal vê; o servidor confere a cada leitura.
+export const shareCategories = () => api('/api/privacy/categories')
+export const myPermissions = () => api('/api/privacy/permissions')
+export const setPermission = (trainerId, category, level) => put('/api/privacy/permissions', { trainerId, category, level })
+export const revokeAllSharing = trainerId => post('/api/privacy/revoke', { trainerId })
+export const consentHistory = trainerId => api('/api/privacy/history' + (trainerId ? qs('trainer', trainerId) : ''))
+export const accessLog = () => api('/api/privacy/access-log')
+export const sharedWithMe = () => api('/api/trainer/shared')
+export const readStudentData = (linkId, category) => api('/api/trainer/student?link=' + encodeURIComponent(linkId) + '&category=' + encodeURIComponent(category))
+export const assignSuggestion = (linkId, title, note, bundle, target) => post('/api/trainer/assignments', { linkId, title, note, bundle, kind: 'SUGGESTION', target })
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {

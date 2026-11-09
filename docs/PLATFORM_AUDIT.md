@@ -87,3 +87,17 @@ Entregue em `api/saas/org/trainers.js`, rotas `/api/trainer/*`, migração `2026
 - **Testes:** `api/test/saas-trainers.test.js` (10) + `frontend/src/saas/Personal.test.jsx` (3). Suíte SaaS da API: 93 de 93.
 
 Fora desta fase, de propósito: o personal **não lê** nenhum dado do aluno (treinos feitos, medidas, peso, fotos) nem altera as rotinas dele. Isso entra na Fase 5, com o consentimento por categoria. Sugestões de alteração e notificações também ficam para as próximas fases.
+
+## 9. Fase 5 concluída (2026-11-09)
+
+Entregue em `api/saas/org/privacy.js` e `projection.js`, rotas `/api/privacy/*` e `/api/trainer/shared|student`, migração `20261109190000_privacy` e as telas `/privacidade` (Ajustes > Privacidade e compartilhamento) e a leitura em `/personal`.
+
+- **Modelo:** `SharingPermission` (aluno × personal × categoria × nível), `ConsentRecord` (histórico imutável de concessões, mudanças e revogações, sem política de UPDATE/DELETE) e `AccessLog` (cada leitura de dados do aluno por um personal).
+- **Categorias disponíveis:** treinos realizados, rotinas, histórico de exercícios, peso corporal, medidas, observações e indicadores de atividade. Fotos de evolução e bem-estar existem no tipo, mas não podem ser compartilhadas (não há leitura segura implementada).
+- **Níveis:** OFF (padrão), SEE e SUGGEST (só para rotinas). CHANGE_DIRECTLY existe no tipo e é recusado: alterar direto a conta do aluno não está implementado.
+- **Verificação a cada requisição:** `GET /api/trainer/student` confere o vínculo ativo e o nível agora, registra o acesso e devolve só a projeção da categoria (e-mail, credenciais, dados do Coach e outras categorias nunca saem). Revogar, revogar tudo ou encerrar o vínculo cortam a próxima leitura.
+- **Sugestões:** com ROUTINES = SUGGEST o personal envia uma sugestão para uma rotina do aluno; nada muda sem o aluno aceitar, e aceitar cria uma rotina nova (não sobrescreve).
+- **Isolamento:** RLS no banco (o personal lê só as concessões feitas a ele, não o histórico nem os acessos) e checagens na API. Um teste de RLS apanhou um erro real (insert com RETURNING num registro que o autor não pode ler) e foi corrigido.
+- **Testes:** `api/test/saas-privacy.test.js` (9) e `Privacy.test.jsx` (4) + novos casos em `Personal.test.jsx`. Suíte SaaS da API: 102 de 102.
+
+Fora desta fase: fotos e bem-estar, alteração direta (CHANGE_DIRECTLY), compartilhamento com a academia como um todo e com recursos de IA por categoria (o Coach tem o consentimento próprio), exportação e exclusão dos registros (LGPD) e notificações.

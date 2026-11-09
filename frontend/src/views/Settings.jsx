@@ -1194,6 +1194,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Personal trainer" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           {/* A code to sign in on a computer (#551), behind the same proof as in a browser. */}
           <DeviceLinkRow state={passkeys.st} />
@@ -1221,6 +1222,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Personal trainer" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           <PasskeysRow state={passkeys.st} changed={credsChanged} />
           <DeviceLinkRow state={passkeys.st} />

@@ -17,7 +17,7 @@ import { cancelSubscription } from './asaas/cancel.js';
 import { PLANS } from './plans.js';
 import { sendMail } from './mailer.js';
 
-export async function createSaas({ json, readBody, readSession, requireAdmin, findUser, cfgStore, jobs, asaasClient }) {
+export async function createSaas({ json, readBody, readSession, requireAdmin, findUser, cfgStore, jobs, asaasClient, readState }) {
   if (!env().DATABASE_URL) throw new Error('SAAS_MODE=1 exige DATABASE_URL (PostgreSQL).');
   // Falha cedo e com uma frase clara se o banco não responde, em vez de 500 na primeira compra.
   await db.$queryRaw`SELECT 1`;
@@ -38,7 +38,7 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
   // O corpo é lido uma vez e reaproveitado: o gate precisa do tamanho da mensagem antes de o Coach lê-la.
   const cachedBody = req => req.__saasBody || (req.__saasBody = readBody(req));
 
-  const routes = saasRoutes({ json, readBody: cachedBody, readSession, requireAdmin, findUser, aiGate, asaasClient });
+  const routes = saasRoutes({ json, readBody: cachedBody, readSession, requireAdmin, findUser, aiGate, asaasClient, readState });
 
   /** Envolve as rotas que geram custo de IA com a checagem do plano. As demais passam intactas. */
   function wrapCoach(coachRoutes) {

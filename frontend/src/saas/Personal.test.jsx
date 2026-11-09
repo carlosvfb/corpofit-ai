@@ -21,7 +21,7 @@ vi.mock('./api.js', () => ({
   errorText: (e, f) => f,
   trainerProfile: vi.fn(), saveTrainerProfile: vi.fn(), trainerLinks: vi.fn(), inviteStudent: vi.fn(), requestTrainer: vi.fn(),
   answerLink: vi.fn(), endLink: vi.fn(), trainerAssignments: vi.fn(), assignWorkout: vi.fn(), answerAssignment: vi.fn(),
-  assignmentComments: vi.fn(), addAssignmentComment: vi.fn()
+  assignmentComments: vi.fn(), addAssignmentComment: vi.fn(), sharedWithMe: vi.fn(), shareCategories: vi.fn(), readStudentData: vi.fn(), assignSuggestion: vi.fn()
 }))
 import * as api from './api.js'
 import * as link from '../lib/routine-link.js'
@@ -35,6 +35,8 @@ const type = async (el, value) => { await act(async () => { const set = Object.g
 beforeEach(() => {
   vi.clearAllMocks()
   api.assignmentComments.mockResolvedValue([])
+  api.sharedWithMe.mockResolvedValue([])
+  api.shareCategories.mockResolvedValue([{ id: 'BODY_WEIGHT', label: 'Peso corporal' }, { id: 'ROUTINES', label: 'Rotinas' }])
   api.trainerProfile.mockResolvedValue({ userId: 't', displayName: 'Prof. Ana', bio: '', specialties: [] })
 })
 afterEach(() => { act(() => root?.unmount()); host?.remove() })
@@ -75,5 +77,39 @@ describe('Personal trainer', () => {
     await mount()
     expect(host.textContent).toContain('Virar personal trainer')
     expect(host.textContent).not.toContain('Convidar aluno')
+  })
+
+  it('o personal só vê o que o aluno compartilhou e lê pela API (que confere a cada leitura)', async () => {
+    api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
+    api.trainerAssignments.mockResolvedValue([])
+    api.sharedWithMe.mockResolvedValue([{ linkId: 'l9', studentId: 's', grants: { BODY_WEIGHT: 'SEE' } }])
+    api.readStudentData.mockResolvedValue({ category: 'BODY_WEIGHT', data: [{ d: '2026-11-01', w: 82.5 }] })
+    await mount()
+    expect(btn('Peso corporal')).toBeTruthy()
+    expect(btn('Rotinas')).toBeUndefined()
+    await act(async () => { btn('Peso corporal').click() }); await flush()
+    expect(api.readStudentData).toHaveBeenCalledWith('l9', 'BODY_WEIGHT')
+    expect(host.textContent).toContain('82.5')
+  })
+
+  it('sem compartilhamento o personal vê o aviso, não os dados; leitura negada mostra o erro', async () => {
+    api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
+    api.trainerAssignments.mockResolvedValue([])
+    await mount()
+    expect(host.textContent).toContain('Nada por enquanto')
+    expect(api.readStudentData).not.toHaveBeenCalled()
+  })
+
+  it('a sugestão para uma rotina do aluno só é oferecida com a permissão SUGGEST', async () => {
+    api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
+    api.trainerAssignments.mockResolvedValue([])
+    await mount()
+    await act(async () => { btn('Enviar treino').click() })
+    expect(host.textContent).not.toContain('Enviar como sugestão')
+    act(() => root.unmount()); host.remove()
+    api.sharedWithMe.mockResolvedValue([{ linkId: 'l9', studentId: 's', grants: { ROUTINES: 'SUGGEST' } }])
+    await mount()
+    await act(async () => { btn('Enviar treino').click() })
+    expect(host.textContent).toContain('Enviar como sugestão')
   })
 })

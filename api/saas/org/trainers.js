@@ -7,6 +7,7 @@ import { SaasError } from '../errors.js';
 import { ensureUser } from '../access.js';
 import { withContext } from './context.js';
 import { rankOf } from './rbac.js';
+import { levelFor } from './privacy.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Não encontrado.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para isso.', 'forbidden');
@@ -138,7 +139,7 @@ export function cleanBundle(b) {
 
 const asg = (a, withBundle = true) => ({
   id: a.id, linkId: a.linkId, trainerId: a.trainerId, studentId: a.studentId, title: a.title, note: a.note, status: a.status, revision: a.revision,
-  createdAt: a.createdAt, updatedAt: a.updatedAt, ...(withBundle ? { bundle: a.bundle } : {})
+  kind: a.kind, target: a.target, createdAt: a.createdAt, updatedAt: a.updatedAt, ...(withBundle ? { bundle: a.bundle } : {})
 });
 
 export async function assign(user, linkId, input) {
@@ -146,11 +147,15 @@ export async function assign(user, linkId, input) {
   if (title.length < 2) throw new SaasError(400, 'Dê um nome ao treino.', 'invalid-title');
   const bundle = cleanBundle(input?.bundle);
   const note = clean(input?.note, 1000);
+  const kind = input?.kind === 'SUGGESTION' ? 'SUGGESTION' : 'ASSIGNMENT';
+  const target = kind === 'SUGGESTION' ? clean(input?.target, 80) : '';
   return withContext({ userId: user.id }, async tx => {
     const l = await loadLink(tx, user, linkId);
     if (l.trainerId !== user.id) throw FORBIDDEN();
     if (l.status !== 'ACTIVE') throw new SaasError(409, 'O vínculo não está ativo.', 'link-not-active');
-    const a = await tx.assignment.create({ data: { linkId: l.id, trainerId: l.trainerId, studentId: l.studentId, title, note, bundle } });
+    // Sugerir mudanças numa rotina do aluno exige a permissão dele (ROUTINES = SUGGEST), conferida agora.
+    if (kind === 'SUGGESTION' && (await levelFor(tx, l.studentId, user.id, 'ROUTINES')) !== 'SUGGEST') throw new SaasError(403, 'O aluno não permitiu sugestões nas rotinas dele.', 'suggest-not-allowed');
+    const a = await tx.assignment.create({ data: { linkId: l.id, trainerId: l.trainerId, studentId: l.studentId, title, note, bundle, kind, target } });
     return asg(a);
   });
 }
