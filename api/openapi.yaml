@@ -4325,6 +4325,137 @@ paths:
         '403': { description: The caller's role does not allow it. }
         '404': { description: Not found, or not a member of this gym. }
 
+  /api/community/items:
+    get:
+      tags: [saas]
+      operationId: listCommunityItems
+      summary: Browse the library (public, or a gym with scope=gym), search and filter
+      parameters:
+        - { name: kind, in: query, required: false, schema: { type: string } }
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: scope, in: query, required: false, schema: { type: string } }
+        - { name: tenant, in: query, required: false, schema: { type: string } }
+        - { name: favorites, in: query, required: false, schema: { type: string } }
+        - { name: mine, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: string } }
+        - { name: offset, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+    post:
+      tags: [saas]
+      operationId: publishCommunityItem
+      summary: Publish a routine, tip or article; the server sanitizes it and refuses personal data
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+    delete:
+      tags: [saas]
+      operationId: removeCommunityItem
+      summary: Remove my own item
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/item:
+    get:
+      tags: [saas]
+      operationId: getCommunityItem
+      summary: One item with its content
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/favorite:
+    post:
+      tags: [saas]
+      operationId: favoriteCommunityItem
+      summary: Favorite or unfavorite an item
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/import:
+    post:
+      tags: [saas]
+      operationId: importCommunityItem
+      summary: Get a routine to add to my own routines; counts the import
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/report:
+    post:
+      tags: [saas]
+      operationId: reportCommunityItem
+      summary: Report an item; several different reports hide it until a moderator decides
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/moderation:
+    get:
+      tags: [saas]
+      operationId: getCommunityModeration
+      summary: Open reports (scope=platform for admins, or a gym owner or admin with tenant=)
+      parameters:
+        - { name: scope, in: query, required: false, schema: { type: string } }
+        - { name: tenant, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
+  /api/community/moderate:
+    post:
+      tags: [saas]
+      operationId: moderateCommunityItem
+      summary: Hide, restore or dismiss the reports of an item
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller. }
+        '404': { description: Not found or not visible to the caller. }
+
   /api/billing/status:
     get:
       tags: [saas]

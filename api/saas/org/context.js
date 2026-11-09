@@ -7,9 +7,11 @@ import { prisma } from '../db.js';
 // (desenvolvimento e testes). Em produção o próprio papel da aplicação (não superusuário) já é restringido.
 const ROLE = /^[a-z_][a-z0-9_]{0,62}$/;
 
-export async function withContext({ userId, tenantId = '' }, fn) {
+export async function withContext({ userId, tenantId = '', moderator = '', counter = '' }, fn) {
   return prisma().$transaction(async tx => {
     await tx.$executeRaw`SELECT set_config('app.user_id', ${String(userId || '')}, true), set_config('app.tenant_id', ${String(tenantId || '')}, true)`;
+    // Só código do servidor, depois de verificar o papel, passa estes dois (ver a migração da biblioteca).
+    if (moderator || counter) await tx.$executeRaw`SELECT set_config('app.moderator', ${String(moderator)}, true), set_config('app.counter', ${String(counter)}, true)`;
     const role = process.env.RLS_ROLE;
     if (role) {
       if (!ROLE.test(role)) throw new Error('RLS_ROLE inválido');

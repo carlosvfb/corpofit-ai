@@ -472,3 +472,89 @@ model AccessLog {
 
   @@index([studentId, createdAt])
 }
+
+// ===== Biblioteca comunitária (fase 7) =====
+// Conteúdo que um usuário publica para todos (PUBLIC) ou só para a própria academia (GYM). O autor confirma
+// que tem o direito de compartilhar; o servidor recusa dados pessoais óbvios e remove de dentro do treino
+// qualquer referência a mídia, pesos ou links. Moderação: denúncias, ocultação e restauração (admin da
+// plataforma, ou dono/admin da academia para o conteúdo dela). RLS em migração 20261109230000_community.
+
+enum CommunityKind {
+  ROUTINE
+  PLAN
+  TIP
+  ARTICLE
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  GYM
+}
+
+enum CommunityStatus {
+  PUBLISHED
+  HIDDEN
+  REMOVED
+}
+
+enum ReportReason {
+  INAPPROPRIATE
+  COPYRIGHT
+  PERSONAL_DATA
+  SPAM
+  OTHER
+}
+
+model CommunityItem {
+  id          String              @id @default(cuid())
+  authorId    String
+  tenantId    String?
+  kind        CommunityKind
+  visibility  CommunityVisibility @default(PUBLIC)
+  status      CommunityStatus     @default(PUBLISHED)
+  title       String
+  description String              @default("")
+  body        String              @default("")
+  /// Rotina ou plano no formato do app, já higienizado (sem pesos, mídia ou links). Null em dicas e artigos.
+  bundle      Json?
+  /// Declaração do autor: o conteúdo é dele (ou ele tem o direito) e pode ser compartilhado.
+  rightsConfirmed Boolean         @default(false)
+  imports     Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  reports   CommunityReport[]
+  favorites CommunityFavorite[]
+
+  @@index([visibility, status, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([authorId])
+}
+
+model CommunityFavorite {
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now())
+
+  item CommunityItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+}
+
+model CommunityReport {
+  id         String       @id @default(cuid())
+  itemId     String
+  reporterId String
+  reason     ReportReason
+  note       String       @default("")
+  /// OPEN até um moderador resolver; RESOLVED guarda quem e o que decidiu.
+  status     String       @default("OPEN")
+  decision   String?
+  resolvedBy String?
+  createdAt  DateTime     @default(now())
+
+  item CommunityItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, reporterId])
+  @@index([status, createdAt])
+}

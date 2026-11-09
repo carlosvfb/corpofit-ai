@@ -21,6 +21,7 @@ import * as org from './org/service.js';
 import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
 import * as orgAi from './org/ai.js';
+import * as community from './org/community.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -258,6 +259,54 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'GET /api/orgs/ai-usage': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await orgAi.tenantAiUsage(user, new URL(req.url, 'http://x').searchParams.get('tenant')));
+    }),
+
+    /* ------------------- biblioteca comunitária ------------------- */
+    'GET /api/community/items': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await community.list(user, { kind: u.get('kind') || undefined, q: u.get('q') || '', scope: u.get('scope') === 'gym' ? 'gym' : 'public', tenantId: u.get('tenant') || undefined, favorites: u.get('favorites') === '1', mine: u.get('mine') === '1', limit: u.get('limit'), offset: u.get('offset') }));
+    }),
+    'POST /api/community/items': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 201, await community.publish(user, await readBody(req)));
+    }),
+    'GET /api/community/item': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await community.get(user, new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'DELETE /api/community/items': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await community.removeOwn(user, new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'POST /api/community/favorite': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await community.favorite(user, b.id, b.on !== false));
+    }),
+    'POST /api/community/import': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await community.importItem(user, b.id));
+    }),
+    'POST /api/community/report': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 201, await community.report(user, b.id, b.reason, b.note));
+    }),
+    'GET /api/community/moderation': guarded(async (req, res) => {
+      const u = new URL(req.url, 'http://x').searchParams;
+      const platform = u.get('scope') === 'platform';
+      const actor = platform ? requireAdmin(req, res) : session(req, res);
+      if (!actor) return;
+      json(res, 200, await community.moderationQueue(actor, { platform, tenantId: u.get('tenant') || undefined }));
+    }),
+    'POST /api/community/moderate': guarded(async (req, res) => {
+      const b = await readBody(req);
+      const platform = b.scope === 'platform';
+      const actor = platform ? requireAdmin(req, res) : session(req, res);
+      if (!actor) return;
+      json(res, 200, await community.moderate(actor, b.id, b.action, { platform, tenantId: b.tenantId }));
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

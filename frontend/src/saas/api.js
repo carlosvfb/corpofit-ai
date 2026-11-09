@@ -68,6 +68,17 @@ export const aiContext = () => api('/api/orgs/ai-context')
 export const setAiContext = tenantId => put('/api/orgs/ai-context', { tenantId })
 export const orgAiUsage = id => api('/api/orgs/ai-usage' + q(id))
 
+// Biblioteca comunitária. O servidor higieniza o que é publicado e confere visibilidade e moderação.
+export const communityItems = params => api('/api/community/items?' + new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString())
+export const communityItem = id => api('/api/community/item' + qs('id', id))
+export const publishItem = body => post('/api/community/items', body)
+export const removeItem = id => api('/api/community/items' + qs('id', id), { method: 'DELETE' })
+export const favoriteItem = (id, on) => post('/api/community/favorite', { id, on })
+export const importCommunityItem = id => post('/api/community/import', { id })
+export const reportItem = (id, reason, note) => post('/api/community/report', { id, reason, note })
+export const moderationQueue = tenantId => api('/api/community/moderation' + qs('tenant', tenantId))
+export const moderateItem = (id, action, tenantId) => post('/api/community/moderate', { id, action, tenantId })
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {

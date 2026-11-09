@@ -7,8 +7,8 @@ export const ROLES = ['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER', 'PERSONAL_TRAINER
 const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 };
 
 const PERMISSIONS = {
-  GYM_OWNER: ['tenant:delete', 'settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read'],
-  GYM_ADMIN: ['settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read'],
+  GYM_OWNER: ['tenant:delete', 'settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate'],
+  GYM_ADMIN: ['settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate'],
   GYM_MANAGER: ['settings:read', 'members:read', 'members:invite', 'dashboard:read', 'activity:read'],
   PERSONAL_TRAINER: ['settings:read', 'dashboard:read'],
   STUDENT: ['settings:read']

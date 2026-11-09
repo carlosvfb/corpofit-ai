@@ -113,3 +113,15 @@ Entregue em `api/saas/org/ai.js`, ganchos em `api/coach/jobs.js` (`setContextHoo
 - **Ferramentas e aprovação:** o Coach já propõe mudanças tipadas (criar rotina, revisar, adaptar o treino em andamento), validadas e só aplicadas depois que o usuário aprova. Isso foi mantido. **Não** foram criadas ferramentas novas de IA para excluir, atribuir treino a aluno ou gerar relatórios, nem "desfazer" de ações da IA; ficam pendentes.
 - **Modelo por academia:** não implementado (todas usam `AI_MODEL`); o consumo já guarda o modelo para quando existir.
 - **Testes:** `api/test/saas-orgai.test.js` (8) e casos novos em `Gyms.test.jsx`. Suíte SaaS da API: 110 de 110. Os 5 testes do Coach que falham na máquina Windows são os mesmos de antes (processo auxiliar de teste).
+
+## 11. Fase 7 concluída (2026-11-09)
+
+Entregue em `api/saas/org/community.js`, rotas `/api/community/*`, migração `20261109230000_community` e a tela `/biblioteca` (Ajustes > Biblioteca).
+
+- **Conteúdo:** rotinas, dicas e artigos. Cada item guarda autor, data, visibilidade (todos ou só a academia), academia dona, status de moderação e a declaração do autor de que o conteúdo é dele e pode ser compartilhado. Planos completos existem no modelo, mas a publicação deles não foi implementada; equipamentos personalizados também ficam para depois.
+- **Higienização no servidor:** da rotina saem pesos, mídias, links, e-mail, telefone e quem enviou; textos com e-mail, telefone ou CPF são recusados. Nenhuma mídia de exercício circula (só texto e estrutura de treino), o que mantém a biblioteca fora do problema de licença das imagens do catálogo. Limite de 10 publicações por dia por autor.
+- **Visibilidade:** o público vale para qualquer usuário logado; o da academia, só para membros ativos (publicar nela exige personal ou acima). Sair da academia ou ter o vínculo removido tira a visão na hora. Para quem não tem acesso, o conteúdo "não existe" (404).
+- **Importar:** o servidor devolve o treino higienizado e conta a importação; o app o adiciona como rotina nova pelo mesmo caminho dos links de amigos, sem sobrescrever nada. Favoritar e buscar por texto e tipo.
+- **Denúncias e moderação:** uma denúncia por pessoa e item, nunca no próprio conteúdo. Três pessoas diferentes escondem o item até um moderador decidir. Dono e admin da academia moderam só o conteúdo dela (ocultar, restaurar ou ignorar as denúncias, tudo registrado no histórico da academia); o admin da plataforma modera tudo pela API (`scope=platform`), sem tela própria ainda.
+- **Isolamento:** RLS no banco. O papel de moderador e o contador de importações só são concedidos pelo servidor, depois de checar o papel ou a visibilidade, e valem para um escopo estreito (a academia do moderador, ou um único item). Teste prova que um moderador de academia não alcança conteúdo público e que o contador não mexe em outro item.
+- **Testes:** `api/test/saas-community.test.js` (9) e `Library.test.jsx` (7). Suíte SaaS da API: 119 de 119.
