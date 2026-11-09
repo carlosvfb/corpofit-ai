@@ -61,3 +61,16 @@ Regra adotada: não incorporar PRs abertos nem branches sem validação; ler o c
 ## 6. Próximo passo
 
 Fase 2: modelo de dados e RBAC com testes de isolamento entre tenants, em `api/saas/org/` (novo módulo) e novas migrações Prisma, sem alterar o fluxo atual de usuários individuais.
+
+## 7. Fase 2 concluída (2026-11-09)
+
+Entregue em `api/saas/org/` (`rbac.js`, `context.js`, `service.js`), rotas `/api/orgs*` (em `api/saas/routes.js` e `openapi.yaml`) e a migração `20261109130000_orgs`.
+
+- **Dados:** `Tenant`, `TenantSettings`, `Membership` (usuário × academia × papel × status), `ActivityLog` (antes/depois). Uma conta serve a várias academias, sem duplicar.
+- **Papéis:** GYM_OWNER, GYM_ADMIN, GYM_MANAGER, PERSONAL_TRAINER, STUDENT. Cada permissão vale só dentro do vínculo ATIVO. Ninguém gerencia quem tem o mesmo nível ou mais; o dono pode nomear outro dono. O último dono não sai.
+- **Isolamento em duas camadas:** a API verifica o papel em cada operação (academia alheia responde 404, sem revelar que existe) e o PostgreSQL aplica Row Level Security por `app.tenant_id` / `app.user_id`, em transação (`withContext`). A migração usa `FORCE ROW LEVEL SECURITY`; superusuários do PostgreSQL nunca são restringidos, então em produção a aplicação deve conectar com um papel que não seja superusuário (o dono padrão do Neon serve). Em desenvolvimento, `RLS_ROLE=<papel sem superusuário>` faz o RLS valer mesmo conectado como dono (os testes usam isto).
+- **Convites:** só para quem já tem conta (por e-mail ou id); o vínculo só vale depois do aceite do convidado.
+- **Painel:** só contagens reais (membros por papel, alunos novos em 30 dias, profissionais). Frequência e evolução ficam para quando houver dados.
+- **Testes:** `api/test/saas-orgs.test.js` (10), incluindo acesso a academia alheia por ID (404 em todas as operações), IDOR em vínculos, revogação imediata e RLS direto no banco com um papel sem superusuário. Suíte SaaS: 83 de 83.
+
+Ainda não existe interface (telas) para academias: é a Fase 3. Convite de quem ainda não tem conta (por e-mail) também fica para a Fase 3.

@@ -3889,6 +3889,166 @@ paths:
         '200': { description: "`{ plan, used, limit, maxChars, resetsAt }`." }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/orgs:
+    get:
+      tags: [saas]
+      operationId: listOrgContexts
+      summary: The personal space and every gym the user belongs to (or is invited to)
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: createOrg
+      summary: Create a gym; the caller becomes its owner
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/settings:
+    get:
+      tags: [saas]
+      operationId: getOrgSettings
+      summary: A gym's brand, AI and feature settings
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    put:
+      tags: [saas]
+      operationId: updateOrgSettings
+      summary: Update a gym's settings (owner or admin); unknown fields are dropped
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/dashboard:
+    get:
+      tags: [saas]
+      operationId: getOrgDashboard
+      summary: Real counts of members, students and professionals (no invented metrics)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/activity:
+    get:
+      tags: [saas]
+      operationId: getOrgActivity
+      summary: The gym's activity log, newest first (owner, admin or manager)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/members:
+    get:
+      tags: [saas]
+      operationId: listOrgMembers
+      summary: The gym's members
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: inviteOrgMember
+      summary: Invite an existing account with a role below the caller's own
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    put:
+      tags: [saas]
+      operationId: updateOrgMemberRole
+      summary: Change a member's role (strictly below the caller's)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    delete:
+      tags: [saas]
+      operationId: removeOrgMember
+      summary: Remove a member (strictly below the caller's role)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+        - { name: user, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/accept:
+    post:
+      tags: [saas]
+      operationId: acceptOrgInvite
+      summary: Accept the caller's own pending invitation
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/leave:
+    post:
+      tags: [saas]
+      operationId: leaveOrg
+      summary: Leave a gym (the last owner cannot)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid }, description: The gym (tenant). A gym the caller does not belong to answers 404. }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
   /api/billing/status:
     get:
       tags: [saas]

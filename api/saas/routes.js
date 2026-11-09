@@ -17,6 +17,7 @@ import { cancelSubscription } from './asaas/cancel.js';
 import { AsaasWebhookService, WebhookValidationError, verifyWebhookToken } from './asaas/webhook.js';
 import { PrismaBillingRepository } from './asaas/repository.js';
 import * as admin from './admin.js';
+import * as org from './org/service.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -49,6 +50,12 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     return false;
   };
   const toPublic = u => ({ id: u.id, name: u.name, email: u.email || null });
+  /** O tenant pedido: ?tenant= na query. Vazio ou fora do formato vira 404 antes de tocar o banco. */
+  const tenantOf = req => {
+    const id = new URL(req.url, 'http://x').searchParams.get('tenant') || '';
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new SaasError(404, 'Academia não encontrada.', 'not-found');
+    return id;
+  };
 
   return {
     /* ------------------------------ público ------------------------------ */
@@ -89,6 +96,59 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
         if (!(e instanceof BillingError || e instanceof SaasError)) await logError(db, 'checkout', e);
         throw e;
       }
+    }),
+
+    /* ------------------- academias (multi-tenant) -------------------
+       O identificador da academia vai na query (?tenant=) ou no corpo; a rota nunca confia nele: o
+       papel do usuário no vínculo é verificado em org/service.js e o PostgreSQL aplica o RLS. */
+    'GET /api/orgs': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.myContexts(user));
+    }),
+    'POST /api/orgs': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 201, await org.createGym(user, await readBody(req)));
+    }),
+    'GET /api/orgs/settings': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.getSettings(user, tenantOf(req)));
+    }),
+    'PUT /api/orgs/settings': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.updateSettings(user, tenantOf(req), await readBody(req)));
+    }),
+    'GET /api/orgs/dashboard': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.dashboard(user, tenantOf(req)));
+    }),
+    'GET /api/orgs/activity': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.recentActivity(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('limit')));
+    }),
+    'GET /api/orgs/members': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.listMembers(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/members': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 201, await org.inviteMember(user, tenantOf(req), await readBody(req)));
+    }),
+    'PUT /api/orgs/members': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await org.updateMemberRole(user, tenantOf(req), b.userId, b.role));
+    }),
+    'DELETE /api/orgs/members': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.removeMember(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('user')));
+    }),
+    'POST /api/orgs/accept': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.acceptInvite(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/leave': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.leaveGym(user, tenantOf(req)));
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

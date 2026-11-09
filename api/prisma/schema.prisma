@@ -71,6 +71,7 @@ model User {
   subscriptions   Subscription[]
   payments        Payment[]
   auditLogs       AdminAuditLog[] @relation("AuditActor")
+  memberships     Membership[]
 }
 
 /// Limites e preços por plano (espelho de api/saas/plans.js, que é a fonte da verdade).
@@ -224,4 +225,84 @@ model KvFile {
   content   String
   rev       Int      @default(1)
   updatedAt DateTime @default(now())
+}
+
+// ===== Academias (multi-tenant) =====
+// Cada linha de Membership, TenantSettings e ActivityLog pertence a UM tenant (`tenantId`) e tem
+// Row Level Security (migração 20261109130000_orgs): sem `app.tenant_id` (ou `app.user_id`, só para
+// ler os próprios vínculos) a consulta não enxerga nada. A API também valida o papel em cada rota.
+
+enum OrgRole {
+  GYM_OWNER
+  GYM_ADMIN
+  GYM_MANAGER
+  PERSONAL_TRAINER
+  STUDENT
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  REMOVED
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  kind      String   @default("GYM")
+  name      String
+  slug      String   @unique
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  settings    TenantSettings?
+  activity    ActivityLog[]
+}
+
+/// Identidade visual, configuração de IA e recursos habilitados da academia (JSON validado na API).
+model TenantSettings {
+  tenantId  String   @id
+  brand     Json     @default("{}")
+  ai        Json     @default("{}")
+  features  Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+/// Usuário × academia × papel. Uma pessoa pode ter vários vínculos sem duplicar a conta.
+/// Só `ACTIVE` concede permissões; `INVITED` espera o aceite; `REMOVED` mantém o histórico.
+model Membership {
+  id          String           @id @default(cuid())
+  tenantId    String
+  userId      String
+  role        OrgRole
+  status      MembershipStatus @default(ACTIVE)
+  invitedById String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+/// Registro imutável de quem fez o quê numa academia, com o antes e o depois.
+model ActivityLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  actorUserId String?
+  action      String
+  targetType  String?
+  targetId    String?
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
 }
