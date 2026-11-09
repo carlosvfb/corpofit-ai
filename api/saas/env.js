@@ -22,7 +22,7 @@ export function env() {
     AI_API_KEY: get('AI_API_KEY')?.trim() || undefined,
     AI_API_BASE_URL: get('AI_API_BASE_URL'),
     AI_MODEL: (get('AI_MODEL') || 'claude-sonnet-5-5').trim(),
-    AI_MAX_OUTPUT_TOKENS: num('AI_MAX_OUTPUT_TOKENS', 1500, 256, 65536),
+    AI_MAX_OUTPUT_TOKENS: num('AI_MAX_OUTPUT_TOKENS', 8000, 256, 65536),
     // Sem valor, o provedor usa o padrão do modelo (alguns modelos recusam `temperature`).
     AI_TEMPERATURE: get('AI_TEMPERATURE') === undefined ? undefined : num('AI_TEMPERATURE', undefined, 0, 1),
     ASAAS_API_KEY: get('ASAAS_API_KEY'),

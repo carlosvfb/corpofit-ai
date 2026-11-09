@@ -8,7 +8,7 @@ A CorpoFit AI **é o Coach do openGym** (`api/coach/`, `docs/AI_COACH.md`) ligad
 AI_PROVIDER=anthropic          # anthropic | openai | gemini | compatible
 AI_API_KEY=                    # somente backend
 AI_MODEL=claude-sonnet-5-5
-AI_MAX_OUTPUT_TOKENS=1500
+AI_MAX_OUTPUT_TOKENS=8000
 # AI_TEMPERATURE=0.4           # opcional
 # AI_API_BASE_URL=             # opcional (gateway/proxy/compatível)
 ```
