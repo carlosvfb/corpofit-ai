@@ -79,6 +79,11 @@ export const reportItem = (id, reason, note) => post('/api/community/report', { 
 export const moderationQueue = tenantId => api('/api/community/moderation' + qs('tenant', tenantId))
 export const moderateItem = (id, action, tenantId) => post('/api/community/moderate', { id, action, tenantId })
 
+// Plano da academia. Preço e limites vêm do servidor; aqui só se escolhe plano e forma de pagamento.
+export const orgBilling = id => api('/api/orgs/billing' + q(id))
+export const startOrgCheckout = (id, planCode, method, cpfCnpj) => post('/api/orgs/billing/checkout' + q(id), { planCode, method, cpfCnpj })
+export const cancelOrgSubscription = id => post('/api/orgs/billing/cancel' + q(id))
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {

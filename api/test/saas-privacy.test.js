@@ -4,6 +4,7 @@ import { db, dbTest, makeUser, resetDb, TEST_DB_URL, dbUp } from './saas-helpers
 import * as tr from '../saas/org/trainers.js';
 import * as pv from '../saas/org/privacy.js';
 import { project, AVAILABLE } from '../saas/org/projection.js';
+process.env.GYM_PLANS = JSON.stringify({ GYM_FREE: { limits: { maxStudents: 50, maxProfessionals: 50, aiMonthlyMessages: 100000 } } }); // estes testes não exercitam o limite do plano (ver saas-gymbilling)
 
 const asUser = u => ({ id: u.id, name: u.name, email: u.email });
 const status = (p, st) => assert.rejects(p, e => e.status === st, `esperava ${st}`);

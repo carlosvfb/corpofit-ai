@@ -144,6 +144,10 @@ model Subscription {
   cancelRequestedAt    DateTime?
   canceledAt           DateTime?
   idempotencyKey       String             @unique
+  /// Assinatura de ACADEMIA (paga pelo dono): o tenant e o código do plano da academia. Nas pessoais, ambos null.
+  /// Nestas, `planCode` é só o valor técnico PREMIUM (chave estrangeira), não o plano da academia.
+  tenantId             String?
+  tenantPlan           String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -152,6 +156,7 @@ model Subscription {
   payments Payment[]
 
   @@index([userId, status])
+  @@index([tenantId])
 }
 
 model Payment {

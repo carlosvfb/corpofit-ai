@@ -8,6 +8,7 @@ import { SaasError } from '../errors.js';
 import { ensureUser } from '../access.js';
 import { withContext } from './context.js';
 import { can, canAssign, canManage, isRole, rankOf } from './rbac.js';
+import { assertCapacity } from './billing.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Academia não encontrada.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para isso.', 'forbidden');
@@ -97,6 +98,7 @@ export async function inviteMember(user, tenantId, input) {
     if (!target || target.deletedAt) throw new SaasError(404, 'Não há uma conta com esse e-mail. Peça para a pessoa se cadastrar primeiro.', 'user-not-found');
     const existing = await tx.membership.findUnique({ where: { tenantId_userId: { tenantId, userId: target.id } } });
     if (existing && existing.status !== 'REMOVED') throw new SaasError(409, 'Essa pessoa já faz parte da academia ou já foi convidada.', 'already-member');
+    await assertCapacity(tx, tenantId, role); // limite de alunos e profissionais do plano
     const m = existing
       ? await tx.membership.update({ where: { id: existing.id }, data: { role, status: 'INVITED', invitedById: user.id } })
       : await tx.membership.create({ data: { tenantId, userId: target.id, role, status: 'INVITED', invitedById: user.id } });
@@ -123,6 +125,7 @@ export async function updateMemberRole(user, tenantId, targetUserId, role) {
     const target = await tx.membership.findUnique({ where: { tenantId_userId: { tenantId, userId: String(targetUserId) } } });
     if (!target || target.status === 'REMOVED') throw new SaasError(404, 'Vínculo não encontrado.', 'not-found');
     if (!canManage(actor, target) || !canAssign(actor, role)) throw FORBIDDEN();
+    if (target.role !== role) await assertCapacity(tx, tenantId, role); // mudar de papel também ocupa uma vaga do novo tipo
     const updated = await tx.membership.update({ where: { id: target.id }, data: { role } });
     await log(tx, tenantId, user.id, 'member.role-changed', { targetType: 'user', targetId: target.userId, before: { role: target.role }, after: { role } });
     return publicMember(updated, null);

@@ -26,7 +26,7 @@ export async function availablePaymentMethods() {
 export async function getBillingOverview(user) {
     const ent = await getEntitlements(user);
     const sub = await db.subscription.findFirst({
-        where: { userId: user.id },
+        where: { userId: user.id, tenantId: null },
         orderBy: { createdAt: "desc" },
         select: {
             id: true,

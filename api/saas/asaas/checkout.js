@@ -98,18 +98,19 @@ export class AsaasCheckoutService {
         }
         // Já possui assinatura ativa/em andamento? Evita duplicidade.
         const open = await db.subscription.findMany({
-            where: { userId: user.id, status: { in: ["PENDING", "ACTIVE", "PAST_DUE"] } },
+            where: { userId: user.id, tenantId: input.tenantId ?? null, status: { in: ["PENDING", "ACTIVE", "PAST_DUE"] } },
             orderBy: { createdAt: "desc" },
         });
         const live = open.find((s) => s.status === "ACTIVE" || s.status === "PAST_DUE");
         if (live)
             throw new BillingError(409, "Você já possui uma assinatura Premium ativa.");
         // Reaproveita pendência do mesmo método (ainda com dados de pagamento) ou abandona as demais.
-        const pendingSame = open.find((s) => s.status === "PENDING" && s.paymentMethod === input.method);
+        const pendingSame = open.find((s) => s.status === "PENDING" && s.paymentMethod === input.method && (s.tenantPlan ?? null) === (input.tenantId ? input.plan.code : null));
         for (const p of open.filter((s) => s.status === "PENDING" && s !== pendingSame)) {
             await this.abandon(p);
         }
-        const plan = PLANS.PREMIUM; // preço sempre vem do servidor
+        const plan = input.plan ?? PLANS.PREMIUM; // preço sempre vem do servidor (nunca do cliente)
+        const label = "CorpoFit AI " + plan.name;
         const customerId = await this.ensureCustomer(user, input.cpfCnpj);
         let sub;
         if (pendingSame) {
@@ -122,7 +123,9 @@ export class AsaasCheckoutService {
             sub = await db.subscription.create({
                 data: {
                     userId: user.id,
-                    planCode: "PREMIUM",
+                    planCode: "PREMIUM", // valor técnico: o plano da academia fica em tenantPlan
+                    tenantId: input.tenantId ?? null,
+                    tenantPlan: input.tenantId ? plan.code : null,
                     paymentMethod: input.method,
                     status: "PENDING",
                     idempotencyKey: `${user.id}:${input.method}:${this.now().getTime()}`,
@@ -132,11 +135,11 @@ export class AsaasCheckoutService {
         try {
             switch (input.method) {
                 case "CREDIT_CARD":
-                    return await this.startCard(sub, customerId, plan.priceCents);
+                    return await this.startCard(sub, customerId, plan.priceCents, label);
                 case "PIX":
-                    return await this.startPix(sub, customerId, plan.priceCents);
+                    return await this.startPix(sub, customerId, plan.priceCents, label);
                 case "PIX_AUTOMATIC":
-                    return await this.startPixAutomatic(sub, customerId, plan.priceCents);
+                    return await this.startPixAutomatic(sub, customerId, plan.priceCents, label);
             }
         }
         catch (err) {
@@ -164,7 +167,7 @@ export class AsaasCheckoutService {
     // Nem `customer` (cadastro sem telefone/endereço) nem `customerData` (exige nome, telefone e
     // endereço completos) seguem daqui: o Asaas recusa os dois. Sem eles, a página segura do
     // Asaas pede ao comprador os dados que o cartão exige.
-    async startCard(sub, customerId, priceCents) {
+    async startCard(sub, customerId, priceCents, label = "CorpoFit AI Premium") {
         const e = env();
         const due = this.now();
         const checkout = await this.client.createCheckout({
@@ -179,8 +182,8 @@ export class AsaasCheckoutService {
             },
             items: [
                 {
-                    name: "CorpoFit AI Premium",
-                    description: "Assinatura mensal CorpoFit AI Premium",
+                    name: label,
+                    description: `Assinatura mensal ${label}`,
                     quantity: 1,
                     value: priceCents / 100,
                     imageBase64: PLACEHOLDER_IMAGE,
@@ -201,11 +204,11 @@ export class AsaasCheckoutService {
         return { kind: "redirect", subscriptionId: sub.id, url: checkout.link };
     }
     // Pix convencional: assinatura Asaas que gera uma cobrança Pix por ciclo.
-    async startPix(sub, customerId, priceCents) {
+    async startPix(sub, customerId, priceCents, label = "CorpoFit AI Premium") {
         const dueDate = ymd(this.now());
         let remoteId = sub.asaasSubscriptionId;
         if (!remoteId) {
-            remoteId = await this.createOrAdoptPixSubscription(sub, customerId, priceCents, dueDate);
+            remoteId = await this.createOrAdoptPixSubscription(sub, customerId, priceCents, dueDate, label);
             await db.subscription.update({ where: { id: sub.id }, data: { asaasSubscriptionId: remoteId } });
         }
         const list = await this.client.listSubscriptionPayments(remoteId);
@@ -235,7 +238,7 @@ export class AsaasCheckoutService {
         return { kind: "pix", subscriptionId: sub.id, payload: qr.payload, image: qr.encodedImage, expiresAt: qr.expirationDate ?? null, dueDate: first.dueDate };
     }
     /** Cria a assinatura; em timeout/falha de rede, verifica se ela já foi criada antes de tentar de novo. */
-    async createOrAdoptPixSubscription(sub, customerId, priceCents, dueDate) {
+    async createOrAdoptPixSubscription(sub, customerId, priceCents, dueDate, label = "CorpoFit AI Premium") {
         try {
             const created = await this.client.createSubscription({
                 customer: customerId,
@@ -243,7 +246,7 @@ export class AsaasCheckoutService {
                 value: priceCents / 100,
                 nextDueDate: dueDate,
                 cycle: "MONTHLY",
-                description: "CorpoFit AI Premium (mensal)",
+                description: `${label} (mensal)`,
                 externalReference: sub.id,
             });
             return created.id;
@@ -259,7 +262,7 @@ export class AsaasCheckoutService {
         }
     }
     // Pix Automático: autorização + primeira cobrança no mesmo QR Code.
-    async startPixAutomatic(sub, customerId, priceCents) {
+    async startPixAutomatic(sub, customerId, priceCents, label = "CorpoFit AI Premium") {
         const start = this.now();
         let auth;
         try {
@@ -268,13 +271,13 @@ export class AsaasCheckoutService {
                 contractId: sub.id.slice(0, 35),
                 startDate: ymd(start),
                 customerId,
-                description: "CorpoFit AI Premium",
+                description: label,
                 value: priceCents / 100,
                 paymentCreationMode: "SUBSCRIPTION",
                 immediateQrCode: {
                     expirationSeconds: 3600,
                     originalValue: priceCents / 100,
-                    description: "CorpoFit AI Premium",
+                    description: label,
                 },
             });
         }

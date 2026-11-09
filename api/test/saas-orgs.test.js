@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { db, dbTest, makeUser, resetDb, TEST_DB_URL, dbUp } from './saas-helpers.mjs';
 import * as org from '../saas/org/service.js';
 import { can, canAssign, canManage } from '../saas/org/rbac.js';
+process.env.GYM_PLANS = JSON.stringify({ GYM_FREE: { limits: { maxStudents: 50, maxProfessionals: 50, aiMonthlyMessages: 100000 } } }); // estes testes não exercitam o limite do plano (ver saas-gymbilling)
 
 const asUser = u => ({ id: u.id, name: u.name, email: u.email });
 const status = async (p, st) => assert.rejects(p, e => e.status === st, `esperava ${st}`);

@@ -5,6 +5,7 @@ import * as org from '../saas/org/service.js';
 import * as oai from '../saas/org/ai.js';
 import { createAiGate } from '../saas/ai.js';
 import { estimateCostMicros } from '../saas/usage.js';
+process.env.GYM_PLANS = JSON.stringify({ GYM_FREE: { limits: { maxStudents: 50, maxProfessionals: 50, aiMonthlyMessages: 100000 } } }); // estes testes não exercitam o limite do plano (ver saas-gymbilling)
 
 const asUser = u => ({ id: u.id, name: u.name, email: u.email });
 const status = (p, st, code) => assert.rejects(p, e => e.status === st && (!code || e.code === code), `esperava ${st}`);

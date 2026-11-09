@@ -22,6 +22,7 @@ import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
 import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
+import * as orgBilling from './org/billing.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -307,6 +308,33 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       const actor = platform ? requireAdmin(req, res) : session(req, res);
       if (!actor) return;
       json(res, 200, await community.moderate(actor, b.id, b.action, { platform, tenantId: b.tenantId }));
+    }),
+
+    /* ------------------- plano e cobrança da academia ------------------- */
+    'GET /api/orgs/plans': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const { publicGymPlans } = await import('./org/gym-plans.js');
+      json(res, 200, publicGymPlans());
+    }),
+    'GET /api/orgs/billing': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await orgBilling.overview(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/billing/checkout': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      if (throttled(checkoutWindow, res, user)) return;
+      const b = await readBody(req);
+      try {
+        json(res, 201, await orgBilling.startCheckout(user, tenantOf(req), { planCode: typeof b.planCode === 'string' ? b.planCode : '', method: typeof b.method === 'string' ? b.method : '', cpfCnpj: typeof b.cpfCnpj === 'string' ? b.cpfCnpj.slice(0, 20) : '' }, client()));
+      } catch (e) {
+        if (!(e instanceof BillingError || e instanceof SaasError)) await logError(db, 'org-checkout', e);
+        throw e;
+      }
+    }),
+    'POST /api/orgs/billing/cancel': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      if (throttled(cancelWindow, res, user)) return;
+      json(res, 200, { status: (await orgBilling.cancel(user, tenantOf(req), client())).status });
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

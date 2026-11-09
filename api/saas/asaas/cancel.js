@@ -5,9 +5,9 @@ import { BillingError } from "./checkout.js";
  * Cancelamento: só marca CANCELED após o Asaas confirmar a remoção.
  * O Premium continua até o fim do período já pago (ver entitlements).
  */
-export async function cancelSubscription(client, userId, now = new Date()) {
+export async function cancelSubscription(client, userId, now = new Date(), tenantId = null) {
     const sub = await db.subscription.findFirst({
-        where: { userId, status: { in: ["PENDING", "ACTIVE", "PAST_DUE"] } },
+        where: { userId, tenantId, status: { in: ["PENDING", "ACTIVE", "PAST_DUE"] } },
         orderBy: { createdAt: "desc" },
     });
     if (!sub)

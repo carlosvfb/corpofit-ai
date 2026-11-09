@@ -77,7 +77,7 @@ export async function adminOverview() {
   const now = new Date();
   const [users, premiumSubs, pending, overdue, aiMonth, aiFailures, errors24h, failedEvents] = await Promise.all([
     db.user.count({ where: { deletedAt: null } }),
-    db.subscription.count({ where: { status: { in: ['ACTIVE', 'PAST_DUE'] } } }),
+    db.subscription.count({ where: { tenantId: null, status: { in: ['ACTIVE', 'PAST_DUE'] } } }),
     db.payment.count({ where: { status: 'PENDING' } }),
     db.payment.count({ where: { status: 'OVERDUE' } }),
     db.usageRecord.aggregate({

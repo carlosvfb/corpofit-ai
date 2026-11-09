@@ -32,7 +32,7 @@ export async function getEntitlements(userOrId) {
     const [row, subs, graceDays] = await Promise.all([
         db.user.findUnique({ where: { id }, select: { manualPremium: true, manualPremiumUntil: true } }),
         db.subscription.findMany({
-            where: { userId: id },
+            where: { userId: id, tenantId: null },
             select: { status: true, currentPeriodEnd: true, graceUntil: true },
         }),
         getGraceDays(),

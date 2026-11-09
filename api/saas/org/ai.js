@@ -8,6 +8,7 @@ import { SaasError } from '../errors.js';
 import { startOfMonth } from '../usage.js';
 import { withContext } from './context.js';
 import { can } from './rbac.js';
+import { tenantEntitlements } from './billing.js';
 
 // Contexto resolvido no portão (assíncrono) e lido pelo job (síncrono). Um job por perfil por vez.
 const byUid = new Map();
@@ -48,7 +49,8 @@ export async function resolveContext(user) {
     if (!m || m.status !== 'ACTIVE') return null;
     const [t, s] = await Promise.all([tx.tenant.findUnique({ where: { id: tenantId } }), tx.tenantSettings.findUnique({ where: { tenantId } })]);
     if (!t || s?.ai?.enabled === false) return null;
-    return { tenantId, cap: tenantCap(s?.ai), systemExtra: buildExtra(t.name, s?.ai) };
+    const ent = await tenantEntitlements(tenantId);
+    return { tenantId, cap: Math.min(tenantCap(s?.ai), ent.limits.aiMonthlyMessages), systemExtra: buildExtra(t.name, s?.ai) };
   });
 }
 
@@ -98,7 +100,7 @@ export async function tenantAiUsage(user, tenantId) {
   const messages = [...okBy.values()].reduce((a, b) => a + b, 0);
   const costKnown = rows.some(r => r._sum.costMicros !== null);
   return {
-    month: since.toISOString().slice(0, 7), enabled: ai.enabled !== false, cap: tenantCap(ai), messages,
+    month: since.toISOString().slice(0, 7), enabled: ai.enabled !== false, cap: Math.min(tenantCap(ai), (await tenantEntitlements(tenantId)).limits.aiMonthlyMessages), messages,
     inputTokens: rows.reduce((a, r) => a + (r._sum.inputTokens || 0), 0), outputTokens: rows.reduce((a, r) => a + (r._sum.outputTokens || 0), 0),
     estimatedCostUsd: costKnown ? rows.reduce((a, r) => a + (r._sum.costMicros || 0), 0) / 1e6 : null,
     members: rows.map(r => ({ userId: r.userId, name: name.get(r.userId) || null, messages: okBy.get(r.userId) || 0 })).sort((a, b) => b.messages - a.messages)

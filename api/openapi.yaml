@@ -4456,6 +4456,64 @@ paths:
         '403': { description: Not allowed for the caller. }
         '404': { description: Not found or not visible to the caller. }
 
+  /api/orgs/plans:
+    get:
+      tags: [saas]
+      operationId: listGymPlans
+      summary: The gym plans with limits; a paid plan with no configured price is not purchasable
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: The plan limit was reached. }
+        '403': { description: Only the owner may contract or cancel. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/billing:
+    get:
+      tags: [saas]
+      operationId: getOrgBilling
+      summary: A gym plan, limits, usage (students and professionals) and subscription status (owner, admin or manager)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: The plan limit was reached. }
+        '403': { description: Only the owner may contract or cancel. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/billing/checkout:
+    post:
+      tags: [saas]
+      operationId: startOrgCheckout
+      summary: The owner contracts a paid gym plan; price and limits come from the server
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: The plan limit was reached. }
+        '403': { description: Only the owner may contract or cancel. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/billing/cancel:
+    post:
+      tags: [saas]
+      operationId: cancelOrgSubscription
+      summary: The owner cancels the gym subscription (the plan lasts until the end of the paid period)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: The plan limit was reached. }
+        '403': { description: Only the owner may contract or cancel. }
+        '404': { description: Not found, or not a member of this gym. }
+
   /api/billing/status:
     get:
       tags: [saas]

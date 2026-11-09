@@ -7,10 +7,10 @@ import './saas.css'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import {
-  acceptOrgInvite, aiContext, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgAiUsage, orgContexts,
-  orgDashboard, orgMembers, orgSettings, removeOrgMember, saveOrgSettings, setAiContext
+  acceptOrgInvite, aiContext, cancelOrgSubscription, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgAiUsage, orgContexts,
+  orgBilling, orgDashboard, orgMembers, orgSettings, removeOrgMember, saveOrgSettings, setAiContext, startOrgCheckout
 } from './api.js'
-import { formatDateTime } from './brand.js'
+import { formatBRL, formatDate, formatDateTime } from './brand.js'
 
 export const ROLE_LABEL = {
   GYM_OWNER: 'Dono', GYM_ADMIN: 'Administrador', GYM_MANAGER: 'Gerente', PERSONAL_TRAINER: 'Personal trainer', STUDENT: 'Aluno'
@@ -18,8 +18,8 @@ export const ROLE_LABEL = {
 const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
 // Espelho do servidor, só para decidir o que mostrar (api/saas/org/rbac.js é quem vale).
 const SEES = {
-  GYM_OWNER: ['dashboard', 'members', 'settings', 'activity', 'ai'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity', 'ai'],
-  GYM_MANAGER: ['dashboard', 'members', 'activity'], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
+  GYM_OWNER: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'],
+  GYM_MANAGER: ['dashboard', 'members', 'activity', 'plan'], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
 }
 const ACTION_LABEL = {
   'tenant.created': 'Academia criada', 'member.invited': 'Convite enviado', 'member.joined': 'Entrou na academia',
@@ -197,6 +197,72 @@ function Activity({ id }) {
   </div>)
 }
 
+const METHOD = { CREDIT_CARD: 'Cartão de crédito', PIX_AUTOMATIC: 'Pix Automático', PIX: 'Pix (pagamento mensal)' }
+
+/** Plano da academia: limites e uso, planos disponíveis e, para o dono, contratar ou cancelar. */
+function PlanTab({ id }) {
+  const [b, setB] = useState(null)
+  const [err, setErr] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [pick, setPick] = useState('')
+  const [method, setMethod] = useState('CREDIT_CARD')
+  const [doc, setDoc] = useState('')
+  const [pix, setPix] = useState(null)
+  const load = useCallback(() => orgBilling(id).then(setB).catch(e => setErr(errorText(e, 'Não foi possível carregar o plano.'))), [id])
+  useEffect(() => { load() }, [load])
+  if (err && !b) return <Err>{err}</Err>
+  if (!b) return <div className="muted small">Carregando…</div>
+  const bar = (used, max) => <div className="ff-meter" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={used}><i style={{ width: Math.min(100, Math.round((used / Math.max(1, max)) * 100)) + '%' }} /></div>
+  const subscribe = async e => {
+    e.preventDefault(); setBusy(true); setErr(null)
+    try {
+      const r = await startOrgCheckout(id, pick, method, doc)
+      if (r.kind === 'redirect') { window.location.href = r.url; return }
+      setPix(r)
+    } catch (x) { setErr(errorText(x, 'Não foi possível iniciar a contratação.')) } finally { setBusy(false) }
+  }
+  const cancel = async () => {
+    if (!window.confirm('Cancelar o plano da academia? Ele continua até o fim do período já pago.')) return
+    setBusy(true); setErr(null)
+    try { await cancelOrgSubscription(id); await load() } catch (x) { setErr(errorText(x, 'Não foi possível cancelar.')) } finally { setBusy(false) }
+  }
+  const sub = b.subscription
+  return <>
+    <Err>{err}</Err>
+    <div className="card">
+      <div className="muted small">Plano da academia</div>
+      <div style={{ fontSize: 20, fontWeight: 800 }}>{b.plan.name}</div>
+      {sub?.status === 'PAST_DUE' && <div className="small" style={{ color: 'var(--red)' }}>Pagamento em atraso. Regularize até {formatDate(sub.graceUntil)}.</div>}
+      {sub?.cancelRequestedAt && <div className="small">Cancelado: vale até {formatDate(sub.currentPeriodEnd)}.</div>}
+      <div className="small" style={{ marginTop: 10 }}>Alunos: {b.usage.students} de {b.limits.maxStudents}</div>{bar(b.usage.students, b.limits.maxStudents)}
+      <div className="small" style={{ marginTop: 8 }}>Profissionais: {b.usage.professionals} de {b.limits.maxProfessionals}</div>{bar(b.usage.professionals, b.limits.maxProfessionals)}
+      <div className="small" style={{ marginTop: 8 }}>IA: até {b.limits.aiMonthlyMessages} mensagens por mês</div>
+      <div className="dim small" style={{ marginTop: 8 }}>Ao passar do limite, ninguém é removido: só não dá para adicionar mais gente até ampliar o plano.</div>
+    </div>
+    <div className="muted small" style={{ margin: '14px 4px 6px' }}>PLANOS</div>
+    {b.plans.map(p => <div className="card" key={p.code} style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{p.name}</b><span>{p.priceCents === 0 ? 'Grátis' : p.priceCents === null ? 'Preço a definir' : formatBRL(p.priceCents) + '/mês'}</span></div>
+      <div className="muted small">Até {p.limits.maxStudents} alunos · {p.limits.maxProfessionals} profissionais · {p.limits.aiMonthlyMessages} mensagens de IA/mês</div>
+      {b.canManage && p.purchasable && p.code !== b.plan.code && <div style={{ marginTop: 8 }}><Button variant={pick === p.code ? 'primary' : 'tinted'} onClick={() => { setPick(p.code); setPix(null) }}>{pick === p.code ? 'Selecionado' : 'Escolher este plano'}</Button></div>}
+    </div>)}
+    {b.canManage && pick && !pix && <form className="card" onSubmit={subscribe}>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Contratar {b.plans.find(p => p.code === pick)?.name}</div>
+      <select className="input" value={method} onChange={e => setMethod(e.target.value)} aria-label="Forma de pagamento">{b.methods.map(m => <option key={m} value={m}>{METHOD[m] || m}</option>)}</select>
+      <input className="input" style={{ marginTop: 8 }} inputMode="numeric" autoComplete="off" value={doc} onChange={e => setDoc(e.target.value)} placeholder="CPF ou CNPJ de quem paga" aria-label="CPF ou CNPJ" />
+      <div style={{ marginTop: 10 }}><Button variant="primary" type="submit" disabled={busy || doc.trim().length < 11}>Assinar</Button></div>
+      <div className="dim small" style={{ marginTop: 6 }}>O plano só passa a valer depois da confirmação do pagamento.</div>
+    </form>}
+    {pix && <div className="card" style={{ marginTop: 8 }}>
+      <div style={{ fontWeight: 700 }}>Pague com o Pix</div>
+      {pix.image && <img className="ff-qr" alt="QR Code Pix" src={`data:image/png;base64,${pix.image}`} />}
+      <Button onClick={() => navigator.clipboard?.writeText(pix.payload)}>Copiar código Pix</Button>
+      <div className="dim small" style={{ marginTop: 6 }}>Depois de pagar, o plano é liberado assim que o pagamento é confirmado.</div>
+    </div>}
+    {b.canManage && b.paid && !sub?.cancelRequestedAt && <div style={{ marginTop: 16 }}><Button variant="tinted" disabled={busy} onClick={cancel}>Cancelar plano</Button></div>}
+    {!b.canManage && <div className="dim small" style={{ marginTop: 12 }}>Só o dono da academia contrata ou cancela o plano.</div>}
+  </>
+}
+
 function AiUsage({ id }) {
   const [u, setU] = useState(null)
   const [err, setErr] = useState(null)
@@ -249,7 +315,7 @@ export function Gym() {
   }, [id, stamp])
   if (error) return <div className="page"><Header title="Academia" back="/academias" /><Err>{error}</Err></div>
   if (!ctx) return <div className="page"><Header title="Academia" back="/academias" /><div className="muted small">Carregando…</div></div>
-  const tabs = [['dashboard', 'Visão geral'], ['members', 'Membros'], ['settings', 'Configurações'], ['activity', 'Atividade'], ['ai', 'Uso da IA']].filter(([k]) => SEES[ctx.role].includes(k))
+  const tabs = [['dashboard', 'Visão geral'], ['members', 'Membros'], ['settings', 'Configurações'], ['activity', 'Atividade'], ['ai', 'Uso da IA'], ['plan', 'Plano']].filter(([k]) => SEES[ctx.role].includes(k))
   const active = tabs.some(([k]) => k === tab) ? tab : tabs[0]?.[0]
   const leave = async () => {
     if (!window.confirm('Sair desta academia? Você perde o acesso a ela.')) return
@@ -265,6 +331,7 @@ export function Gym() {
     {active === 'settings' && <Settings id={id} onSaved={() => setStamp(x => x + 1)} />}
     {active === 'activity' && <Activity id={id} />}
     {active === 'ai' && <AiUsage id={id} />}
+    {active === 'plan' && <PlanTab id={id} />}
     {tabs.length === 0 && <div className="card dim small">Você é aluno desta academia. Os recursos para alunos (treinos atribuídos e compartilhamento) chegam nas próximas fases.</div>}
     <AiChoice id={id} />
     <div style={{ marginTop: 24 }}><Button variant="tinted" onClick={leave}>Sair desta academia</Button></div>
