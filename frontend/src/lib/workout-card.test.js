@@ -234,7 +234,7 @@ describe('cardPalette', () => {
     expect(light).toMatchObject({ bg: '#f2f2f7', surface: '#ffffff', label: '#000000', acc: '#30d158' })
     expect(light.accText).not.toBe('#30d158')
     expect(parseColor(light.accText)[1]).toBeLessThan(parseColor('#30d158')[1])
-    expect(cardPalette('dark', 'nonsense').acc).toBe('#30d158')
+    expect(cardPalette('dark', 'nonsense').acc).toBe('#7c5cff')
   })
 })
 

@@ -171,10 +171,10 @@ const CHART_CSS = `
   svg .bar.hot { fill: #4d7c0f; }
   svg .line { fill: none; stroke: #3b404b; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
   svg .dot { fill: #3b404b; stroke: #fff; stroke-width: 1.2; }
-  svg .dot.hot { fill: #a3e635; stroke: #3f6212; stroke-width: 1.4; }
+  svg .dot.hot { fill: #9b87ff; stroke: #4c35c4; stroke-width: 1.4; }
   svg.cal { display: block; }
   svg.cal .l0 { fill: #f0f1f4; } svg.cal .l1 { fill: #e2f5bd; } svg.cal .l2 { fill: #bfe57a; }
-  svg.cal .l3 { fill: #84cc16; } svg.cal .l4 { fill: #3f6212; }
+  svg.cal .l3 { fill: #7c5cff; } svg.cal .l4 { fill: #4c35c4; }
 `
 
 /* ------------------------------- shared page CSS ------------------------------- */
@@ -205,7 +205,7 @@ const REPORT_CSS = `
   .legend { display: flex; gap: 3pt; align-items: center; font-size: 7.5pt; color: var(--faint); margin-top: 4pt; }
   .legend i { display: inline-block; width: 8pt; height: 8pt; border-radius: 2pt; }
   .legend .l0 { background: #f0f1f4; } .legend .l1 { background: #e2f5bd; } .legend .l2 { background: #bfe57a; }
-  .legend .l3 { background: #84cc16; } .legend .l4 { background: #3f6212; }
+  .legend .l3 { background: #7c5cff; } .legend .l4 { background: #4c35c4; }
   .keep-next { break-after: avoid; page-break-after: avoid; }
 
   table.mus td { padding: 2.5pt 6pt 2.5pt 0; border-bottom: 0; }
@@ -221,7 +221,7 @@ const REPORT_CSS = `
   td.num + td.num, th.num + th.num { padding-inline-start: 12pt; }
   .ex-en { color: var(--faint); font-size: 8pt; text-transform: capitalize; overflow-wrap: anywhere; }
   .pr { display: inline-block; font-size: 6.5pt; letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
-    color: #3f6212; background: var(--lime-soft); border: 1px solid #d3eba4; border-radius: 3pt; padding: 0 3pt; vertical-align: 1pt; margin-inline-start: 3pt; }
+    color: #4c35c4; background: var(--lime-soft); border: 1px solid #cfc4ff; border-radius: 3pt; padding: 0 3pt; vertical-align: 1pt; margin-inline-start: 3pt; }
 
   /* a list's heading, printed as its table's first header row (repeats on the next page) */
   th.t-h { font-size: 7.5pt; letter-spacing: .12em; color: var(--muted); padding: 16pt 0 3pt; border-bottom: 1px solid var(--rule); }

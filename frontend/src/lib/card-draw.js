@@ -8,7 +8,7 @@
 export const FORMATS = { story: { width: 1080, height: 1920 }, square: { width: 1080, height: 1080 } }
 export const FORMAT_IDS = Object.keys(FORMATS)
 export const STYLE_IDS = ['dark', 'light']
-export const SITE = 'opengym.ch'
+export const SITE = 'corpofitai.vercel.app'
 
 /**
  * The colours of a card, the app's own (index.css) in a fixed light or dark look, whatever the
@@ -42,9 +42,9 @@ export function mixColor(a, b, p) {
   return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`
 }
 
-export function cardPalette(style, acc = '#30d158') {
+export function cardPalette(style, acc = '#7c5cff') {
   const light = style === 'light'
-  const a = parseColor(acc) ? acc : '#30d158'
+  const a = parseColor(acc) ? acc : '#7c5cff'
   return light
     ? { bg: '#f2f2f7', surface: '#ffffff', tile: '#f2f2f7', label: '#000000', label2: '#6c6c70', acc: a, accText: mixColor(a, '#000000', 0.62), sep: '#e5e5ea', light: true }
     : { bg: '#000000', surface: '#1c1c1e', tile: '#2c2c2e', label: '#ffffff', label2: '#98989f', acc: a, accText: a, sep: '#38383a', light: false }
@@ -66,7 +66,7 @@ export function drawMark(ctx, x, y, h, color) {
 }
 
 /**
- * The footer every card ends with: the mark, "openGym" with "Gym" in the accent, and the site at
+ * The footer every card ends with: the mark, "CorpoFit AI" with "AI" in the accent, and the site at
  * the other end. `y` is the text's baseline. Drawn left to right whatever the language: it is a
  * logo, and a logo does not mirror.
  */
@@ -78,10 +78,10 @@ export function drawBrand(ctx, { x, y, width, colors, family, size = 40 }) {
   ctx.textAlign = 'left'
   ctx.font = `800 ${size}px ${family}`
   ctx.fillStyle = colors.label
-  ctx.fillText('open', tx, y)
-  tx += ctx.measureText('open').width
+  ctx.fillText('CorpoFit ', tx, y)
+  tx += ctx.measureText('CorpoFit ').width
   ctx.fillStyle = colors.accText || colors.acc
-  ctx.fillText('Gym', tx, y)
+  ctx.fillText('AI', tx, y)
   ctx.font = `600 ${Math.round(size * 0.72)}px ${family}`
   ctx.fillStyle = colors.label2
   ctx.textAlign = 'right'

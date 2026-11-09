@@ -44,8 +44,8 @@ export function probeMarks(probe) {
 }
 
 // The app icon (frontend/resources/icon.svg), drawn small: the lime dumbbell on its dark tile.
-export const LOGO_SVG = '<svg class="logo-mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0c0e12"/>'
-  + '<g fill="#a3e635"><rect x="80" y="242" width="352" height="28"/><rect x="80" y="199" width="36" height="114"/>'
+export const LOGO_SVG = '<svg class="logo-mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#7c5cff"/>'
+  + '<g fill="#ffffff"><rect x="80" y="242" width="352" height="28"/><rect x="80" y="199" width="36" height="114"/>'
   + '<rect x="131" y="169" width="47" height="174"/><rect x="334" y="169" width="47" height="174"/>'
   + '<rect x="396" y="199" width="36" height="114"/></g></svg>'
 
@@ -70,13 +70,13 @@ export const PRINT_CSS = `
   @page {
     size: auto;
     margin: 15mm 14mm 17mm;
-    @bottom-left { content: "opengym.ch"; font: 7.5pt/1 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #9aa0ad; }
+    @bottom-left { content: "corpofitai.vercel.app"; font: 7.5pt/1 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #9aa0ad; }
     @bottom-right { font: 7.5pt/1 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #9aa0ad; }
   }
   :root {
     --ink: #15171c; --ink-2: #3b404b; --muted: #6b7180; --faint: #9aa0ad;
     --rule: #e3e6ec; --rule-soft: #eff1f5; --tint: #f6f7f9;
-    --lime: #a3e635; --lime-ink: #4d7c0f; --lime-soft: #f1f9e1;
+    --lime: #7c5cff; --lime-ink: #4c35c4; --lime-soft: #efeaff;
   }
   * { box-sizing: border-box; }
   html { color-scheme: light; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -151,13 +151,13 @@ export function printShell({ title, kicker = '', facts = [], owner = '', date, b
 ${css}</style></head>
 <body><div class="doc">
   <header class="mast keep">
-    <div class="mast-top"><div class="brand">${LOGO_SVG}<span>openGym</span></div><div class="mast-meta">${meta}</div></div>
+    <div class="mast-top"><div class="brand">${LOGO_SVG}<span>CorpoFit AI</span></div><div class="mast-meta">${meta}</div></div>
     ${kicker ? `<div class="kicker">${esc(kicker)}</div>` : ''}
     <h1>${esc(title)}</h1>
     ${factLine ? `<div class="facts">${factLine}</div>` : ''}
   </header>
   ${body}
-  <div class="end keep">${esc(t('Made with openGym'))} · opengym.ch${credit ? `<div class="credit" lang="en" dir="ltr">${esc(credit)}</div>` : ''}</div>
+  <div class="end keep">${esc(t('Made with openGym'))} · corpofitai.vercel.app${credit ? `<div class="credit" lang="en" dir="ltr">${esc(credit)}</div>` : ''}</div>
 </div></body></html>`
 }
 
@@ -174,7 +174,7 @@ export function paperFor(locale) {
 export function printOptions() {
   let locale = ''
   try { locale = navigator.language || '' } catch (e) { /* */ }
-  return { paper: paperFor(locale), footer: { left: 'opengym.ch', page: t('Page {0} of {1}') } }
+  return { paper: paperFor(locale), footer: { left: 'corpofitai.vercel.app', page: t('Page {0} of {1}') } }
 }
 
 // The web: a hidden iframe and the browser's own print dialog (→ Save as PDF), so we never

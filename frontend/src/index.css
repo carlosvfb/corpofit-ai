@@ -141,6 +141,7 @@
 }
 
 /* accents — Apple's system colours, so a recolour never looks off-system */
+:root[data-accent="corpofit"]{ --acc:#7c5cff; --acc-2:#5b3fe0; --on-acc:#fff }
 :root[data-accent="lime"]  { --acc:var(--green);  --acc-2:#248a3d; --on-acc:#000 }
 :root[data-accent="sky"]   { --acc:var(--blue);   --acc-2:#0060df; --on-acc:#fff }
 :root[data-accent="orange"]{ --acc:var(--orange); --acc-2:#c76b00; --on-acc:#000 }
