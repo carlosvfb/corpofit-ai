@@ -11,6 +11,7 @@ export function PlanCard() {
   const nav = useNavigate()
   const on = useStore(s => saasOn(s.config))
   const user = useStore(s => s.user)
+  const coachOn = useStore(s => !!s.config?.coach?.enabled)
   const [info, setInfo] = useState(null)
   useEffect(() => {
     if (!on || !user) return
@@ -28,6 +29,9 @@ export function PlanCard() {
         {b.plan.isPremium ? 'Gerenciar' : 'Assinar Premium'}
       </button>
     </div>
+    {coachOn
+      ? <button className="btn" onClick={() => nav('/coach')} style={{ width: '100%', marginTop: 12, minHeight: 44, borderRadius: 12 }}>Conversar com a {BRAND.aiName}</button>
+      : <div className="dim small" style={{ marginTop: 10 }}>A {BRAND.aiName} ainda não foi ativada neste servidor.</div>}
     <div className="small muted" style={{ marginTop: 10 }}>{BRAND.aiName}: {ai.used} de {ai.limit} mensagens neste mês</div>
     <div className="ff-meter" role="progressbar" aria-valuemin={0} aria-valuemax={ai.limit} aria-valuenow={ai.used} aria-label="Mensagens da IA no mês"><i style={{ width: pct + '%' }} /></div>
     {b.subscription?.status === 'PAST_DUE' && <div className="small" style={{ color: 'var(--red)', marginTop: 8 }}>Cobrança vencida. Regularize até {formatDate(b.subscription.graceUntil)}.</div>}
