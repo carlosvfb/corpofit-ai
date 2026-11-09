@@ -2214,7 +2214,9 @@ const saas = SAAS_MODE
   ? await (await import('./saas/index.js')).createSaas({
     json, readBody, readSession, requireAdmin,
     findUser: id => db.users.find(u => u.id === id) || null,
-    cfgStore: coachConfig, jobs: coachJobs, readState
+    cfgStore: coachConfig, jobs: coachJobs,
+    // Na Vercel o estado de OUTRO perfil não vem junto com a requisição: carrega-se o arquivo dele antes de ler.
+    readState: async id => { if (storage) await storage.hydrate({ exact: [path.basename(stateFile(id))] }); return readState(id); }
   })
   : null;
 

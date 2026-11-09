@@ -362,7 +362,7 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       if (throttled(checkoutWindow, res, user)) return;
       const b = await readBody(req);
       try {
-        json(res, 201, await orgBilling.startCheckout(user, tenantOf(req), { planCode: typeof b.planCode === 'string' ? b.planCode : '', method: typeof b.method === 'string' ? b.method : '', cpfCnpj: typeof b.cpfCnpj === 'string' ? b.cpfCnpj.slice(0, 20) : '' }, client()));
+        json(res, 201, await orgBilling.startCheckout(user, tenantOf(req), { planCode: typeof b.planCode === 'string' ? b.planCode : '', method: typeof b.method === 'string' ? b.method : '', cpfCnpj: typeof b.cpfCnpj === 'string' ? b.cpfCnpj.slice(0, 20) : '' }, client));
       } catch (e) {
         if (!(e instanceof BillingError || e instanceof SaasError)) await logError(db, 'org-checkout', e);
         throw e;
@@ -371,7 +371,7 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'POST /api/orgs/billing/cancel': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       if (throttled(cancelWindow, res, user)) return;
-      json(res, 200, { status: (await orgBilling.cancel(user, tenantOf(req), client())).status });
+      json(res, 200, { status: (await orgBilling.cancel(user, tenantOf(req), client)).status });
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

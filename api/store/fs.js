@@ -39,6 +39,8 @@ async function flushVfs(v) {
 
 /** Controle do armazenamento virtual; `null` no modo normal (disco). */
 export const storage = STORAGE_POSTGRES && {
+  /** Traz para o contexto da requisição atual arquivos de outro perfil (ex.: o personal lendo, com permissão, o estado de um aluno). */
+  async hydrate(scope) { await current().hydrate(scope); },
   /**
    * Roda `fn` com os dados do `scope` carregados num vfs próprio e grava o que mudou ao final, com
    * controle otimista. Se outra instância gravou no meio (ConflictError), refaz tudo do zero.

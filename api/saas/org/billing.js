@@ -84,12 +84,12 @@ export async function startCheckout(user, tenantId, { planCode, method, cpfCnpj 
   if (!asaasConfigured()) throw new SaasError(503, 'Pagamentos ainda não configurados.');
   const current = await tenantEntitlements(tenantId);
   if (current.paid && current.planCode === plan.code) throw new SaasError(409, 'Esta academia já está neste plano.', 'same-plan');
-  return new AsaasCheckoutService(client).start(user, { method, cpfCnpj, tenantId, plan });
+  return new AsaasCheckoutService(typeof client === 'function' ? client() : client).start(user, { method, cpfCnpj, tenantId, plan });
 }
 
 export async function cancel(user, tenantId, client) {
   await ownerContext(user, tenantId);
-  return cancelSubscription(client, user.id, new Date(), tenantId);
+  return cancelSubscription(typeof client === 'function' ? client() : client, user.id, new Date(), tenantId);
 }
 
 export { BillingError };
