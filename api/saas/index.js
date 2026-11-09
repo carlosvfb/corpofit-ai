@@ -11,6 +11,7 @@ import { db } from './db.js';
 import { saasRoutes } from './routes.js';
 import { bootstrapCoach, createAiGate, JOB_ROUTES } from './ai.js';
 import { aiContextFor } from './org/ai.js';
+import { eraseUserData } from './org/lgpd.js';
 import { SaasError, logError } from './errors.js';
 import { AsaasClient } from './asaas/client.js';
 import { asaasConfigured } from './asaas/config.js';
@@ -77,6 +78,13 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
       if (asaasConfigured() || asaasClient) {
         await cancelSubscription(asaasClient || AsaasClient.fromEnv(), uid).catch(() => undefined);
       }
+      // Assinaturas de academias que esta pessoa pagava: cancela no Asaas (a academia volta ao plano grátis ao fim do período).
+      if (asaasConfigured() || asaasClient) {
+        const tenantSubs = await db.subscription.findMany({ where: { userId: uid, tenantId: { not: null }, status: { in: ['PENDING', 'ACTIVE', 'PAST_DUE'] } }, select: { tenantId: true }, distinct: ['tenantId'] });
+        for (const t of tenantSubs) await cancelSubscription(asaasClient || AsaasClient.fromEnv(), uid, new Date(), t.tenantId).catch(() => undefined);
+      }
+      // Academias, personal, privacidade e biblioteca: elimina os dados dela (LGPD). Falha não impede o resto.
+      try { await eraseUserData(uid); } catch (err) { await logError(db, 'user-erase', err); }
       await db.user.update({
         where: { id: uid },
         data: { name: 'Usuário removido', email: null, deletedAt: new Date(), manualPremium: false, manualPremiumUntil: null }

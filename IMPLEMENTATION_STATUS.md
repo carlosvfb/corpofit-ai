@@ -1,3 +1,5 @@
+> **Atualização (2026-11-10):** as Fases 2 a 9 (academias, personal trainers, privacidade, IA por academia, biblioteca, planos de academia e fechamento) estão descritas, com testes e pendências, em [docs/PLATFORM_AUDIT.md](docs/PLATFORM_AUDIT.md). Este arquivo registra o estado da primeira entrega (conta individual, planos pessoais, Asaas e IA).
+
 # Status da implementação
 
 Última atualização: 2026-11-08. Branch: `corpofitai-saas` (a partir do `main` do openGym). Nada foi commitado.

@@ -248,7 +248,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <p class="api-facts">
     <span>OpenAPI 3.1.0</span>
     <span>openGym v1.4.3</span>
-    <span>154 endpoints</span>
+    <span>155 endpoints</span>
     <span>AGPL-3.0-or-later</span>
   </p>
 
@@ -1117,7 +1117,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
     <span class="ep-sum">Create a profile with a name and password</span>
   </summary>
   <div class="ep-body">
-<p>For browsers that cannot make a passkey (plain http on a LAN address, some Firefox setups). Creates the profile and signs it in. The same invite rules as passkey registration apply: on an invite-only instance the code is checked first, checked again after hashing, and burned. The password must be 10–256 characters and not one of the passwords guessing scripts try first; no two profiles with a password may share a name. An optional <code>email</code> is stored as the profile's sign-in e-mail (see <code>POST /api/account/email</code>); one that is not an address is refused with <code>400 email-invalid</code>, one that is in use with <code>409 email-taken</code>. Both are asked only after the hash and the second invite check, so without a valid code it is never answered, which counts against the caller's address like a wrong invite code. <b>Not</b> CSRF-exempt.</p>
+<p>For browsers that cannot make a passkey (plain http on a LAN address, some Firefox setups). Creates the profile and signs it in. The same invite rules as passkey registration apply: on an invite-only instance the code is checked first, checked again after hashing, and burned. The password must be 10–256 characters and not one of the passwords guessing scripts try first; no two profiles with a password may share a name. An optional <code>email</code> is stored as the profile's sign-in e-mail (see <code>POST /api/account/email</code>); one that is not an address is refused with <code>400 email-invalid</code>, one that is in use with <code>409 email-taken</code>. Both are asked only after the hash and the second invite check, so without a valid code it is never answered, which counts against the caller's address like a wrong invite code. In the CorpoFit AI SaaS mode (<code>SAAS_MODE=1</code>) the e-mail is required (<code>400 email-required</code> without one) and the body must carry <code>acceptTerms: true</code> (<code>400 terms-required</code> otherwise). <b>Not</b> CSRF-exempt.</p>
     <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Public: no authentication required.</span></p>
 
 <p class="ep-h">Request body <span class="p-hint">(JSON)</span></p><div class="ptab">
@@ -5245,6 +5245,32 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <div class="prow rrow">
     <span class="r-code s4">404</span>
     <span class="p-desc">Not found</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-exportMyOrgData">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/privacy/export</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Everything the platform keeps about me in gyms, trainer links, sharing, consent and the library</span>
+  </summary>
+  <div class="ep-body">
+
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The data as JSON (LGPD access and portability).</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
   </div>
     </div>
   </div>

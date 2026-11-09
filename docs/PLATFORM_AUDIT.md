@@ -137,3 +137,54 @@ Entregue em `api/saas/org/gym-plans.js` e `billing.js`, rotas `/api/orgs/plans`,
 - **Quem pode o quê:** dono contrata e cancela; dono, admin e gerente veem plano, uso e limites; aluno e personal não. Contratar nunca libera nada antes da confirmação do pagamento pelo webhook. Trocar de plano é cancelar o atual e contratar o novo (o atual vale até o fim do período pago).
 - **Testes:** `api/test/saas-gymbilling.test.js` (10) e casos novos em `Gyms.test.jsx`. Suíte SaaS da API: 129 de 129 com `--test-concurrency=2`; com a concorrência padrão do Node (todos os arquivos ao mesmo tempo no mesmo PostgreSQL embutido) um teste diferente falha a cada rodada por sobrecarga, e cada um passa isolado.
 - **Fora desta fase:** plano próprio para personal trainers (só avaliado: o personal independente hoje não paga; a decisão comercial é sua), upgrade com cobrança proporcional, trial, notas fiscais e a tela de planos de academia no site público.
+
+## 13. Fase 9: fechamento e relatório final (2026-11-10)
+
+### A descoberta mais importante do fechamento
+Ao conferir o banco de produção (consulta somente de leitura), o papel de conexão do Neon (`neondb_owner`) tem **BYPASSRLS**: o Row Level Security das Fases 2 a 8 **não valia para ele**. As verificações de papel na API sempre valeram; o que faltava era a segunda camada, a do banco. Corrigido nesta fase: a migração `20261110130000_app_role` cria o papel `corpofit_app` (sem LOGIN, sem superusuário, sem BYPASSRLS) e `withContext` passa a trocar para ele (`SET LOCAL ROLE`) em toda transação de academia, personal, privacidade, biblioteca e IA. É automático em produção (schema `public`); `RLS_ROLE` força outro papel em qualquer ambiente. Se o papel não existir ou não puder ser assumido, o servidor avisa no log. A afirmação anterior de que "o papel padrão do Neon serve" estava errada.
+
+### LGPD
+- **Acesso e portabilidade:** `GET /api/privacy/export` devolve em JSON tudo o que a plataforma guarda sobre a pessoa em academias, vínculos com personal, treinos trocados, comentários, compartilhamento, consentimento, quem leu seus dados e biblioteca. Treinos, medidas e histórico continuam no export principal do app.
+- **Eliminação:** ao excluir a conta, `eraseUserData` apaga perfil de personal, vínculos (levando junto treinos enviados e comentários), concessões, histórico de consentimento, registro de acessos, itens da biblioteca, favoritos e denúncias, e tira a pessoa de todas as academias. Cancela também as assinaturas de academia que ela pagava. Se era o único dono, a academia fica `NO_OWNER` para revisão, com os dados dela intactos. Mantidos por obrigação ou autoria pseudonimizada: cobranças (fiscal) e o registro de atividade das academias.
+- **Minimização:** o personal só lê categorias que o aluno liberou, por projeção; fotos e bem-estar não são compartilháveis.
+
+### Auditoria de dependências
+- Frontend: `npm audit --omit=dev` sem vulnerabilidades.
+- API: 3 avisos altos, todos na cadeia `prisma` → `@prisma/config` → `deepmerge-ts` (esgotamento de pilha ao mesclar objetos recursivos, GHSA-ggr8-5vv4-36mx). É ferramenta de linha de comando usada nas migrações, sem entrada de usuário; a correção exige Prisma 7 (mudança incompatível) e **não foi aplicada**. Reavalie ao migrar de versão.
+
+### A. Funcionalidades implementadas (todas testadas)
+Multi-tenant com papéis (dono, administrador, gerente, personal, aluno), convites e vínculos; painel da academia com contagens reais; personal trainers com perfil, vínculos, treinos enviados com histórico e comentários; privacidade por categoria com consentimento, histórico e registro de acessos; sugestões de rotina com aceite do aluno; IA por academia (contexto escolhido pelo usuário, teto mensal, consumo e custo estimado); biblioteca comunitária com moderação; planos e cobrança de academias; exportação e eliminação LGPD.
+
+### B. Pendente
+Fotos de evolução e bem-estar (compartilhamento); alteração direta pelo personal (`CHANGE_DIRECTLY`); compartilhamento com a academia inteira; ferramentas de IA novas (excluir, atribuir a aluno, relatórios) e "desfazer" de ações da IA; modelo de IA por academia; publicação de planos completos e equipamentos na biblioteca; notificações push e internas dos novos eventos; plano próprio para personal independente; cobrança proporcional em troca de plano; convite a quem ainda não tem conta; verificação de e-mail no cadastro; tela de moderação para o admin da plataforma; migração do índice de contas (`db.json`) para linhas por usuário (escala além de alguns milhares); telas só em pt-BR.
+
+### C. Banco e migrações (todas aditivas, sem apagar dados)
+`orgs`, `trainers`, `privacy`, `ai_orgs`, `community`, `tenant_billing`, `erasure`, `app_role`. Tabelas novas: Tenant, TenantSettings, Membership, ActivityLog, TrainerProfile, TrainerStudent, Assignment, AssignmentComment, SharingPermission, ConsentRecord, AccessLog, CommunityItem, CommunityFavorite, CommunityReport. Colunas novas: `User.aiTenantId`, `UsageRecord.tenantId/provider/costMicros`, `Subscription.tenantId/tenantPlan`, `Assignment.kind/target`. Todas as tabelas de dados de academia têm RLS forçado.
+
+### D. Testes
+- API (SaaS, PostgreSQL real, `--test-concurrency=2`): **135 de 135** passam. Com a concorrência padrão do Node um teste diferente falha por rodada por sobrecarga do banco embutido da máquina de desenvolvimento; cada um passa isolado.
+- Frontend (suíte inteira): 7.855 passam e 12 falham; as falhas são de empacotamento de apps, ícones sazonais, pacotes de assets e um fallback de CSS, em arquivos que este trabalho não alterou e que já falhavam no Windows. Os testes das telas de academia, personal, privacidade e biblioteca passam.
+- Os 5 testes do Coach (`api/test/coach*`) que dependem de um processo auxiliar continuam falhando no Windows, como antes.
+
+### E. Comandos
+```
+cd api && npm ci && npx prisma generate
+npm run db:dev                      # PostgreSQL embutido para desenvolvimento
+node --test --test-concurrency=2 test/saas-*.test.js
+cd ../frontend && npm ci && npm test && npm run build
+```
+Produção: Vercel (`DEPLOY.md`); as migrações rodam no build.
+
+### F. Variáveis novas
+`AI_PRICES`, `TENANT_AI_MONTHLY_CAP`, `GYM_PLANS` (ver `.env.example`) e `RLS_ROLE` (opcional). Nada de credencial real em arquivos do repositório.
+
+### G. O que falta para vender
+1. Definir preços e limites dos planos de academia (`GYM_PLANS`) e revisar os padrões.
+2. Homologar o pagamento no Sandbox do Asaas, inclusive o de academia, e depois em produção.
+3. Confirmar o papel `corpofit_app` em produção (consulta de leitura abaixo) e acompanhar o log do primeiro deploy.
+4. Revisão jurídica de Termos e Privacidade, RIPD para fotos e dados de saúde antes de liberar esses compartilhamentos, e designar o encarregado (DPO).
+5. Teste real da IA de ponta a ponta com a chave de produção, e configurar `AI_PRICES` para ver o custo.
+6. Domínio próprio, e-mail transacional (Resend) e backups do Neon.
+7. Rodar a suíte completa em Linux (CI) para ter o estado verdadeiro, sem as falhas do Windows.
+
+Verificação do RLS em produção (somente leitura): conectado como o dono do banco, `BEGIN; SET LOCAL ROLE corpofit_app; SELECT count(*) FROM "Membership"; ROLLBACK;` deve devolver 0.

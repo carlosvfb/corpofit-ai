@@ -23,6 +23,7 @@ import * as privacy from './org/privacy.js';
 import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
 import * as orgBilling from './org/billing.js';
+import { exportMyData } from './org/lgpd.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -236,6 +237,10 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'GET /api/privacy/access-log': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await privacy.accessLog(user));
+    }),
+    'GET /api/privacy/export': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await exportMyData(user));
     }),
     'GET /api/trainer/shared': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;

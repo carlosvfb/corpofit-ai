@@ -53,3 +53,9 @@ Como tudo está no PostgreSQL, **um** backup cobre o produto inteiro:
 - **Excluir a conta** (Configurações → Conta → Excluir): o openGym apaga o perfil, o histórico, as fotos e as credenciais do Coach; o CorpoFit AI, no mesmo gesto, cancela a assinatura no Asaas (melhor esforço) e **anonimiza** o espelho no PostgreSQL (nome "Usuário removido", e-mail nulo, consumo de IA apagado). Assinaturas e cobranças ficam, sem dados pessoais, por obrigação fiscal/legal.
 - **Exportar dados:** o app exporta tudo em JSON e CSV (recurso do openGym).
 - Defina com o jurídico o prazo de guarda dos registros financeiros e dos backups.
+
+## Row Level Security (academias, personal, privacidade, biblioteca)
+
+As tabelas de academia, vínculos, compartilhamento e biblioteca têm RLS **forçado**, com políticas por `app.user_id`, `app.tenant_id` e (apenas para código do servidor, depois de verificar o papel) `app.moderator`, `app.counter` e `app.eraser`. Cada transação define esses valores por `withContext` (`api/saas/org/context.js`).
+
+O RLS só vale para um papel sem superusuário e sem `BYPASSRLS`. O dono padrão do Neon tem `BYPASSRLS`, por isso a migração `app_role` cria o papel `corpofit_app` e as transações trocam para ele (`SET LOCAL ROLE`). Para conferir em produção: `BEGIN; SET LOCAL ROLE corpofit_app; SELECT count(*) FROM "Membership"; ROLLBACK;` deve devolver 0. `RLS_ROLE` força outro papel; sem papel utilizável o servidor avisa no log.

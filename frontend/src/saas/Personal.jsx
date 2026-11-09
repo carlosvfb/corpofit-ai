@@ -29,7 +29,7 @@ function Header() {
 }
 
 const exName = id => EXIDX[id]?.n || id
-const day = d => d || '—'
+const day = d => d || '–'
 
 /** O que o aluno compartilhou, de forma legível. Só o que o servidor devolveu para a categoria. */
 export function DataView({ category, data }) {

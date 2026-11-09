@@ -1044,7 +1044,9 @@ paths:
         `POST /api/account/email`); one that is not an address is refused with `400
         email-invalid`, one that is in use with `409 email-taken`. Both are asked only after the
         hash and the second invite check, so without a valid code it is never answered,
-        which counts against the caller's address like a wrong invite code. **Not**
+        which counts against the caller's address like a wrong invite code. In the CorpoFit AI
+        SaaS mode (`SAAS_MODE=1`) the e-mail is required (`400 email-required` without one) and the
+        body must carry `acceptTerms: true` (`400 terms-required` otherwise). **Not**
         CSRF-exempt.
       security: []
       requestBody:
@@ -4513,6 +4515,15 @@ paths:
         '402': { description: The plan limit was reached. }
         '403': { description: Only the owner may contract or cancel. }
         '404': { description: Not found, or not a member of this gym. }
+
+  /api/privacy/export:
+    get:
+      tags: [saas]
+      operationId: exportMyOrgData
+      summary: Everything the platform keeps about me in gyms, trainer links, sharing, consent and the library
+      responses:
+        '200': { description: The data as JSON (LGPD access and portability). }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /api/billing/status:
     get:
