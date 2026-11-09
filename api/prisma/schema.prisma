@@ -1,0 +1,227 @@
+// CorpoFit AI SaaS: dados de assinatura, cobrança, consumo de IA e administração (PostgreSQL).
+//
+// O que NÃO está aqui, de propósito: contas/senhas/passkeys e o histórico de treino. No openGym
+// eles vivem em db.json e state-<uid>.json (um documento por perfil, sincronizado por revisão).
+// Treinos, exercícios, sessões e registros de séries são partes desse documento; conversas da IA
+// ficam no registro do Coach. Aqui o `User` é um espelho mínimo, chaveado pelo mesmo `uid`.
+// Valores monetários sempre em centavos.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanCode {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  RECEIVED
+  OVERDUE
+  REFUNDED
+  REFUSED
+  CANCELED
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  PIX_AUTOMATIC
+  PIX
+}
+
+enum EventProcessingStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+/// Espelho do perfil do openGym (mesmo id). Criado sob demanda.
+model User {
+  id                  String    @id
+  email               String?
+  name                String
+  isAdmin             Boolean   @default(false)
+  /// Concessão manual de Premium (admin). Sempre auditada em AdminAuditLog.
+  manualPremium       Boolean   @default(false)
+  manualPremiumUntil  DateTime?
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  usage           UsageRecord[]
+  billingCustomer BillingCustomer?
+  subscriptions   Subscription[]
+  payments        Payment[]
+  auditLogs       AdminAuditLog[] @relation("AuditActor")
+}
+
+/// Limites e preços por plano (espelho de api/saas/plans.js, que é a fonte da verdade).
+model Plan {
+  code               PlanCode @id
+  name               String
+  priceCents         Int
+  cycle              String   @default("MONTHLY")
+  aiMessagesPerMonth Int
+  features           Json
+  active             Boolean  @default(true)
+
+  subscriptions Subscription[]
+}
+
+/// Consumo de IA: uma linha por chamada ao provedor (ou tentativa com falha).
+model UsageRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  kind         String   @default("coach")
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  success      Boolean  @default(true)
+  model        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model BillingCustomer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  asaasCustomerId String   @unique
+  /// Somente os 4 últimos dígitos, para exibição. O documento completo não é guardado.
+  documentLast4   String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  planCode             PlanCode
+  status               SubscriptionStatus @default(PENDING)
+  paymentMethod        PaymentMethodType
+  asaasSubscriptionId  String?            @unique
+  asaasAuthorizationId String?            @unique
+  asaasCheckoutId      String?
+  /// Dados para retomar o pagamento: { url } (checkout) ou { payload, image, expiresAt } (Pix).
+  checkoutData         Json?
+  /// Fim do período já pago. O Premium vale até aqui após o cancelamento.
+  currentPeriodEnd     DateTime?
+  /// Tolerância para cobrança vencida.
+  graceUntil           DateTime?
+  cancelRequestedAt    DateTime?
+  canceledAt           DateTime?
+  idempotencyKey       String             @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan     Plan      @relation(fields: [planCode], references: [code])
+  payments Payment[]
+
+  @@index([userId, status])
+}
+
+model Payment {
+  id             String            @id @default(cuid())
+  subscriptionId String
+  userId         String
+  asaasPaymentId String            @unique
+  status         PaymentStatus     @default(PENDING)
+  method         PaymentMethodType
+  valueCents     Int
+  dueDate        DateTime
+  paidAt         DateTime?
+  refundedAt     DateTime?
+  invoiceUrl     String?
+  pixPayload     String?
+  pixExpiresAt   DateTime?
+  /// Primeira cobrança da assinatura (a que libera o Premium).
+  isInitial      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([subscriptionId])
+  @@index([status, dueDate])
+}
+
+model PaymentEvent {
+  id                   String                @id @default(cuid())
+  externalEventId      String                @unique
+  type                 String
+  status               EventProcessingStatus @default(RECEIVED)
+  asaasPaymentId       String?
+  asaasSubscriptionId  String?
+  asaasAuthorizationId String?
+  receivedAt           DateTime              @default(now())
+  processedAt          DateTime?
+  error                String?
+
+  @@index([status, receivedAt])
+  @@index([asaasPaymentId])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+}
+
+/// Configurações editáveis pelo admin (ex.: pixAutomaticEnabled, graceDays).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// Erros de integração (pagamentos/IA) para o painel admin. Só mensagens, nunca segredos.
+model ErrorLog {
+  id        String   @id @default(cuid())
+  scope     String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Modo Vercel (STORAGE=postgres): o "sistema de arquivos" do openGym (db.json, state-<uid>.json,
+/// coach.json, audit.log…) vive aqui, uma linha por arquivo. `rev` é o controle otimista de
+/// concorrência: uma gravação só vale se a revisão lida ainda é a atual (api/store/vfs.js).
+model KvFile {
+  path      String   @id
+  content   String
+  rev       Int      @default(1)
+  updatedAt DateTime @default(now())
+}

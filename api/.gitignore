@@ -1,0 +1,6 @@
+.devdb
+.devdb.log
+.env
+.data
+.api-dev.log
+.vite-dev.log

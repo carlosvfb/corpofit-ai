@@ -1,0 +1,89 @@
+/* Ponto de entrada do CorpoFit AI SaaS dentro da API do openGym.
+ *
+ * Só é carregado com SAAS_MODE=1 (server.js importa este módulo sob demanda). Sem a variável, a API
+ * é o openGym de sempre, sem Postgres e sem nada disto. O que ele acrescenta:
+ *   - planos, assinatura e cobrança recorrente via Asaas (cartão, Pix Automático, Pix mensal);
+ *   - webhook idempotente do Asaas e painel financeiro;
+ *   - a CorpoFit AI = o Coach do openGym, com chave da plataforma e limites por plano.
+ * Contas, senhas e o histórico de treino continuam sendo do openGym (db.json e state-<uid>.json). */
+import { env } from './env.js';
+import { db } from './db.js';
+import { saasRoutes } from './routes.js';
+import { bootstrapCoach, createAiGate, JOB_ROUTES } from './ai.js';
+import { SaasError, logError } from './errors.js';
+import { AsaasClient } from './asaas/client.js';
+import { asaasConfigured } from './asaas/config.js';
+import { cancelSubscription } from './asaas/cancel.js';
+import { PLANS } from './plans.js';
+import { sendMail } from './mailer.js';
+
+export async function createSaas({ json, readBody, readSession, requireAdmin, findUser, cfgStore, jobs, asaasClient }) {
+  if (!env().DATABASE_URL) throw new Error('SAAS_MODE=1 exige DATABASE_URL (PostgreSQL).');
+  // Falha cedo e com uma frase clara se o banco não responde, em vez de 500 na primeira compra.
+  await db.$queryRaw`SELECT 1`;
+
+  // As linhas de Plan são espelho de plans.js (fonte da verdade); a assinatura aponta para elas.
+  for (const p of Object.values(PLANS)) {
+    const data = { name: p.name, priceCents: p.priceCents, cycle: p.cycle, aiMessagesPerMonth: p.limits.aiMessagesPerMonth, features: p.features };
+    await db.plan.upsert({ where: { code: p.code }, create: { code: p.code, ...data }, update: data });
+  }
+
+  const aiGate = createAiGate();
+  const ensureAi = () => bootstrapCoach({ cfgStore });
+  const ai = ensureAi();
+  if (!ai.configured) console.warn(`[saas] CorpoFit AI desligada: ${ai.reason}`);
+  else console.log(`[saas] CorpoFit AI: ${ai.provider} · ${ai.model}`);
+  jobs.setUsageHook(ev => aiGate.onJobFinished(ev).catch(err => logError(db, 'ai-usage', err)));
+
+  // O corpo é lido uma vez e reaproveitado: o gate precisa do tamanho da mensagem antes de o Coach lê-la.
+  const cachedBody = req => req.__saasBody || (req.__saasBody = readBody(req));
+
+  const routes = saasRoutes({ json, readBody: cachedBody, readSession, requireAdmin, findUser, aiGate, asaasClient });
+
+  /** Envolve as rotas que geram custo de IA com a checagem do plano. As demais passam intactas. */
+  function wrapCoach(coachRoutes) {
+    const out = { ...coachRoutes };
+    for (const key of JOB_ROUTES) {
+      const original = coachRoutes[key];
+      if (!original) continue;
+      out[key] = async (req, res) => {
+        const user = readSession(req);
+        if (user) {
+          try {
+            let body = {};
+            try { body = await cachedBody(req); } catch { /* o handler original responde ao corpo inválido */ }
+            await aiGate.check(user, body);
+          } catch (e) {
+            if (e instanceof SaasError) return json(res, e.status, { error: e.message, code: e.code });
+            throw e;
+          }
+        }
+        return original(req, res);
+      };
+    }
+    return out;
+  }
+
+  /**
+   * Conta encerrada ou apagada: cancela a assinatura no Asaas (melhor esforço) e anonimiza o espelho.
+   * Cobranças e assinaturas permanecem, sem dados pessoais (obrigação fiscal/legal).
+   */
+  async function onUserDeleted(uid) {
+    try {
+      const mirror = await db.user.findUnique({ where: { id: uid } });
+      if (!mirror) return;
+      if (asaasConfigured() || asaasClient) {
+        await cancelSubscription(asaasClient || AsaasClient.fromEnv(), uid).catch(() => undefined);
+      }
+      await db.user.update({
+        where: { id: uid },
+        data: { name: 'Usuário removido', email: null, deletedAt: new Date(), manualPremium: false, manualPremiumUntil: null }
+      });
+      await db.usageRecord.deleteMany({ where: { userId: uid } });
+    } catch (err) {
+      await logError(db, 'user-deleted', err);
+    }
+  }
+
+  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail };
+}

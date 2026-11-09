@@ -1,0 +1,19 @@
+# O que NÃO sobe para a Vercel. As mídias de exercício são licenciadas (Gym visual) só para o openGym e
+# não podem ir para um serviço comercial; os apps nativos, relógios, site e infra alternativa não
+# participam do deploy web.
+catalogue/media
+frontend/android
+frontend/ios
+frontend/garmin
+watch-zepp
+website
+mcp
+helm
+kubernetes
+contrib
+fastlane
+assets
+.devdb
+api/.devdb
+api/.data
+api/.devdb.log

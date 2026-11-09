@@ -1,0 +1,22 @@
+# Lembretes, revisões agendadas do Coach e compactação do log: chama a rota de cron do app a cada
+# 5 minutos. Na Vercel Hobby o cron nativo só roda uma vez por dia (vercel.json), então este
+# agendador gratuito do GitHub faz o resto. Segredos do repositório: APP_URL (https://seu-dominio)
+# e CRON_SECRET (o mesmo valor da Vercel).
+name: cron-tick
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    if: ${{ vars.CRON_ENABLED != 'false' }}
+    steps:
+      - name: Chamar /api/cron/tick
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then echo "APP_URL/CRON_SECRET não configurados"; exit 0; fi
+          curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/tick"

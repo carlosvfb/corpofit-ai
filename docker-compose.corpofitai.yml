@@ -1,0 +1,92 @@
+# CorpoFit AI (SaaS) sobre o openGym: PostgreSQL + api + web. Não altera o docker-compose.yml original
+# (o openGym autohospedado continua intacto).
+#
+#   cp .env.example .env      # preencha a seção CorpoFit AI (segredos)
+#   docker compose -f docker-compose.corpofitai.yml up -d --build
+#
+# Em produção, ponha HTTPS na frente (perfil "https" abaixo, com Caddy) e use um domínio real.
+name: corpofitai
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-corpofitai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-corpofitai}
+    volumes:
+      - corpofitai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    # Sem "ports": o banco só é acessível pela rede interna do Compose.
+
+  api:
+    build:
+      context: ./api
+      target: ${API_TARGET:-default}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      PORT: ${PORT:-3000}
+      DATA_DIR: /data
+      TRUST_PROXY: "1"
+      SAAS_MODE: "1"
+      PASSWORD_LOGIN: "1"
+      DEFAULT_LANG: ${DEFAULT_LANG:-pt-BR}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-corpofitai}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-corpofitai}?schema=public
+    volumes:
+      # Contas, senhas, histórico de treino e o segredo das sessões: FAZER BACKUP (junto com o banco).
+      - corpofitai_data:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        NO_MEDIA: "1"        # sem as mídias de exercício (licença do Gym visual): ver NOTICE.md
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-8080}:${NGINX_PORT:-80}"
+    environment:
+      NGINX_PORT: ${NGINX_PORT:-80}
+      BACKEND: api
+      PORT: ${PORT:-3000}
+      RESOLVER: ${RESOLVER:-127.0.0.11}
+      CF_CONNECTING_IP: ${CF_CONNECTING_IP:-}
+      BASE_PATH: ${BASE_PATH:-}
+      MEDIA_UPLOAD_MAX: ${MEDIA_UPLOAD_MAX:-48m}
+
+  # HTTPS automático (Let's Encrypt) na frente do web. Use:  --profile https
+  # Requer DOMAIN no .env, DNS apontando para este servidor e as portas 80/443 liberadas.
+  # Com este perfil, defina WEB_PORT=127.0.0.1:8080 para não expor o web direto.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?defina DOMAIN no .env}
+    command: caddy reverse-proxy --from ${DOMAIN} --to web:${NGINX_PORT:-80}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  corpofitai_pgdata:
+  corpofitai_data:
+  caddy_data:
+  caddy_config:
