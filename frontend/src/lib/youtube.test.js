@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { youtubeId, youtubeLinks } from './youtube.js'
+import { youtubeId, youtubeLinks, youtubeSearchUrl } from './youtube.js'
+import { _setLangState } from './i18n-core.js'
+
+describe('YouTube search language', () => {
+  const bench = { id: '0025', n: 'barbell bench press' }
+  it('searches in Portuguese when the language has a translated name', () => {
+    _setLangState('pt-BR', {}, null, { '0025': 'supino reto com barra' })
+    expect(youtubeSearchUrl(bench)).toBe('https://www.youtube.com/results?search_query=supino+reto+com+barra+como+fazer&hl=pt-BR')
+    // a custom exercise has no translation: its own name, still with the local phrase absent
+    expect(youtubeSearchUrl({ id: 'c', n: 'Meu treino', custom: true })).toBe('https://www.youtube.com/results?search_query=Meu+treino+form')
+    _setLangState('en', {}, null, null)
+    expect(youtubeSearchUrl(bench)).toBe('https://www.youtube.com/results?search_query=barbell+bench+press+form')
+  })
+})
 
 describe('YouTube exercise links', () => {
   it('accepts only known hosts and complete video IDs', () => {

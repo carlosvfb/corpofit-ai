@@ -132,7 +132,7 @@ export class AsaasCheckoutService {
         try {
             switch (input.method) {
                 case "CREDIT_CARD":
-                    return await this.startCard(sub, customerId, plan.priceCents);
+                    return await this.startCard(sub, customerId, plan.priceCents, { name: user.name, email: user.email, cpfCnpj: input.cpfCnpj.replace(/\D/g, "") });
                 case "PIX":
                     return await this.startPix(sub, customerId, plan.priceCents);
                 case "PIX_AUTOMATIC":
@@ -161,7 +161,9 @@ export class AsaasCheckoutService {
         return null;
     }
     // Cartão: checkout hospedado (dados do cartão nunca passam pelo nosso servidor).
-    async startCard(sub, customerId, priceCents) {
+    // Só nome, e-mail e CPF/CNPJ seguem daqui. Passar `customer` (cadastro sem telefone/endereço)
+    // faz o Asaas recusar; com `customerData` a própria página do Asaas pede o que faltar.
+    async startCard(sub, customerId, priceCents, customerData) {
         const e = env();
         const due = this.now();
         const checkout = await this.client.createCheckout({
@@ -169,7 +171,7 @@ export class AsaasCheckoutService {
             chargeTypes: ["RECURRENT"],
             minutesToExpire: 60,
             externalReference: sub.id,
-            customer: customerId,
+            customerData,
             callback: {
                 successUrl: e.ASAAS_SUCCESS_URL ?? `${e.APP_URL}/#/checkout/sucesso`,
                 cancelUrl: e.ASAAS_CANCEL_URL ?? `${e.APP_URL}/#/checkout/cancelado`,

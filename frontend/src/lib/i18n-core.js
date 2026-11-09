@@ -258,6 +258,10 @@ export const CASED_NAME_LANGS = ['de']
 export const exerciseNameClass = ex => (!enOnly && exerciseNames && ex && exerciseNames[ex.id]
   && CASED_NAME_LANGS.includes(baseLang(lang)) ? '' : 'capitalize')
 
+// The active language's own name for a built-in exercise, or null (English, "English names only",
+// a custom exercise, or a name the pack lacks). Used to search the web in the user's language.
+export const exerciseNameTranslated = ex => (enOnly ? null : (exerciseNames && ex && exerciseNames[ex.id]) || null)
+
 // Search both the localized and canonical English title without changing persisted data.
 export const exerciseNameSearchText = ex => {
   const translated = exerciseNames && ex && exerciseNames[ex.id]

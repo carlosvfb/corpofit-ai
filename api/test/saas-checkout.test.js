@@ -46,7 +46,9 @@ describe('checkout Asaas', () => {
     const body = c.createCheckout.calls[0][0];
     assert.equal(body.items[0].value, 29.9);
     assert.deepEqual(body.chargeTypes, ['RECURRENT']);
-    assert.equal(body.customer, 'cus_1');
+    assert.equal(body.customer, undefined);
+    assert.equal(body.customerData.cpfCnpj, CPF.replace(/\D/g, ''));
+    assert.equal(body.customerData.email, user.email);
     assert.match(body.callback.successUrl, /#\/checkout\/sucesso$/);
 
     const again = await svc.start(user, { method: 'CREDIT_CARD', cpfCnpj: CPF });
