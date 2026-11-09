@@ -63,6 +63,11 @@ export const sharedWithMe = () => api('/api/trainer/shared')
 export const readStudentData = (linkId, category) => api('/api/trainer/student?link=' + encodeURIComponent(linkId) + '&category=' + encodeURIComponent(category))
 export const assignSuggestion = (linkId, title, note, bundle, target) => post('/api/trainer/assignments', { linkId, title, note, bundle, kind: 'SUGGESTION', target })
 
+// IA por academia: o usuário escolhe se o Coach usa a orientação de uma academia; o dono vê o consumo.
+export const aiContext = () => api('/api/orgs/ai-context')
+export const setAiContext = tenantId => put('/api/orgs/ai-context', { tenantId })
+export const orgAiUsage = id => api('/api/orgs/ai-usage' + q(id))
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {

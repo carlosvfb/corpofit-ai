@@ -7,8 +7,8 @@ import './saas.css'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import {
-  acceptOrgInvite, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgContexts,
-  orgDashboard, orgMembers, orgSettings, removeOrgMember, saveOrgSettings
+  acceptOrgInvite, aiContext, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgAiUsage, orgContexts,
+  orgDashboard, orgMembers, orgSettings, removeOrgMember, saveOrgSettings, setAiContext
 } from './api.js'
 import { formatDateTime } from './brand.js'
 
@@ -18,7 +18,7 @@ export const ROLE_LABEL = {
 const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
 // Espelho do servidor, só para decidir o que mostrar (api/saas/org/rbac.js é quem vale).
 const SEES = {
-  GYM_OWNER: ['dashboard', 'members', 'settings', 'activity'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity'],
+  GYM_OWNER: ['dashboard', 'members', 'settings', 'activity', 'ai'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity', 'ai'],
   GYM_MANAGER: ['dashboard', 'members', 'activity'], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
 }
 const ACTION_LABEL = {
@@ -177,7 +177,9 @@ function Settings({ id, onSaved }) {
     <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={a.enabled !== false} onChange={e => set('ai', 'enabled', e.target.checked)} /> IA habilitada para esta academia</label>
     <label className="small muted" htmlFor="a-ins" style={{ display: 'block', marginTop: 10 }}>Instruções da academia para a IA</label>
     <textarea id="a-ins" className="input" rows={4} maxLength={2000} value={a.instructions || ''} onChange={e => set('ai', 'instructions', e.target.value)} placeholder="Ex.: Priorize treinos de até 50 minutos e exercícios com máquinas." />
-    <div className="dim small" style={{ marginTop: 6 }}>Estas instruções ainda não alteram a IA dos alunos: a ligação com o Coach vem na fase da IA por academia.</div>
+    <label className="small muted" htmlFor="a-cap" style={{ display: 'block', marginTop: 10 }}>Limite mensal de mensagens de IA da academia (opcional)</label>
+    <input id="a-cap" className="input" type="number" min={1} value={a.monthlyMessages || ''} onChange={e => set('ai', 'monthlyMessages', e.target.value === '' ? undefined : Number(e.target.value))} placeholder="Sem limite próprio" />
+    <div className="dim small" style={{ marginTop: 6 }}>As instruções valem só para quem escolher usar a orientação desta academia na própria IA (veja a aba Visão geral). A plataforma tem um teto mensal; você pode apenas baixá-lo.</div>
     <div style={{ marginTop: 12 }}><Button variant="primary" type="submit" disabled={busy}>Salvar</Button>{ok && <span className="small" style={{ marginInlineStart: 10 }}>Salvo.</span>}</div>
   </form>
 }
@@ -195,6 +197,43 @@ function Activity({ id }) {
   </div>)
 }
 
+function AiUsage({ id }) {
+  const [u, setU] = useState(null)
+  const [err, setErr] = useState(null)
+  useEffect(() => { orgAiUsage(id).then(setU).catch(e => setErr(errorText(e, 'Não foi possível carregar o consumo.'))) }, [id])
+  if (err) return <Err>{err}</Err>
+  if (!u) return <div className="muted small">Carregando…</div>
+  const pct = Math.min(100, Math.round((u.messages / Math.max(1, u.cap)) * 100))
+  return <>
+    <div className="card">
+      <div className="muted small">Mensagens de IA em {u.month}</div>
+      <div style={{ fontSize: 26, fontWeight: 800 }}>{u.messages} <span className="muted small">de {u.cap}</span></div>
+      <div className="ff-meter" role="progressbar" aria-valuemin={0} aria-valuemax={u.cap} aria-valuenow={u.messages} aria-label="Mensagens de IA da academia no mês"><i style={{ width: pct + '%' }} /></div>
+      <div className="small" style={{ marginTop: 8 }}>Tokens: {u.inputTokens} de entrada, {u.outputTokens} de saída</div>
+      <div className="small">Custo estimado: {u.estimatedCostUsd === null ? 'indisponível (sem preços configurados)' : 'US$ ' + u.estimatedCostUsd.toFixed(2)}</div>
+      {!u.enabled && <div className="small" style={{ marginTop: 6 }}>A IA está desligada para esta academia.</div>}
+    </div>
+    <div className="muted small" style={{ margin: '14px 4px 6px' }}>POR MEMBRO (SÓ CONTAGENS)</div>
+    {u.members.length === 0 && <div className="card dim small">Ninguém usou a orientação da academia neste mês.</div>}
+    {u.members.map(m => <div className="card" key={m.userId} style={{ marginBottom: 6 }}><div className="small"><b>{m.name || 'Membro'}</b>: {m.messages} mensagens</div></div>)}
+    <div className="dim small" style={{ marginTop: 8 }}>A academia nunca vê o conteúdo das conversas nem os dados dos alunos.</div>
+  </>
+}
+
+/** Escolha do usuário: usar ou não a orientação desta academia na própria IA. O espaço pessoal é o padrão. */
+function AiChoice({ id }) {
+  const [on, setOn] = useState(null)
+  const [err, setErr] = useState(null)
+  useEffect(() => { aiContext().then(c => setOn(c.tenantId === id)).catch(() => setOn(false)) }, [id])
+  const toggle = async v => { setErr(null); try { await setAiContext(v ? id : null); setOn(v) } catch (e) { setErr(errorText(e, 'Não foi possível salvar.')) } }
+  if (on === null) return null
+  return <div className="card" style={{ marginTop: 16 }}>
+    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={on} onChange={e => toggle(e.target.checked)} /> Usar a orientação desta academia na minha IA</label>
+    <div className="dim small" style={{ marginTop: 6 }}>Desligado, sua IA continua só com você. Ligado, as instruções de treino que a academia definiu entram como preferência. A academia não vê suas conversas nem seus dados; vê apenas quantas mensagens foram usadas.</div>
+    <Err>{err}</Err>
+  </div>
+}
+
 export function Gym() {
   const { id } = useParams()
   const nav = useNavigate()
@@ -210,7 +249,7 @@ export function Gym() {
   }, [id, stamp])
   if (error) return <div className="page"><Header title="Academia" back="/academias" /><Err>{error}</Err></div>
   if (!ctx) return <div className="page"><Header title="Academia" back="/academias" /><div className="muted small">Carregando…</div></div>
-  const tabs = [['dashboard', 'Visão geral'], ['members', 'Membros'], ['settings', 'Configurações'], ['activity', 'Atividade']].filter(([k]) => SEES[ctx.role].includes(k === 'dashboard' ? 'dashboard' : k))
+  const tabs = [['dashboard', 'Visão geral'], ['members', 'Membros'], ['settings', 'Configurações'], ['activity', 'Atividade'], ['ai', 'Uso da IA']].filter(([k]) => SEES[ctx.role].includes(k))
   const active = tabs.some(([k]) => k === tab) ? tab : tabs[0]?.[0]
   const leave = async () => {
     if (!window.confirm('Sair desta academia? Você perde o acesso a ela.')) return
@@ -225,7 +264,9 @@ export function Gym() {
     {active === 'members' && <Members id={id} role={ctx.role} />}
     {active === 'settings' && <Settings id={id} onSaved={() => setStamp(x => x + 1)} />}
     {active === 'activity' && <Activity id={id} />}
+    {active === 'ai' && <AiUsage id={id} />}
     {tabs.length === 0 && <div className="card dim small">Você é aluno desta academia. Os recursos para alunos (treinos atribuídos e compartilhamento) chegam nas próximas fases.</div>}
+    <AiChoice id={id} />
     <div style={{ marginTop: 24 }}><Button variant="tinted" onClick={leave}>Sair desta academia</Button></div>
   </div>
 }

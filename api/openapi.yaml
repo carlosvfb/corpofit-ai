@@ -4288,6 +4288,43 @@ paths:
         '403': { description: Not allowed (no active link, or the student has not shared this category). }
         '404': { description: Not found, or the caller is not a party to it. }
 
+  /api/orgs/ai-context:
+    get:
+      tags: [saas]
+      operationId: getAiContext
+      summary: Whether my Coach uses a gym guidance (null = personal space)
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+    put:
+      tags: [saas]
+      operationId: setAiContext
+      summary: Choose the gym whose guidance my Coach uses, or null for the personal space
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
+  /api/orgs/ai-usage:
+    get:
+      tags: [saas]
+      operationId: getOrgAiUsage
+      summary: The gym AI use this month (counts, tokens, estimated cost and per-member message counts; owner or admin; never any content)
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: The caller's role does not allow it. }
+        '404': { description: Not found, or not a member of this gym. }
+
   /api/billing/status:
     get:
       tags: [saas]

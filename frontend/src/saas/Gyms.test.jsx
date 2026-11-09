@@ -12,7 +12,7 @@ vi.mock('./api.js', () => ({
   errorText: (e, f) => f,
   orgContexts: vi.fn(), createOrg: vi.fn(), acceptOrgInvite: vi.fn(), orgDashboard: vi.fn(), orgMembers: vi.fn(),
   orgSettings: vi.fn(), saveOrgSettings: vi.fn(), orgActivity: vi.fn(), inviteOrgMember: vi.fn(), changeOrgRole: vi.fn(),
-  removeOrgMember: vi.fn(), leaveOrg: vi.fn()
+  removeOrgMember: vi.fn(), leaveOrg: vi.fn(), aiContext: vi.fn(), setAiContext: vi.fn(), orgAiUsage: vi.fn()
 }))
 import * as api from './api.js'
 
@@ -25,6 +25,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   api.orgDashboard.mockResolvedValue({ members: { active: 3, invited: 1, byRole: {} }, students: { active: 2, joinedLast30Days: 1 }, professionals: { active: 1 } })
   api.orgMembers.mockResolvedValue([])
+  api.aiContext.mockResolvedValue({ tenantId: null, hasGuidance: false })
+  api.setAiContext.mockResolvedValue({})
+  api.orgAiUsage.mockResolvedValue({ month: '2026-11', enabled: true, cap: 2000, messages: 12, inputTokens: 900, outputTokens: 300, estimatedCostUsd: null, members: [{ userId: 'u1', name: 'Ana', messages: 12 }] })
 })
 afterEach(() => { act(() => root?.unmount()); host?.remove() })
 
@@ -56,7 +59,7 @@ describe('Academias', () => {
 
   it('o painel mostra as abas conforme o papel', async () => {
     for (const [role, expected] of [
-      ['GYM_OWNER', ['Visão geral', 'Membros', 'Configurações', 'Atividade']],
+      ['GYM_OWNER', ['Visão geral', 'Membros', 'Configurações', 'Atividade', 'Uso da IA']],
       ['GYM_MANAGER', ['Visão geral', 'Membros', 'Atividade']],
       ['PERSONAL_TRAINER', ['Visão geral']],
       ['STUDENT', []]
@@ -86,5 +89,26 @@ describe('Academias', () => {
     await act(async () => { const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(email, 'novo@x.com'); email.dispatchEvent(new Event('input', { bubbles: true })) })
     await act(async () => { host.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }); await flush()
     expect(api.inviteOrgMember).toHaveBeenCalledWith('g1', 'novo@x.com', 'STUDENT')
+  })
+
+  it('qualquer membro escolhe usar (ou não) a orientação da academia na própria IA', async () => {
+    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'STUDENT', status: 'ACTIVE' }] })
+    await mount(<Gym />)
+    const box = host.querySelector('input[type=checkbox]')
+    expect(box.checked).toBe(false)
+    expect(host.textContent).toContain('A academia não vê suas conversas')
+    await act(async () => { box.click() }); await flush()
+    expect(api.setAiContext).toHaveBeenCalledWith('g1')
+  })
+
+  it('o dono vê o consumo de IA da academia, sem conteúdo, com o custo indisponível quando não há preços', async () => {
+    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
+    await mount(<Gym />)
+    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Uso da IA').click() }); await flush()
+    expect(api.orgAiUsage).toHaveBeenCalledWith('g1')
+    expect(host.textContent).toContain('12')
+    expect(host.textContent).toContain('indisponível')
+    expect(host.textContent).toContain('Ana')
+    expect(host.textContent).toContain('nunca vê o conteúdo')
   })
 })

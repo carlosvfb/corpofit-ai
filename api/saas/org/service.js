@@ -185,6 +185,7 @@ export function cleanSettings(input) {
     if (typeof a.enabled === 'boolean') ai.enabled = a.enabled;
     const ins = str(a.instructions, 2000); if (ins !== undefined) ai.instructions = ins;
     const sty = str(a.style, 200); if (sty !== undefined) ai.style = sty;
+    const mm = Number(a.monthlyMessages); if (Number.isFinite(mm) && mm >= 1 && mm <= 10_000_000) ai.monthlyMessages = Math.floor(mm);
     out.ai = ai;
   }
   const f = input?.features;

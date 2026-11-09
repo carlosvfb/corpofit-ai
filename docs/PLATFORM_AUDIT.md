@@ -101,3 +101,15 @@ Entregue em `api/saas/org/privacy.js` e `projection.js`, rotas `/api/privacy/*` 
 - **Testes:** `api/test/saas-privacy.test.js` (9) e `Privacy.test.jsx` (4) + novos casos em `Personal.test.jsx`. Suíte SaaS da API: 102 de 102.
 
 Fora desta fase: fotos e bem-estar, alteração direta (CHANGE_DIRECTLY), compartilhamento com a academia como um todo e com recursos de IA por categoria (o Coach tem o consentimento próprio), exportação e exclusão dos registros (LGPD) e notificações.
+
+## 10. Fase 6 concluída (2026-11-09)
+
+Entregue em `api/saas/org/ai.js`, ganchos em `api/coach/jobs.js` (`setContextHook`, tenant e provedor no evento de uso), `api/saas/usage.js` e `api/saas/ai.js`, migração `20261109210000_ai_orgs`, rotas `/api/orgs/ai-context` e `/api/orgs/ai-usage` e, na tela da academia, a aba "Uso da IA" (dono e admin) e a escolha do usuário.
+
+- **Provedores (já existiam, reaproveitados):** Anthropic, OpenAI, Gemini e compatível com OpenAI (`AI_PROVIDER` + `AI_API_BASE_URL`: OpenRouter, Ollama e gateways). A seleção é só no servidor; a chave nunca vai ao navegador. Trocar de modelo é mudar `AI_MODEL`.
+- **Contexto por academia, sem misturar:** o espaço pessoal é o padrão. O usuário escolhe "usar a orientação desta academia na minha IA" (`User.aiTenantId`); o vínculo ATIVO é revalidado a cada mensagem. As instruções e o estilo que o dono configurou entram no prompt como preferência extra, marcada como subordinada às regras da plataforma e de segurança. Sair da academia, ter o vínculo removido ou a IA desligada pela academia encerra o efeito na hora. A academia nunca recebe o conteúdo das conversas nem dados do aluno.
+- **Consumo e custo:** cada chamada grava `tenantId`, `provider`, modelo, tokens e `costMicros`. O custo só é estimado se `AI_PRICES` tiver o preço do modelo (JSON, USD por milhão de tokens); sem isso fica `null` e a tela diz "indisponível". Nenhum preço foi inventado.
+- **Limites:** além do limite pessoal do plano, cada academia tem um teto mensal somando seus membros: `TENANT_AI_MONTHLY_CAP` (padrão 2000), que o dono pode apenas baixar. Ao atingir, a IA da academia responde 402 e o usuário volta ao espaço pessoal. Dono e admin veem só contagens (total, tokens, custo e mensagens por membro).
+- **Ferramentas e aprovação:** o Coach já propõe mudanças tipadas (criar rotina, revisar, adaptar o treino em andamento), validadas e só aplicadas depois que o usuário aprova. Isso foi mantido. **Não** foram criadas ferramentas novas de IA para excluir, atribuir treino a aluno ou gerar relatórios, nem "desfazer" de ações da IA; ficam pendentes.
+- **Modelo por academia:** não implementado (todas usam `AI_MODEL`); o consumo já guarda o modelo para quando existir.
+- **Testes:** `api/test/saas-orgai.test.js` (8) e casos novos em `Gyms.test.jsx`. Suíte SaaS da API: 110 de 110. Os 5 testes do Coach que falham na máquina Windows são os mesmos de antes (processo auxiliar de teste).

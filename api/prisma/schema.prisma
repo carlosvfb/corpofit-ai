@@ -71,6 +71,8 @@ model User {
   subscriptions   Subscription[]
   payments        Payment[]
   auditLogs       AdminAuditLog[] @relation("AuditActor")
+  /// A academia cuja orientação de IA o usuário escolheu usar no Coach (null = espaço pessoal). Validada a cada uso.
+  aiTenantId      String?
   memberships     Membership[]
   trainerProfile  TrainerProfile?
   trainerLinks    TrainerStudent[] @relation("TrainerSide")
@@ -99,11 +101,17 @@ model UsageRecord {
   outputTokens Int      @default(0)
   success      Boolean  @default(true)
   model        String?
+  /// Academia cujo contexto de IA o usuário estava usando (null = espaço pessoal).
+  tenantId     String?
+  provider     String?
+  /// Custo estimado em micro-dólares (tokens × preço por milhão de tokens de AI_PRICES); null se não há preço.
+  costMicros   Int?
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([tenantId, createdAt])
   @@index([createdAt])
 }
 

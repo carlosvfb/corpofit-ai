@@ -303,7 +303,7 @@ export function whyUnusable(errors) {
 // PostgreSQL); it is awaited by the caller so a serverless invocation is not cut off before it lands.
 function reportUsage(job, result) {
   if (!onUsage) return undefined;
-  try { return onUsage({ uid: job.uid, kind: job.kind, trigger: job.trigger, outcome: result.outcome, errorClass: result.errorClass || null, usage: result.usage || null, model: result.model || null }); }
+  try { return onUsage({ uid: job.uid, kind: job.kind, trigger: job.trigger, outcome: result.outcome, errorClass: result.errorClass || null, usage: result.usage || null, model: result.model || null, tenantId: job.ctx?.tenantId || null, provider: job.ctx?.provider || null }); }
   catch (e) { console.error('coach usage hook failed', e); return undefined; }
 }
 
@@ -360,6 +360,10 @@ function finishNow(job, result) {
  * here depends on it: with no hook set (every self-hosted instance) a job ends exactly as before. */
 let onUsage = null;
 export function setUsageHook(fn) { onUsage = fn; }
+/** SaaS: devolve, por perfil, o contexto extra de um job ({ tenantId, systemExtra }) ou null. Sem hook
+ *  (toda instância autohospedada) nada muda. O texto extra vai ao modelo junto com as regras da plataforma. */
+let contextHook = null;
+export function setContextHook(fn) { contextHook = fn; }
 const sumUsage = parts => parts.length ? parts.reduce((a, u) => ({ input: a.input + (u.input || 0), output: a.output + (u.output || 0) }), { input: 0, output: 0 }) : null;
 
 // Set by server.js so a finished job can raise a push notification without this module
@@ -379,7 +383,11 @@ async function execute(job) {
   if (!S.coach?.consent?.agreedAt) return finish(job, { outcome: 'failed', errorClass: 'consent' });
   if (!cfgStore.isEnabled()) return finish(job, { outcome: 'failed', errorClass: 'off' });
 
-  const cfg = cfgStore.load();
+  const baseCfg = cfgStore.load();
+  let ctx = null;
+  try { ctx = contextHook ? contextHook(job.uid) : null; } catch { ctx = null; }
+  job.ctx = ctx ? { ...ctx, provider: baseCfg.provider } : { provider: baseCfg.provider };
+  const cfg = ctx?.systemExtra ? { ...baseCfg, systemExtra: [baseCfg.systemExtra, ctx.systemExtra].filter(s => typeof s === 'string' && s).join('\n\n') } : baseCfg;
   const adapter = adapterFor(cfg.provider);
   if (!adapter) return finish(job, { outcome: 'failed', errorClass: 'off' });
   // The gate again, for the provider this job actually runs on: enqueue asked about the one

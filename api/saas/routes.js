@@ -20,6 +20,7 @@ import * as admin from './admin.js';
 import * as org from './org/service.js';
 import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
+import * as orgAi from './org/ai.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -242,6 +243,21 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       const user = session(req, res); if (!user) return;
       const u = new URL(req.url, 'http://x').searchParams;
       json(res, 200, await privacy.studentData(user, u.get('link'), u.get('category'), async id => readState(id)));
+    }),
+
+    /* ------------------- IA por academia ------------------- */
+    'GET /api/orgs/ai-context': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await orgAi.getAiContext(user));
+    }),
+    'PUT /api/orgs/ai-context': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await orgAi.setAiContext(user, b.tenantId ?? null));
+    }),
+    'GET /api/orgs/ai-usage': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await orgAi.tenantAiUsage(user, new URL(req.url, 'http://x').searchParams.get('tenant')));
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {

@@ -24,6 +24,11 @@ export function env() {
     AI_MODEL: (get('AI_MODEL') || 'claude-sonnet-5-5').trim(),
     AI_MAX_OUTPUT_TOKENS: num('AI_MAX_OUTPUT_TOKENS', 8000, 256, 65536),
     // Sem valor, o provedor usa o padrão do modelo (alguns modelos recusam `temperature`).
+    // Preços para estimar o custo: JSON { "<modelo>": { "in": USD por milhão de tokens de entrada, "out": idem de saída } }.
+    // Sem isto o custo não é estimado (nunca inventamos preços).
+    AI_PRICES: get('AI_PRICES'),
+    // Teto mensal de mensagens de IA por academia, somando todos os membros (cada academia pode baixar, não subir).
+    TENANT_AI_MONTHLY_CAP: num('TENANT_AI_MONTHLY_CAP', 2000, 1, 10_000_000),
     AI_TEMPERATURE: get('AI_TEMPERATURE') === undefined ? undefined : num('AI_TEMPERATURE', undefined, 0, 1),
     ASAAS_API_KEY: get('ASAAS_API_KEY'),
     ASAAS_ENV: asaasEnv,

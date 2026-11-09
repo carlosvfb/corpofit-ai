@@ -9,6 +9,7 @@ import { scoped, limiterCodec } from '../store/ephemeral.js';
 import { env } from './env.js';
 import { getEntitlements, ensureUser } from './access.js';
 import { aiUsageThisMonth, recordUsage, startOfNextMonth } from './usage.js';
+import { rememberContext, resolveContext, tenantMonthMessages } from './org/ai.js';
 import { SaasError } from './errors.js';
 
 // As rotas do Coach que geram um pedido ao provedor (e, portanto, custo).
@@ -111,6 +112,12 @@ export function createAiGate() {
         'ai-quota-exceeded'
       );
     }
+    // IA com a orientação de uma academia: o teto mensal da academia vale além do limite pessoal do plano.
+    const ctx = await resolveContext(user);
+    if (ctx && (await tenantMonthMessages(ctx.tenantId)) >= ctx.cap) {
+      throw new SaasError(402, 'A IA desta academia atingiu o limite do mês. Volte ao seu espaço pessoal para continuar.', 'tenant-ai-quota');
+    }
+    rememberContext(user.id, ctx);
     return { ent, used };
   }
 
@@ -132,7 +139,7 @@ export function createAiGate() {
     // pela validação, o tokens foram cobrados). Falhas de transporte não consomem a cota.
     const answered = ev.outcome === 'ready' || ev.outcome === 'nochange' || !!ev.usage;
     if (ev.errorClass === 'forgotten' || ev.errorClass === 'consent' || ev.errorClass === 'off' || ev.errorClass === 'nostate') return;
-    await recordUsage({ userId: ev.uid, kind: ev.kind, usage: ev.usage, success: answered, model: ev.model });
+    await recordUsage({ userId: ev.uid, kind: ev.kind, usage: ev.usage, success: answered, model: ev.model, tenantId: ev.tenantId, provider: ev.provider });
   }
 
   return { check, summary, onJobFinished };

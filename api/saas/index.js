@@ -10,6 +10,7 @@ import { env } from './env.js';
 import { db } from './db.js';
 import { saasRoutes } from './routes.js';
 import { bootstrapCoach, createAiGate, JOB_ROUTES } from './ai.js';
+import { aiContextFor } from './org/ai.js';
 import { SaasError, logError } from './errors.js';
 import { AsaasClient } from './asaas/client.js';
 import { asaasConfigured } from './asaas/config.js';
@@ -33,6 +34,7 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
   const ai = ensureAi();
   if (!ai.configured) console.warn(`[saas] CorpoFit AI desligada: ${ai.reason}`);
   else console.log(`[saas] CorpoFit AI: ${ai.provider} · ${ai.model}`);
+  jobs.setContextHook?.(uid => aiContextFor(uid));
   jobs.setUsageHook(ev => aiGate.onJobFinished(ev).catch(err => logError(db, 'ai-usage', err)));
 
   // O corpo é lido uma vez e reaproveitado: o gate precisa do tamanho da mensagem antes de o Coach lê-la.
