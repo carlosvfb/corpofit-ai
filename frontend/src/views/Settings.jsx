@@ -860,7 +860,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
         {ctx.nameLang && <>
           <Row icon="globe" iconTint="var(--purple)" title={t('English exercise names')}
             subtitle={t('Show the English name in parentheses next to the translated one.')}>
-            <Switch checked={S.enParens?.[baseLang(lang)] ?? true}
+            <Switch checked={S.enParens?.[baseLang(lang)] ?? baseLang(lang) !== 'pt'}
               disabled={S.enOnly?.[baseLang(lang)] === true}
               onChange={v => update(s => { s.enParens = { ...(s.enParens || {}), [baseLang(lang)]: v } })} />
           </Row>
