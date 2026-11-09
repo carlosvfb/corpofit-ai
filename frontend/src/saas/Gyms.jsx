@@ -76,7 +76,7 @@ export default function Gyms() {
         <label className="small muted" htmlFor="gym-name">Nome da academia</label>
         <input id="gym-name" className="input" value={name} maxLength={80} onChange={e => setName(e.target.value)} placeholder="Ex.: Academia Força Total" />
         <div style={{ marginTop: 10 }}><Button variant="primary" disabled={busy || name.trim().length < 2} type="submit">Criar academia</Button></div>
-        <div className="dim small" style={{ marginTop: 8 }}>Você será o dono e poderá convidar professores e alunos que já tenham conta.</div>
+        <div className="dim small" style={{ marginTop: 8 }}>Você será o dono e poderá convidar professores e alunos por e-mail (mesmo quem ainda não tem conta).</div>
       </form>
     </>}
   </div>
@@ -330,7 +330,7 @@ export function Gym() {
   return <div className="page">
     <Header title={ctx.name} sub={ROLE_LABEL[ctx.role]} back="/academias" />
     {tabs.length > 0 && <div role="tablist" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-      {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={active === k} className={'btn ' + (active === k ? 'primary' : 'tinted')} onClick={() => setTab(k)}>{label}</button>)}
+      {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={active === k} className={'btn ' + (active === k ? 'primary' : 'tinted')} onClick={() => setTab(k)} style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}>{label}</button>)}
     </div>}
     {active === 'dashboard' && <Overview id={id} />}
     {active === 'members' && <Members id={id} role={ctx.role} />}

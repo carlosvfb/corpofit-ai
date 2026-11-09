@@ -158,7 +158,7 @@ export default function Library() {
       <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Biblioteca</h1><div className="sub">Rotinas, dicas e artigos compartilhados</div></div>
     </div>
     <div role="tablist" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-      {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={'btn ' + (tab === k ? 'primary' : 'tinted')} onClick={() => setTab(k)}>{label}</button>)}
+      {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={'btn ' + (tab === k ? 'primary' : 'tinted')} onClick={() => setTab(k)} style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}>{label}</button>)}
     </div>
     {notice && <div className="small" role="status" style={{ margin: '6px 0' }}>{notice}</div>}
     <Err>{error}</Err>

@@ -89,3 +89,6 @@
 .ff-table td { padding: 7px 8px; border-top: 1px solid rgba(128, 128, 128, .2); border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); vertical-align: top; }
 .ff-scroll { overflow-x: auto; }
 .ff-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; opacity: .75; word-break: break-all; }
+
+/* Linhas de botões das telas de academia, personal e biblioteca: lado a lado, não uma por linha. */
+.page .card div[style*="flex-wrap"] > .btn, .page .card div[style*="display: flex"] > .btn { width: auto; min-height: 40px; padding: 0 14px; flex: 0 0 auto; }

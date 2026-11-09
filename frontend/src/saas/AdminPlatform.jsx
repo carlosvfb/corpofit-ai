@@ -55,7 +55,7 @@ export default function AdminPlatform() {
       <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Plataforma</h1><div className="sub">Academias e moderação da biblioteca</div></div>
     </div>
     <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-      {[['gyms', 'Academias'], ['moderation', 'Moderação']].map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={'btn ' + (tab === k ? 'primary' : 'tinted')} onClick={() => setTab(k)}>{l}</button>)}
+      {[['gyms', 'Academias'], ['moderation', 'Moderação']].map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={'btn ' + (tab === k ? 'primary' : 'tinted')} onClick={() => setTab(k)} style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}>{l}</button>)}
     </div>
     {tab === 'gyms' ? <Gyms /> : <Moderation />}
   </div>
