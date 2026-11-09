@@ -1192,6 +1192,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
       {user && !DEMO && <ServerSyncSection>
         {MOBILE && <>
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           {/* A code to sign in on a computer (#551), behind the same proof as in a browser. */}
           <DeviceLinkRow state={passkeys.st} />
@@ -1217,6 +1218,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
             onClick={() => window.open(REPO, '_blank', 'noopener')} />
         </> : user ? <>
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           <PasskeysRow state={passkeys.st} changed={credsChanged} />
           <DeviceLinkRow state={passkeys.st} />

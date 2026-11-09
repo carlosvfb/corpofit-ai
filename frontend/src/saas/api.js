@@ -21,6 +21,22 @@ export const adminPremium = body => post('/api/admin/saas/premium', body)
 export const adminSettings = body => post('/api/admin/saas/settings', body)
 export const adminReconcile = subscriptionId => post('/api/admin/saas/reconcile', { subscriptionId })
 
+// Academias (multi-tenant). O servidor decide o que cada papel pode; aqui só se pede e se mostra.
+const q = id => '?tenant=' + encodeURIComponent(id)
+const put = (path, body) => api(path, { method: 'PUT', body: JSON.stringify(body || {}) })
+export const orgContexts = () => api('/api/orgs')
+export const createOrg = (name, slug) => post('/api/orgs', { name, slug: slug || undefined })
+export const orgSettings = id => api('/api/orgs/settings' + q(id))
+export const saveOrgSettings = (id, body) => put('/api/orgs/settings' + q(id), body)
+export const orgDashboard = id => api('/api/orgs/dashboard' + q(id))
+export const orgActivity = id => api('/api/orgs/activity' + q(id))
+export const orgMembers = id => api('/api/orgs/members' + q(id))
+export const inviteOrgMember = (id, email, role) => post('/api/orgs/members' + q(id), { email, role })
+export const changeOrgRole = (id, userId, role) => put('/api/orgs/members' + q(id), { userId, role })
+export const removeOrgMember = (id, userId) => api('/api/orgs/members' + q(id) + '&user=' + encodeURIComponent(userId), { method: 'DELETE' })
+export const acceptOrgInvite = id => post('/api/orgs/accept' + q(id))
+export const leaveOrg = id => post('/api/orgs/leave' + q(id))
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {
