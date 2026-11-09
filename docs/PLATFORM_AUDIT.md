@@ -188,3 +188,12 @@ Produção: Vercel (`DEPLOY.md`); as migrações rodam no build.
 7. Rodar a suíte completa em Linux (CI) para ter o estado verdadeiro, sem as falhas do Windows.
 
 Verificação do RLS em produção (somente leitura): conectado como o dono do banco, `BEGIN; SET LOCAL ROLE corpofit_app; SELECT count(*) FROM "Membership"; ROLLBACK;` deve devolver 0.
+
+## 14. Suíte do personal: agenda, ficha do aluno e montador (2026-11-10)
+- **Banco:** `TrainingSession` (dia e horário exatos em UTC, duração, local, status PLANNED/CONFIRMED/DONE/MISSED/CANCELLED, série semanal) e `TrainerNote` (anotações privadas), migração `20261110180000_trainer_suite`. RLS: a agenda é das duas partes do vínculo; as anotações, só do personal.
+- **API:** `api/saas/org/schedule.js` e rotas `/api/trainer/overview|sessions|notes` e `/api/privacy/preset` (todas em `openapi.yaml`). Marcar com repetição semanal (até 12), recusa de horário que colide com outra sessão do personal (409), confirmar/recusar pelo aluno, remarcar (volta a pedir confirmação), registrar feito/faltou perto do horário, cancelar (uma ou a série). Encerrar o vínculo cancela a agenda futura. Avisos in-app para a outra parte. Exportação LGPD inclui agenda e anotações; excluir a conta leva tudo junto (cascata do vínculo).
+- **Privacidade:** a visão geral só usa frequência se o aluno liberou ACTIVITY ou WORKOUTS, e cada leitura entra no registro de acessos. Atalhos de compartilhamento (`none`, `training`, `full`) passam por `setPermission`, então geram o mesmo histórico de consentimento. O aluno continua no controle; CHANGE_DIRECTLY segue recusado.
+- **Falha achada pelos testes:** `listSessions` dependia só do RLS para isolar; agora filtra explicitamente por participante (defesa em profundidade).
+- **App:** portal do personal com barra Alunos | Agenda | Exercícios | Biblioteca | Perfil; ficha do aluno com abas Treinos, Agenda, Progresso, Notas, Acesso; montador de treino a partir do catálogo (só texto, sem mídia); no app do aluno, treinos marcados com confirmar/recusar e o atalho de compartilhamento ao aceitar um personal.
+- **Testes:** `saas-schedule.test.js` (10), `TrainerPages.test.jsx` (5); suíte SaaS da API 153 de 153; frontend `src/saas` 41 de 41.
+- **Não verificado:** uso real em celular e produção (a verificação visual fica por conta do primeiro uso após o deploy); notificação push da agenda (só aviso dentro do app).

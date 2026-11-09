@@ -4290,6 +4290,123 @@ paths:
         '403': { description: Not allowed (no active link, or the student has not shared this category). }
         '404': { description: Not found, or the caller is not a party to it. }
 
+  /api/trainer/overview:
+    get:
+      tags: [saas]
+      operationId: getTrainerOverview
+      summary: Each active student with last workout, next session and flags (only what the student shares)
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/sessions:
+    get:
+      tags: [saas]
+      operationId: listTrainingSessions
+      summary: Scheduled sessions in a period, for the trainer or the student
+      parameters:
+        - { name: from, in: query, required: false, schema: { type: string } }
+        - { name: to, in: query, required: false, schema: { type: string } }
+        - { name: link, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    post:
+      tags: [saas]
+      operationId: createTrainingSessions
+      summary: Trainer schedules a session with exact day and time, optionally repeating weekly
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    put:
+      tags: [saas]
+      operationId: updateTrainingSession
+      summary: Reschedule, confirm, decline or mark a session as done or missed
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    delete:
+      tags: [saas]
+      operationId: cancelTrainingSession
+      summary: Cancel a session, or this and the following ones of a series
+      parameters:
+        - { name: id, in: query, required: false, schema: { type: string } }
+        - { name: reason, in: query, required: false, schema: { type: string } }
+        - { name: series, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/notes:
+    get:
+      tags: [saas]
+      operationId: listTrainerNotes
+      summary: Private trainer notes about one student
+      parameters:
+        - { name: link, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    post:
+      tags: [saas]
+      operationId: addTrainerNote
+      summary: Add a private note about a student
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    delete:
+      tags: [saas]
+      operationId: deleteTrainerNote
+      summary: Delete one private note
+      parameters:
+        - { name: id, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/privacy/preset:
+    post:
+      tags: [saas]
+      operationId: applySharingPreset
+      summary: Apply a sharing shortcut (none, training or full) for one trainer
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role or link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
   /api/orgs/ai-context:
     get:
       tags: [saas]

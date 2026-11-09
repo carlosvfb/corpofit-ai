@@ -110,6 +110,7 @@ export async function endLink(user, id) {
     if (l.status === 'ENDED') return summarize(l, user);
     const u = await tx.trainerStudent.update({ where: { id: l.id }, data: { status: 'ENDED', endedAt: new Date() } });
     await tx.assignment.updateMany({ where: { linkId: l.id, status: 'ASSIGNED' }, data: { status: 'ARCHIVED' } });
+    await tx.trainingSession.updateMany({ where: { linkId: l.id, status: { in: ['PLANNED', 'CONFIRMED'] }, startsAt: { gte: new Date() } }, data: { status: 'CANCELLED', cancelledBy: l.trainerId === user.id ? 'TRAINER' : 'STUDENT', reason: 'Vínculo encerrado' } });
     return summarize(u, user);
   });
 }

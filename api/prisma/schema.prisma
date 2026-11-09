@@ -375,6 +375,8 @@ model TrainerStudent {
   trainer     User         @relation("TrainerSide", fields: [trainerId], references: [id], onDelete: Cascade)
   student     User         @relation("StudentSide", fields: [studentId], references: [id], onDelete: Cascade)
   assignments Assignment[]
+  sessions    TrainingSession[]
+  notes       TrainerNote[]
 
   @@unique([trainerId, studentId])
   @@index([studentId])
@@ -608,4 +610,56 @@ model Notification {
 
   @@unique([userId, dedupeKey])
   @@index([userId, createdAt])
+}
+
+// ===== Agenda e acompanhamento do personal =====
+
+enum SessionStatus {
+  PLANNED
+  CONFIRMED
+  DONE
+  MISSED
+  CANCELLED
+}
+
+/// Um treino marcado entre personal e aluno: dia e horário exatos (UTC; o app mostra no fuso de quem olha).
+/// O personal marca e remarca; o aluno confirma ou recusa; depois do horário o personal registra se foi feito.
+model TrainingSession {
+  id           String        @id @default(cuid())
+  linkId       String
+  trainerId    String
+  studentId    String
+  /// Treino (Assignment) previsto para esta sessão, se houver.
+  assignmentId String?
+  title        String
+  startsAt     DateTime
+  durationMin  Int           @default(60)
+  place        String        @default("")
+  note         String        @default("")
+  status       SessionStatus @default(PLANNED)
+  /// Quem cancelou ('TRAINER' ou 'STUDENT') e por quê.
+  cancelledBy  String?
+  reason       String        @default("")
+  /// Sessões criadas juntas ("repetir toda semana") compartilham este id.
+  seriesId     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  link TrainerStudent @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([trainerId, startsAt])
+  @@index([studentId, startsAt])
+}
+
+/// Anotações PRIVADAS do personal sobre um aluno. O aluno nunca as vê.
+model TrainerNote {
+  id        String   @id @default(cuid())
+  linkId    String
+  trainerId String
+  body      String
+  createdAt DateTime @default(now())
+
+  link TrainerStudent @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId, createdAt])
 }

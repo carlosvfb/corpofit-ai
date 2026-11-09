@@ -1,4 +1,4 @@
-// Portal do personal trainer (celular): alunos, treinos enviados, biblioteca e perfil, com barra de abas própria.
+// Portal do personal trainer (celular): alunos, agenda, exercícios, biblioteca e perfil, com barra de abas própria.
 // Quem ainda não tem perfil profissional começa criando o perfil.
 import { useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
@@ -8,6 +8,8 @@ import { Button } from '../../components/ui.jsx'
 import { useStore } from '../../store/useStore.js'
 import { TrainerSide } from '../Personal.jsx'
 import Library from '../Library.jsx'
+import ExerciseLibrary from '../../views/Library.jsx'
+import { Agenda, StudentDetail, StudentsHome } from './TrainerPages.jsx'
 import Notifications from '../Notifications.jsx'
 import { Err } from '../Gyms.jsx'
 import { errorText, trainerAssignments, trainerLinks, trainerProfile } from '../api.js'
@@ -51,6 +53,7 @@ function Profile() {
     <div className="card" style={{ marginTop: 14 }}>
       <div className="muted small">Conta: {user?.name}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+        <Button variant="tinted" onClick={() => nav('/personal/treinos')}>Treinos enviados</Button>
         <Button variant="tinted" onClick={() => nav('/personal/avisos')}>Notificações</Button>
         <Button variant="tinted" onClick={() => nav('/home')}>Meu treino (app do aluno)</Button>
         <Button variant="tinted" onClick={async () => { try { await signOut?.() } finally { nav('/', { replace: true }) } }}>Sair</Button>
@@ -65,10 +68,13 @@ export default function TrainerPortal() {
   if (profile === undefined) return <div className="page"><div className="muted small">Carregando…</div></div>
   // Sem perfil profissional: primeiro o perfil. Depois o portal inteiro.
   if (!profile) return <Page title="Portal do personal" note="Crie seu perfil profissional para começar a convidar alunos."><TrainerSide part="profile" onSaved={setProfile} /></Page>
-  const tabs = [['/personal', 'Alunos', '👥', true], ['/personal/treinos', 'Treinos', '📋'], ['/personal/biblioteca', 'Biblioteca', '📚'], ['/personal/perfil', 'Perfil', '👤']]
+  const tabs = [['/personal', 'Alunos', '👥', true], ['/personal/agenda', 'Agenda', '📅'], ['/personal/exercicios', 'Exercícios', '🏋️'], ['/personal/biblioteca', 'Biblioteca', '📚'], ['/personal/perfil', 'Perfil', '👤']]
   return <>
     <Routes>
-      <Route index element={<Page title="Alunos" note="Você só vê o que cada aluno autorizar."><TrainerSide part="students" /></Page>} />
+      <Route index element={<StudentsHome />} />
+      <Route path="aluno/:linkId" element={<StudentDetail />} />
+      <Route path="agenda" element={<Agenda />} />
+      <Route path="exercicios" element={<ExerciseLibrary />} />
       <Route path="treinos" element={<Sent />} />
       <Route path="biblioteca" element={<Library back="/personal" />} />
       <Route path="perfil" element={<Profile />} />

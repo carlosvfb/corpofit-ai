@@ -69,3 +69,11 @@ body.desk { background: var(--bg, #0c0e12); }
 .pt-note { margin: 0 0 14px; font-size: 13px; opacity: .7; }
 .dk-toolbar > .btn, .dk-main form > .btn { width: auto; min-height: 40px; padding: 0 16px; }
 .dk-table td:nth-child(5) { white-space: nowrap; }
+
+/* ---------- ficha do aluno (personal) ---------- */
+.ts-tabs { display: flex; gap: 4px; overflow-x: auto; margin: 0 0 12px; padding-bottom: 2px; }
+.ts-tabs button { flex: none; padding: 8px 14px; border-radius: 18px; border: 0; background: rgba(128, 128, 128, .14); color: inherit; font-size: 14px; }
+.ts-tabs button.active { background: var(--acc, #7c5cff); color: #fff; font-weight: 650; }
+.pt-nav a { min-width: 0; font-size: 10.5px; }
+.pt-nav a b { font-size: 18px; }
+.page { padding-bottom: 84px; }

@@ -121,3 +121,16 @@ export function errorText(e, fallback = 'Algo deu errado. Tente novamente.') {
   if (code && CODES[code]) return CODES[code]
   return e?.message && !/^HTTP \d+$/.test(e.message) ? e.message : fallback
 }
+
+// Agenda, anotações privadas e visão geral do personal. Datas sempre em ISO (o app mostra no fuso de quem olha).
+export const updateAssignment = (id, body) => put('/api/trainer/assignments', { id, ...body })
+export const trainerOverview = () => api('/api/trainer/overview')
+export const trainerSessions = (p = {}) => api('/api/trainer/sessions' + (Object.keys(p).length ? '?' + new URLSearchParams(Object.entries(p).filter(([, v]) => v)).toString() : ''))
+export const createSessions = (linkId, body) => post('/api/trainer/sessions', { linkId, ...body })
+export const updateSession = (id, body) => put('/api/trainer/sessions', { id, ...body })
+export const answerSession = (id, action) => put('/api/trainer/sessions', { id, action }) // confirm | decline | done | missed
+export const cancelSession = (id, reason, series) => api('/api/trainer/sessions?id=' + encodeURIComponent(id) + '&reason=' + encodeURIComponent(reason || '') + (series ? '&series=1' : ''), { method: 'DELETE' })
+export const trainerNotes = linkId => api('/api/trainer/notes' + qs('link', linkId))
+export const addTrainerNote = (linkId, body) => post('/api/trainer/notes', { linkId, body })
+export const deleteTrainerNote = id => api('/api/trainer/notes' + qs('id', id), { method: 'DELETE' })
+export const applyPreset = (trainerId, preset) => post('/api/privacy/preset', { trainerId, preset })

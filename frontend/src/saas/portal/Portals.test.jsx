@@ -21,6 +21,7 @@ vi.mock('../../store/useUI.js', () => { const u = { toast: vi.fn() }; const useU
 vi.mock('../../sheets.jsx', () => ({ askAddDeviceData: vi.fn() }))
 vi.mock('../../lib/api.js', () => ({ passwordLogin: vi.fn() }))
 vi.mock('../../lib/routine-link.js', () => ({ routineLinkBundle: vi.fn(), readRoutineBundle: vi.fn(), importRoutineLink: vi.fn() }))
+vi.mock('../../views/Library.jsx', () => ({ default: () => <div>Biblioteca de exercícios</div> }))
 vi.mock('../AdminFinance.jsx', () => ({ default: () => <div>Financeiro da plataforma</div> }))
 vi.mock('../api.js', () => ({
   errorText: (e, f) => f,
@@ -31,6 +32,8 @@ vi.mock('../api.js', () => ({
   trainerProfile: vi.fn(), saveTrainerProfile: vi.fn(), trainerLinks: vi.fn(), trainerAssignments: vi.fn(), inviteStudent: vi.fn(), requestTrainer: vi.fn(),
   answerLink: vi.fn(), endLink: vi.fn(), assignWorkout: vi.fn(), assignSuggestion: vi.fn(), answerAssignment: vi.fn(), assignmentComments: vi.fn(),
   addAssignmentComment: vi.fn(), sharedWithMe: vi.fn(), shareCategories: vi.fn(), readStudentData: vi.fn(),
+  trainerOverview: vi.fn(), trainerSessions: vi.fn(), createSessions: vi.fn(), updateSession: vi.fn(), answerSession: vi.fn(), cancelSession: vi.fn(),
+  trainerNotes: vi.fn(), addTrainerNote: vi.fn(), deleteTrainerNote: vi.fn(), updateAssignment: vi.fn(), applyPreset: vi.fn(), myPermissions: vi.fn(),
   communityItems: vi.fn(), communityItem: vi.fn(), publishItem: vi.fn(), removeItem: vi.fn(), favoriteItem: vi.fn(), importCommunityItem: vi.fn(), reportItem: vi.fn(),
   listNotifications: vi.fn(), markNotificationsRead: vi.fn(), emailVerification: vi.fn(), sendEmailCode: vi.fn(), confirmEmailCode: vi.fn()
 }))
@@ -141,7 +144,7 @@ describe('portais: cada função na sua tela', () => {
 
   it('portal do personal: sem perfil, primeiro cria o perfil; com perfil, tem barra de abas própria', async () => {
     api.trainerProfile.mockResolvedValue(null)
-    api.trainerLinks.mockResolvedValue([]); api.trainerAssignments.mockResolvedValue([]); api.sharedWithMe.mockResolvedValue([]); api.shareCategories.mockResolvedValue([])
+    api.trainerLinks.mockResolvedValue([]); api.trainerAssignments.mockResolvedValue([]); api.sharedWithMe.mockResolvedValue([]); api.shareCategories.mockResolvedValue([]); api.trainerOverview.mockResolvedValue([])
     await mount('/personal', <TrainerPortal />)
     expect(host.textContent).toContain('Crie seu perfil profissional')
     expect(host.querySelector('.pt-nav')).toBeNull()
@@ -149,7 +152,7 @@ describe('portais: cada função na sua tela', () => {
     api.trainerProfile.mockResolvedValue({ userId: 'u1', displayName: 'Prof. Ana', bio: '', specialties: [] })
     await mount('/personal', <TrainerPortal />)
     const tabs = [...host.querySelectorAll('.pt-nav a')].map(a => a.textContent)
-    expect(tabs.join('|')).toMatch(/Alunos.*Treinos.*Biblioteca.*Perfil/)
+    expect(tabs.join('|')).toMatch(/Alunos.*Agenda.*Exercícios.*Biblioteca.*Perfil/)
     expect(document.body.classList.contains('desk')).toBe(false)   // é celular, sem o layout de computador
     expect(host.textContent).toContain('Convidar aluno')
   })

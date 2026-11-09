@@ -21,7 +21,8 @@ vi.mock('./api.js', () => ({
   errorText: (e, f) => f,
   trainerProfile: vi.fn(), saveTrainerProfile: vi.fn(), trainerLinks: vi.fn(), inviteStudent: vi.fn(), requestTrainer: vi.fn(),
   answerLink: vi.fn(), endLink: vi.fn(), trainerAssignments: vi.fn(), assignWorkout: vi.fn(), answerAssignment: vi.fn(),
-  assignmentComments: vi.fn(), addAssignmentComment: vi.fn(), sharedWithMe: vi.fn(), shareCategories: vi.fn(), readStudentData: vi.fn(), assignSuggestion: vi.fn()
+  assignmentComments: vi.fn(), addAssignmentComment: vi.fn(), sharedWithMe: vi.fn(), shareCategories: vi.fn(), readStudentData: vi.fn(), assignSuggestion: vi.fn(),
+  trainerSessions: vi.fn(), myPermissions: vi.fn(), applyPreset: vi.fn(), answerSession: vi.fn(), cancelSession: vi.fn(), createSessions: vi.fn(), updateSession: vi.fn()
 }))
 import * as api from './api.js'
 import * as link from '../lib/routine-link.js'
@@ -35,6 +36,8 @@ const type = async (el, value) => { await act(async () => { const set = Object.g
 beforeEach(() => {
   vi.clearAllMocks()
   api.assignmentComments.mockResolvedValue([])
+  api.trainerSessions.mockResolvedValue([])
+  api.myPermissions.mockResolvedValue([])
   api.sharedWithMe.mockResolvedValue([])
   api.shareCategories.mockResolvedValue([{ id: 'BODY_WEIGHT', label: 'Peso corporal' }, { id: 'ROUTINES', label: 'Rotinas' }])
   api.trainerProfile.mockResolvedValue({ userId: 't', displayName: 'Prof. Ana', bio: '', specialties: [] })

@@ -109,3 +109,18 @@ export async function studentData(user, linkId, category, readState) {
   const S = await readState(studentId);
   return { category, asOf: new Date().toISOString(), data: project(category, S) };
 }
+
+/** Atalhos de compartilhamento para o aluno escolher de uma vez (ele ainda pode ajustar categoria por categoria).
+    "training": o que o personal precisa para acompanhar o treino. "full": também corpo e observações. "none": nada. */
+export const PRESETS = {
+  none: {},
+  training: { WORKOUTS: 'SEE', EXERCISE_HISTORY: 'SEE', ROUTINES: 'SUGGEST', ACTIVITY: 'SEE' },
+  full: { WORKOUTS: 'SEE', EXERCISE_HISTORY: 'SEE', ROUTINES: 'SUGGEST', ACTIVITY: 'SEE', BODY_WEIGHT: 'SEE', MEASUREMENTS: 'SEE', NOTES: 'SEE' }
+};
+export async function applyPreset(user, trainerId, preset) {
+  const p = PRESETS[preset];
+  if (!p) throw new SaasError(400, 'Atalho inválido.', 'invalid-preset');
+  let changed = 0;
+  for (const c of AVAILABLE) { const r = await setPermission(user, trainerId, c, p[c] || 'OFF'); if (r.changed) changed++; }
+  return { preset, changed };
+}

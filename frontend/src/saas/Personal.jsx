@@ -12,8 +12,9 @@ import { importRoutineLink, readRoutineBundle, routineLinkBundle } from '../lib/
 import { EXIDX } from '../lib/exercises.js'
 import {
   addAssignmentComment, answerAssignment, answerLink, assignSuggestion, assignWorkout, assignmentComments, endLink, errorText, inviteStudent,
-  readStudentData, requestTrainer, saveTrainerProfile, shareCategories, sharedWithMe, trainerAssignments, trainerLinks, trainerProfile
+  applyPreset, myPermissions, readStudentData, requestTrainer, saveTrainerProfile, shareCategories, sharedWithMe, trainerAssignments, trainerLinks, trainerProfile, trainerSessions
 } from './api.js'
+import { SessionRow, groupByDay } from './Sessions.jsx'
 import { formatDateTime } from './brand.js'
 
 const STATUS = { ASSIGNED: 'Novo', IMPORTED: 'Adicionado às rotinas', DECLINED: 'Recusado', ARCHIVED: 'Arquivado' }
@@ -46,7 +47,7 @@ export function DataView({ category, data }) {
   })}</div>
 }
 
-function Comments({ assignmentId }) {
+export function Comments({ assignmentId }) {
   const [list, setList] = useState(null)
   const [text, setText] = useState('')
   const [err, setErr] = useState(null)
@@ -173,7 +174,14 @@ function StudentSide({ links, assignments, reload }) {
   const [err, setErr] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [sessions, setSessions] = useState([])
+  const [grants, setGrants] = useState({})
+  const [dismissed, setDismissed] = useState([])
+  const [askShare, setAskShare] = useState(null) // personal que acabou de ser aceito: oferece o atalho de compartilhamento
+  const loadSessions = useCallback(() => { trainerSessions({ from: new Date(Date.now() - 86_400_000).toISOString() }).then(setSessions).catch(() => {}); myPermissions().then(r => setGrants(Object.fromEntries(r.map(x => [x.trainerId, x.grants])))).catch(() => {}) }, [])
+  useEffect(() => { loadSessions() }, [loadSessions, links])
   const run = async fn => { setBusy(true); setErr(null); setNotice(null); try { await fn() } catch (e) { setErr(errorText(e, 'Não foi possível concluir.')) } finally { setBusy(false) } }
+  const share = (l, preset) => run(async () => { await applyPreset(l.other.id, preset); setAskShare(null); setNotice(preset === 'none' ? 'Seu personal não vê mais nenhum dado seu.' : 'Pronto. Você pode ajustar categoria por categoria em Privacidade e compartilhamento.'); loadSessions() })
   const mine = links.filter(l => l.side === 'STUDENT')
   const add = a => run(async () => {
     const parsed = readRoutineBundle(a.bundle, S?.unit || 'kg')
@@ -196,14 +204,30 @@ function StudentSide({ links, assignments, reload }) {
       <div className="dim small" style={{ marginTop: 6 }}>O personal precisa ter o perfil profissional criado e aceitar o pedido.</div>
     </form>
     {mine.length === 0 && <div className="card dim small">Você ainda não tem um personal vinculado.</div>}
+    {sessions.filter(x => x.status !== 'CANCELLED' || new Date(x.startsAt) > new Date()).length > 0 && <>
+      <Section>TREINOS MARCADOS COM SEU PERSONAL</Section>
+      {groupByDay(sessions.filter(x => x.status !== 'CANCELLED' || new Date(x.startsAt) > new Date())).map(g => <div key={g.k}>
+        <div className="muted small" style={{ margin: '8px 4px 4px', textTransform: 'capitalize' }}>{g.k}</div>
+        {g.items.map(x => <SessionRow key={x.id} s={x} role="student" onChange={loadSessions} />)}
+      </div>)}
+    </>}
     {mine.map(l => {
       const got = assignments.filter(a => a.linkId === l.id)
       return <div className="card" key={l.id} style={{ marginBottom: 8 }}>
         <div style={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{l.other.name || l.other.email}</div>
         <div className="muted small">{l.status === 'PENDING' ? (l.initiatedBy === 'TRAINER' ? 'Convidou você para ser aluno' : 'Pedido enviado, esperando o personal') : 'Ativo'}</div>
         {l.status === 'PENDING' && l.initiatedBy === 'TRAINER' && <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
-          <Button variant="primary" disabled={busy} onClick={() => run(async () => { await answerLink(l.id, true); await reload() })}>Aceitar</Button>
+          <Button variant="primary" disabled={busy} onClick={() => run(async () => { await answerLink(l.id, true); setAskShare(l.id); await reload() })}>Aceitar</Button>
           <Button variant="tinted" disabled={busy} onClick={() => run(async () => { await answerLink(l.id, false); await reload() })}>Recusar</Button>
+        </div>}
+        {l.status === 'ACTIVE' && (askShare === l.id || (!dismissed.includes(l.id) && !Object.values(grants[l.other.id] || {}).some(v => v !== 'OFF'))) && <div className="card" style={{ marginTop: 8, background: 'var(--acc-soft, rgba(124,92,255,.12))' }}>
+          <div style={{ fontWeight: 650 }}>Deixar {l.other.name || 'seu personal'} acompanhar seu treino?</div>
+          <div className="small" style={{ margin: '4px 0 8px' }}>Para ele montar e ajustar seu treino de perto, ele precisa ver seus treinos feitos, cargas e frequência. Fotos e bem-estar nunca são compartilhados. Você pode mudar ou revogar quando quiser.</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <Button variant="primary" disabled={busy} onClick={() => share(l, 'training')}>Acompanhar meu treino</Button>
+            <Button variant="tinted" disabled={busy} onClick={() => share(l, 'full')}>Treino, medidas e peso</Button>
+            <Button variant="tinted" disabled={busy} onClick={() => { setAskShare(null); setDismissed(d => [...d, l.id]); share(l, 'none') }}>Não compartilhar</Button>
+          </div>
         </div>}
         {l.status === 'ACTIVE' && <div style={{ marginTop: 8 }}>
           <Button variant="tinted" disabled={busy} onClick={() => { if (window.confirm('Encerrar o vínculo com este personal? Os treinos já recebidos ficam com você.')) run(async () => { await endLink(l.id); await reload() }) }}>Encerrar vínculo</Button>

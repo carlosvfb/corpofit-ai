@@ -20,6 +20,7 @@ import * as admin from './admin.js';
 import * as org from './org/service.js';
 import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
+import * as schedule from './org/schedule.js';
 import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
 import * as orgBilling from './org/billing.js';
@@ -215,7 +216,53 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       json(res, 201, await trainers.addComment(user, b.assignmentId, b.body));
     }),
 
+    /* ------------------- agenda, anotações e visão geral do personal ------------------- */
+    'GET /api/trainer/overview': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await schedule.trainerOverview(user, async id => readState(id)));
+    }),
+    'GET /api/trainer/sessions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await schedule.listSessions(user, { from: u.get('from') || undefined, to: u.get('to') || undefined, linkId: u.get('link') || undefined }));
+    }),
+    'POST /api/trainer/sessions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 201, await schedule.createSessions(user, b.linkId, b));
+    }),
+    'PUT /api/trainer/sessions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      if (b.action === 'confirm' || b.action === 'decline') return json(res, 200, await schedule.respondSession(user, b.id, b.action));
+      if (b.action === 'done' || b.action === 'missed') return json(res, 200, await schedule.markSession(user, b.id, b.action.toUpperCase()));
+      json(res, 200, await schedule.updateSession(user, b.id, b));
+    }),
+    'DELETE /api/trainer/sessions': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await schedule.cancelSession(user, u.get('id'), { reason: u.get('reason') || '', series: u.get('series') === '1' }));
+    }),
+    'GET /api/trainer/notes': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await schedule.listNotes(user, new URL(req.url, 'http://x').searchParams.get('link')));
+    }),
+    'POST /api/trainer/notes': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 201, await schedule.addNote(user, b.linkId, b.body));
+    }),
+    'DELETE /api/trainer/notes': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await schedule.deleteNote(user, new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+
     /* ------------------- privacidade e compartilhamento ------------------- */
+    'POST /api/privacy/preset': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await privacy.applyPreset(user, b.trainerId, b.preset));
+    }),
     'GET /api/privacy/categories': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, privacy.categories());
