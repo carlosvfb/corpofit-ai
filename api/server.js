@@ -2224,7 +2224,9 @@ const routes = {
   // what "unhealthy" is for. The 200 keeps the shape it had, plus the flag it is now asserting.
   'GET /api/health': async (req, res) => {
     if (!dataWritable()) return json(res, 503, { ok: false, writable: false });
-    json(res, 200, { ok: true, users: db.users.length, writable: true });
+    let ai; // SaaS: diz se a IA está configurada e, se não, por quê (nunca expõe a chave)
+    try { ai = saas ? saas.ensureAi() : undefined; } catch (err) { ai = { configured: false, reason: 'erro: ' + String(err?.message || err).slice(0, 120) }; }
+    json(res, 200, { ok: true, users: db.users.length, writable: true, ...(ai ? { ai } : {}) });
   },
 
   // Public config the login screen needs before anyone is signed in. `coach` is absent unless
