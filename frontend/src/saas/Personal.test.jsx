@@ -2,7 +2,7 @@
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import Personal from './Personal.jsx'
+import Personal, { TrainerSide } from './Personal.jsx'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -28,7 +28,7 @@ import * as link from '../lib/routine-link.js'
 
 let host, root
 const flush = async () => { for (let i = 0; i < 6; i++) await act(async () => { await Promise.resolve() }) }
-const mount = async () => { host = document.createElement('div'); document.body.append(host); root = createRoot(host); await act(async () => { root.render(<Personal />) }); await flush() }
+const mount = async (el = <Personal />) => { host = document.createElement('div'); document.body.append(host); root = createRoot(host); await act(async () => { root.render(el) }); await flush() }
 const btn = text => [...host.querySelectorAll('button')].find(b => b.textContent === text)
 const type = async (el, value) => { await act(async () => { const set = Object.getOwnPropertyDescriptor(el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype, 'value').set; set.call(el, value); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })) }) }
 
@@ -62,7 +62,7 @@ describe('Personal trainer', () => {
     api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
     api.trainerAssignments.mockResolvedValue([])
     api.assignWorkout.mockResolvedValue({})
-    await mount()
+    await mount(<TrainerSide />)
     await act(async () => { btn('Enviar treino').click() })
     await type(host.querySelector('select[aria-label="Rotina a enviar"]'), 'r1')
     await act(async () => { btn('Enviar treino').click() }); await flush()
@@ -74,7 +74,7 @@ describe('Personal trainer', () => {
     api.trainerProfile.mockResolvedValue(null)
     api.trainerLinks.mockResolvedValue([])
     api.trainerAssignments.mockResolvedValue([])
-    await mount()
+    await mount(<TrainerSide />)
     expect(host.textContent).toContain('Virar personal trainer')
     expect(host.textContent).not.toContain('Convidar aluno')
   })
@@ -84,7 +84,7 @@ describe('Personal trainer', () => {
     api.trainerAssignments.mockResolvedValue([])
     api.sharedWithMe.mockResolvedValue([{ linkId: 'l9', studentId: 's', grants: { BODY_WEIGHT: 'SEE' } }])
     api.readStudentData.mockResolvedValue({ category: 'BODY_WEIGHT', data: [{ d: '2026-11-01', w: 82.5 }] })
-    await mount()
+    await mount(<TrainerSide />)
     expect(btn('Peso corporal')).toBeTruthy()
     expect(btn('Rotinas')).toBeUndefined()
     await act(async () => { btn('Peso corporal').click() }); await flush()
@@ -95,7 +95,7 @@ describe('Personal trainer', () => {
   it('sem compartilhamento o personal vê o aviso, não os dados; leitura negada mostra o erro', async () => {
     api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
     api.trainerAssignments.mockResolvedValue([])
-    await mount()
+    await mount(<TrainerSide />)
     expect(host.textContent).toContain('Nada por enquanto')
     expect(api.readStudentData).not.toHaveBeenCalled()
   })
@@ -103,13 +103,23 @@ describe('Personal trainer', () => {
   it('a sugestão para uma rotina do aluno só é oferecida com a permissão SUGGEST', async () => {
     api.trainerLinks.mockResolvedValue([{ id: 'l9', side: 'TRAINER', status: 'ACTIVE', initiatedBy: 'TRAINER', other: { name: 'Beto', email: 'b@x.com' } }])
     api.trainerAssignments.mockResolvedValue([])
-    await mount()
+    await mount(<TrainerSide />)
     await act(async () => { btn('Enviar treino').click() })
     expect(host.textContent).not.toContain('Enviar como sugestão')
     act(() => root.unmount()); host.remove()
     api.sharedWithMe.mockResolvedValue([{ linkId: 'l9', studentId: 's', grants: { ROUTINES: 'SUGGEST' } }])
-    await mount()
+    await mount(<TrainerSide />)
     await act(async () => { btn('Enviar treino').click() })
     expect(host.textContent).toContain('Enviar como sugestão')
+  })
+
+  it('o app do aluno não traz o lado do personal: só um atalho para o portal do personal', async () => {
+    api.trainerLinks.mockResolvedValue([])
+    api.trainerAssignments.mockResolvedValue([])
+    await mount()
+    expect(host.textContent).toContain('Meu personal')
+    expect(host.textContent).toContain('Você é personal trainer?')
+    expect(host.textContent).not.toContain('Convidar aluno')
+    expect(host.textContent).not.toContain('MEU PERFIL PROFISSIONAL')
   })
 })

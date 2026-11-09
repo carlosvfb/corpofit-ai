@@ -11,7 +11,7 @@ import { formatDate } from './brand.js'
 const REASON = { INAPPROPRIATE: 'Conteúdo inadequado', COPYRIGHT: 'Direitos autorais', PERSONAL_DATA: 'Dados pessoais', SPAM: 'Spam', OTHER: 'Outro motivo' }
 const Err = ({ children }) => children ? <div className="small" role="alert" style={{ color: 'var(--red)', margin: '8px 0' }}>{children}</div> : null
 
-function Gyms() {
+export function PlatformGyms() {
   const [rows, setRows] = useState(null)
   const [err, setErr] = useState(null)
   useEffect(() => { adminGyms().then(setRows).catch(e => setErr(errorText(e, 'Não foi possível carregar as academias.'))) }, [])
@@ -24,7 +24,7 @@ function Gyms() {
   </div>)
 }
 
-function Moderation() {
+export function PlatformModeration() {
   const [queue, setQueue] = useState(null)
   const [err, setErr] = useState(null)
   const load = useCallback(() => moderationQueuePlatform().then(setQueue).catch(e => setErr(errorText(e, 'Não foi possível carregar a fila.'))), [])
@@ -57,6 +57,6 @@ export default function AdminPlatform() {
     <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
       {[['gyms', 'Academias'], ['moderation', 'Moderação']].map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={'btn ' + (tab === k ? 'primary' : 'tinted')} onClick={() => setTab(k)} style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}>{l}</button>)}
     </div>
-    {tab === 'gyms' ? <Gyms /> : <Moderation />}
+    {tab === 'gyms' ? <PlatformGyms /> : <PlatformModeration />}
   </div>
 }

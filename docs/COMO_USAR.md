@@ -3,6 +3,21 @@
 Site: https://corpofitai.vercel.app (no celular, abra no navegador e use "Adicionar à tela inicial" para instalar).
 As áreas novas ficam em **Ajustes** (engrenagem no canto da tela inicial). Tudo abaixo exige estar logado.
 
+## 0. Quatro portais, um para cada função
+Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia, admin), mas **cada função tem a sua entrada, o seu login e a sua tela**:
+
+| Portal | Para quem | Aparelho | Endereço (entrada) | Depois do login |
+|---|---|---|---|---|
+| **Aluno** | quem treina | celular | `https://corpofitai.vercel.app/#/entrar` | app de treino (`/#/home`) |
+| **Personal** | personal trainers | celular (barra de abas própria: Alunos, Treinos, Biblioteca, Perfil) | `/#/personal/entrar` | `/#/personal` |
+| **Academia** | dono, administrador e gerente | computador (menu lateral, tabelas) | `/#/academia/entrar` | `/#/academia` |
+| **Administração** | equipe da plataforma | computador | `/#/plataforma/entrar` | `/#/plataforma` |
+
+- No site público, o cabeçalho tem **Para academias** e **Para personais**, e o rodapé tem **Administração**.
+- Só a administração não tem cadastro: o acesso de admin é dado pelo dono do produto.
+- Quem entra num portal sem ter a função vê uma explicação e o caminho certo (por exemplo, a administração responde "Acesso restrito").
+- Dentro de qualquer portal há o atalho "Meu treino (app do aluno)" para voltar ao seu app.
+
 ## 1. Primeiros passos
 | O quê | Como |
 |---|---|
@@ -28,22 +43,23 @@ As áreas novas ficam em **Ajustes** (engrenagem no canto da tela inicial). Tudo
 - **Início → Assinar Premium** (ou Ajustes → Assinatura e plano): cartão, Pix ou Pix Automático.
 - O Premium só vale depois da confirmação do pagamento (webhook do Asaas). Cancelar mantém o plano até o fim do período pago.
 
-## 5. Academias (Ajustes → Academias)
+## 5. Portal da academia (computador): `/#/academia`
 | O quê | Como |
 |---|---|
-| Criar uma academia | Campo **Criar uma academia**. Você vira dono. |
-| Convidar alguém | Academia → aba **Membros** → e-mail e papel. Quem ainda não tem conta fica como *aguardando cadastro* e só recebe o convite depois de se cadastrar e **confirmar o e-mail**. |
-| Aceitar convite | Ajustes → Academias → **Convites** → *Aceitar convite*. |
+| Criar uma academia | Em **Minhas academias** → *Cadastrar uma academia*. Você vira dono. |
+| Convidar alguém | Menu **Membros** (tabela com busca, papéis e situação) → e-mail e papel. Quem ainda não tem conta fica como *aguardando cadastro* e só recebe o convite depois de se cadastrar e **confirmar o e-mail**. |
+| Aceitar convite | Quem gerencia: em **Minhas academias** → *Convites*. Aluno ou personal: Ajustes → Minhas academias (no app do celular). |
 | Papéis | Dono, administrador, gerente, personal, aluno. Cada um só gerencia quem está abaixo. |
-| Marca e IA da academia | Aba **Configurações**: nome, cor, logo (https), contato, instruções para a IA e limite mensal. |
-| Painel e histórico | Abas **Visão geral** (contagens reais) e **Atividade** (quem fez o quê). |
-| Uso da IA | Aba **Uso da IA** (dono e admin): mensagens, tokens, custo estimado e contagem por membro. |
-| Plano da academia | Aba **Plano** (dono, admin e gerente veem; só o dono contrata): limites e uso, planos, contratar e cancelar. |
+| Marca e IA da academia | Menu **Configurações**: nome, cor, logo (https), contato, instruções para a IA e limite mensal. |
+| Painel e histórico | Menus **Visão geral** (contagens reais) e **Atividade** (quem fez o quê). |
+| Uso da IA | Menu **Uso da IA** (dono e admin): mensagens, tokens, custo estimado e contagem por membro. |
+| Plano da academia | Menu **Plano e cobrança** (dono, admin e gerente veem; só o dono contrata): limites e uso, planos, contratar e cancelar. |
 
-## 6. Personal trainer (Ajustes → Personal trainer)
-- **Virar personal:** preencha o perfil profissional.
+## 6. Portal do personal (celular): `/#/personal`
+- **Virar personal:** entre em `/#/personal/entrar` (ou crie conta em `/#/personal/cadastro`) e preencha o perfil profissional.
+- **Abas:** Alunos, Treinos (tudo o que você enviou), Biblioteca e Perfil.
 - **Aluno novo:** *Convidar aluno* por e-mail (a pessoa precisa já ter conta). O aluno também pode pedir um personal pelo e-mail dele.
-- **Enviar treino:** em um aluno ativo → *Enviar treino* → escolha uma das **suas** rotinas. O aluno vê o treino na mesma tela e toca em *Adicionar às minhas rotinas*. Cada edição guarda a versão anterior.
+- **Enviar treino:** em um aluno ativo → *Enviar treino* → escolha uma das **suas** rotinas. O aluno vê o treino em **Ajustes → Meu personal** (app do aluno) e toca em *Adicionar às minhas rotinas*. Cada edição guarda a versão anterior.
 - **Sugestão para uma rotina do aluno:** só aparece se o aluno liberou "Ver e sugerir" nas rotinas.
 - **Comentários:** nos treinos enviados, dos dois lados.
 - **Ver dados do aluno:** só as categorias que o aluno liberou (botões "O aluno compartilha com você").
@@ -63,8 +79,8 @@ As áreas novas ficam em **Ajustes** (engrenagem no canto da tela inicial). Tudo
 ## 9. Notificações (Ajustes → Notificações e e-mail)
 Convites, vínculos, treinos e sugestões recebidos, comentários e mudanças de compartilhamento. Um aviso aparece no cartão da tela inicial quando há novidades.
 
-## 10. Administração da plataforma (só admin)
-- **Ajustes → Painel de administração** (em inglês, "Admin dashboard"): **Financeiro e IA** (assinaturas, cobranças, webhooks, Premium manual, consumo) e **Academias e moderação** (academias com plano e contagens, e fila de denúncias de toda a biblioteca).
+## 10. Administração da plataforma (computador): `/#/plataforma`
+- Menus: **Academias** (plano e contagens), **Moderação** (denúncias de toda a biblioteca), **Financeiro e IA** (assinaturas, cobranças, webhooks, Premium manual, consumo) e **Configurações da instância** (o painel de administração original).
 
 ## 11. Dados e privacidade (LGPD)
 - `GET /api/privacy/export` (logado): tudo o que a plataforma guarda sobre você nestas áreas, em JSON.

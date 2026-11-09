@@ -3,7 +3,7 @@
 // Aparece no lugar da tela de login do openGym quando o servidor está em SAAS_MODE (GET /api/config).
 // Tudo em português do Brasil; o resto do app usa os pacotes de idioma do openGym (DEFAULT_LANG=pt-BR).
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import './saas.css'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -12,6 +12,8 @@ import { askAddDeviceData } from '../sheets.jsx'
 import { hasData } from '../store/useStore.js'
 import { BRAND, formatBRL } from './brand.js'
 import { errorText, forgotPassword, getPlans, registerAccount } from './api.js'
+import PortalLogin from './portal/PortalLogin.jsx'
+import { portalOf } from './portal/portals.js'
 
 const MIN_PASSWORD = 10
 
@@ -27,6 +29,8 @@ function Shell({ children }) {
             <Link to="/funcionalidades">Funcionalidades</Link>
             <Link to="/planos">Planos</Link>
             <Link to="/contato">Contato</Link>
+            <Link to="/academia/entrar">Para academias</Link>
+            <Link to="/personal/entrar">Para personais</Link>
           </nav>
           <div className="ff-cta">
             <Link to="/entrar" className="ff-btn">Entrar</Link>
@@ -43,6 +47,7 @@ function Shell({ children }) {
             <Link to="/privacidade">Privacidade</Link>
             <Link to="/contato">Contato</Link>
             <Link to="/licenca">Licença e código-fonte</Link>
+            <Link to="/plataforma/entrar">Administração</Link>
             {source && <a href={source} rel="noopener noreferrer" target="_blank">Código-fonte</a>}
           </nav>
         </div>
@@ -335,6 +340,11 @@ export default function PublicSite() {
   useEffect(() => { window.scrollTo(0, 0); document.title = BRAND.name + ' · treinos com IA' }, [pathname])
   const email = config?.saas?.supportEmail || 'suporte@exemplo.com.br'
   const source = config?.saas?.sourceCodeUrl || null
+  // Cada função tem a sua entrada: academia e administração (computador), personal (celular), aluno (o app).
+  const entries = { '/personal/entrar': ['personal', 'login'], '/personal/cadastro': ['personal', 'register'], '/academia/entrar': ['academia', 'login'], '/academia/cadastro': ['academia', 'register'], '/plataforma/entrar': ['admin', 'login'] }
+  if (entries[pathname]) return <PortalLogin portal={entries[pathname][0]} mode={entries[pathname][1]} />
+  const wanted = portalOf(pathname)
+  if (wanted.key !== 'student') return <Navigate to={wanted.login} replace />
   const page = {
     '/funcionalidades': <Features />, '/planos': <Plans />, '/entrar': <Login />, '/cadastro': <Register />,
     '/recuperar': <Recover />, '/termos': <Terms plans={plans} />, '/privacidade': <Privacy email={email} />,

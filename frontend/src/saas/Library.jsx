@@ -106,7 +106,7 @@ function Publish({ gyms, onDone }) {
   </form>
 }
 
-function Moderation({ gyms, onNotice }) {
+export function Moderation({ gyms, onNotice }) {
   const [tenant, setTenant] = useState(gyms[0]?.id || '')
   const [queue, setQueue] = useState(null)
   const [err, setErr] = useState(null)
@@ -130,7 +130,7 @@ function Moderation({ gyms, onNotice }) {
   </>
 }
 
-export default function Library() {
+export default function Library({ back = '/settings' }) {
   const nav = useNavigate()
   const [tab, setTab] = useState('explore')
   const [gyms, setGyms] = useState([])
@@ -154,7 +154,7 @@ export default function Library() {
   const tabs = [['explore', 'Explorar'], ['favorites', 'Favoritos'], ['mine', 'Meus'], ['publish', 'Publicar'], ...(moderators.length ? [['moderation', 'Moderação']] : [])]
   return <div className="page">
     <div className="hdr">
-      <button className="iconbtn" data-back="/settings" onClick={() => nav('/settings')} aria-label="Voltar"><Icon name="chevronLeft" /></button>
+      <button className="iconbtn" data-back={back} onClick={() => nav(back)} aria-label="Voltar"><Icon name="chevronLeft" /></button>
       <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Biblioteca</h1><div className="sub">Rotinas, dicas e artigos compartilhados</div></div>
     </div>
     <div role="tablist" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>

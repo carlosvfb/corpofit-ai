@@ -34,7 +34,7 @@ function EmailBox() {
   </div>
 }
 
-export default function Notifications() {
+export default function Notifications({ back = '/settings' }) {
   const nav = useNavigate()
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -43,7 +43,7 @@ export default function Notifications() {
   const open = async n => { if (!n.read) { await markNotificationsRead([n.id]).catch(() => {}) } if (n.link) nav(n.link); else load() }
   return <div className="page">
     <div className="hdr">
-      <button className="iconbtn" data-back="/settings" onClick={() => nav('/settings')} aria-label="Voltar"><Icon name="chevronLeft" /></button>
+      <button className="iconbtn" data-back={back} onClick={() => nav(back)} aria-label="Voltar"><Icon name="chevronLeft" /></button>
       <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Notificações</h1><div className="sub">Convites, treinos, comentários e mudanças de compartilhamento</div></div>
     </div>
     <Err>{error}</Err>

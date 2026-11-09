@@ -55,6 +55,7 @@ import { useRoutineLinks } from './components/RoutineShare.jsx'
 import Login from './views/Login.jsx'
 import PublicSite from './saas/PublicSite.jsx'
 import { saasOn } from './saas/brand.js'
+import { hasOwnNav } from './saas/portal/portals.js'
 import MobileOnboarding from './views/MobileOnboarding.jsx'
 import PermissionSteps from './views/PermissionSteps.jsx'
 import Home from './views/Home.jsx'
@@ -86,6 +87,9 @@ const CheckoutResult = lazyView(() => import('./saas/Checkout.jsx').then(m => ({
 const AdminFinance = lazyView(() => import('./saas/AdminFinance.jsx'))
 const Gyms = lazyView(() => import('./saas/Gyms.jsx'))
 const Personal = lazyView(() => import('./saas/Personal.jsx'))
+const GymPortal = lazyView(() => import('./saas/portal/GymPortal.jsx'))
+const TrainerPortal = lazyView(() => import('./saas/portal/TrainerPortal.jsx'))
+const AdminPortal = lazyView(() => import('./saas/portal/AdminPortal.jsx'))
 const Privacy = lazyView(() => import('./saas/Privacy.jsx'))
 const CommunityLibrary = lazyView(() => import('./saas/Library.jsx'))
 const Notifications = lazyView(() => import('./saas/Notifications.jsx'))
@@ -305,7 +309,7 @@ function Shell() {
   }, [inWorkout])
   // The chat owns the bottom of the screen as well: its composer sits where the tabs would be.
   // The first-launch card has no tabs either: they changed the route behind it.
-  const noTabs = inWorkout || loc.pathname === '/coach' || needsMobileOnboarding || permSteps
+  const noTabs = inWorkout || loc.pathname === '/coach' || needsMobileOnboarding || permSteps || (saasOn(config) && hasOwnNav(loc.pathname))
 
   const authed = user || isGuest
   // The first setup is through (sign-in or "Use on this device", and the phone's permission
@@ -314,7 +318,9 @@ function Shell() {
   // never over a sheet or a workout, and only once the copy is the account's own.
   const tour = useTour()
   const tourAsked = useRef(false)
-  const setupDone = authed && ready && !needsMobileOnboarding && !permSteps
+  // Os portais de academia, personal e administração não são o app de treino: nada de tour nem de escolha de módulos por cima deles.
+  const inPortal = saasOn(config) && hasOwnNav(loc.pathname)
+  const setupDone = authed && ready && !needsMobileOnboarding && !permSteps && !inPortal
   // A tapped NFC sticker (components/Nfc.jsx): one that opened the app waits for the setup.
   useNfcTagLinks(setupDone)
   // A friend's routine link (components/RoutineShare.jsx): the same wait for the setup.
@@ -372,17 +378,20 @@ function Shell() {
       {isOn(S, 'coach') && <Route path="/coach/proposal" element={<Navigate to="/coach" replace />} />}
       {isOn(S, 'coach') && <Route path="/coach/setup" element={<CoachSetup />} />}
       <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
-      {saasOn(config) && <Route path="/assinatura" element={<Subscription />} />}
-      {saasOn(config) && <Route path="/academias" element={<Gyms />} />}
-      {saasOn(config) && <Route path="/personal" element={<Personal />} />}
-      {saasOn(config) && <Route path="/privacidade" element={<Privacy />} />}
-      {saasOn(config) && <Route path="/biblioteca" element={<CommunityLibrary />} />}
-      {saasOn(config) && <Route path="/notificacoes" element={<Notifications />} />}
-      {saasOn(config) && <Route path="/admin/plataforma" element={user?.admin ? <AdminPlatform /> : <Navigate to="/home" replace />} />}
-      {saasOn(config) && <Route path="/academias/:id" element={<Gym />} />}
-      {saasOn(config) && <Route path="/checkout" element={<Checkout />} />}
-      {saasOn(config) && <Route path="/checkout/:status" element={<CheckoutResult />} />}
-      {saasOn(config) && <Route path="/admin/financeiro" element={user?.admin ? <AdminFinance /> : <Navigate to="/home" replace />} />}
+      {(saasOn(config) || !config) && <Route path="/assinatura" element={<Subscription />} />}
+      {(saasOn(config) || !config) && <Route path="/academias" element={<Gyms />} />}
+      {(saasOn(config) || !config) && <Route path="/meu-personal" element={<Personal />} />}
+      {(saasOn(config) || !config) && <Route path="/personal/*" element={<TrainerPortal />} />}
+      {(saasOn(config) || !config) && <Route path="/academia/*" element={<GymPortal />} />}
+      {(saasOn(config) || !config) && <Route path="/plataforma/*" element={<AdminPortal />} />}
+      {(saasOn(config) || !config) && <Route path="/privacidade" element={<Privacy />} />}
+      {(saasOn(config) || !config) && <Route path="/biblioteca" element={<CommunityLibrary />} />}
+      {(saasOn(config) || !config) && <Route path="/notificacoes" element={<Notifications />} />}
+      {(saasOn(config) || !config) && <Route path="/admin/plataforma" element={<Navigate to="/plataforma" replace />} />}
+      {(saasOn(config) || !config) && <Route path="/academias/:id" element={<Gym />} />}
+      {(saasOn(config) || !config) && <Route path="/checkout" element={<Checkout />} />}
+      {(saasOn(config) || !config) && <Route path="/checkout/:status" element={<CheckoutResult />} />}
+      {(saasOn(config) || !config) && <Route path="/admin/financeiro" element={user?.admin ? <AdminFinance /> : <Navigate to="/home" replace />} />}
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   ))

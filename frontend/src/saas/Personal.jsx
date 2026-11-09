@@ -24,7 +24,7 @@ function Header() {
   const nav = useNavigate()
   return <div className="hdr">
     <button className="iconbtn" data-back="/settings" onClick={() => nav('/settings')} aria-label="Voltar"><Icon name="chevronLeft" /></button>
-    <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Personal trainer</h1><div className="sub">Seu personal, seus alunos e os treinos enviados</div></div>
+    <div style={{ flex: 1, marginInlineStart: 12 }}><h1>Meu personal</h1><div className="sub">Seu personal e os treinos que ele envia</div></div>
   </div>
 }
 
@@ -67,7 +67,7 @@ function Comments({ assignmentId }) {
 
 /* ------------------------------ lado do personal ------------------------------ */
 
-function TrainerSide({ links, assignments, reload }) {
+function TrainerSideInner({ links, assignments, reload, part = 'all', onSaved }) {
   const S = useStore(s => s.S)
   const [profile, setProfile] = useState(undefined)
   const [form, setForm] = useState({ displayName: '', bio: '', specialties: '' })
@@ -96,8 +96,9 @@ function TrainerSide({ links, assignments, reload }) {
     setOpen(null); setAsSuggestion(false); setTarget(''); setTitle(''); setNote(''); setRoutineId(''); await reload()
   })
   return <>
+    {part !== 'students' && <>
     <Section>MEU PERFIL PROFISSIONAL</Section>
-    <form className="card" onSubmit={e => { e.preventDefault(); run(async () => setProfile(await saveTrainerProfile({ displayName: form.displayName, bio: form.bio, specialties: form.specialties.split(',') }))) }}>
+    <form className="card" onSubmit={e => { e.preventDefault(); run(async () => { const saved = await saveTrainerProfile({ displayName: form.displayName, bio: form.bio, specialties: form.specialties.split(',') }); setProfile(saved); onSaved?.(saved) }) }}>
       <Err>{err}</Err>
       <label className="small muted" htmlFor="tp-name">Nome profissional</label>
       <input id="tp-name" className="input" value={form.displayName} maxLength={80} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} />
@@ -107,7 +108,8 @@ function TrainerSide({ links, assignments, reload }) {
       <input id="tp-spec" className="input" value={form.specialties} onChange={e => setForm(f => ({ ...f, specialties: e.target.value }))} />
       <div style={{ marginTop: 10 }}><Button variant="primary" type="submit" disabled={busy || form.displayName.trim().length < 2}>{profile ? 'Salvar perfil' : 'Virar personal trainer'}</Button></div>
     </form>
-    {profile && <>
+    </>}
+    {profile && part !== 'profile' && <>
       <Section>MEUS ALUNOS</Section>
       <form className="card" style={{ marginBottom: 8 }} onSubmit={e => { e.preventDefault(); run(async () => { await inviteStudent(email.trim()); setEmail(''); await reload() }) }}>
         <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail da conta do aluno" aria-label="E-mail da conta do aluno" />
@@ -221,7 +223,22 @@ function StudentSide({ links, assignments, reload }) {
   </>
 }
 
+/** O lado do personal, com os próprios dados. `part`: 'profile', 'students' ou 'all'. */
+export function TrainerSide({ part = 'all', onSaved }) {
+  const [links, setLinks] = useState(null)
+  const [assignments, setAssignments] = useState([])
+  const [error, setError] = useState(null)
+  const reload = useCallback(async () => {
+    try { const [l, a] = await Promise.all([trainerLinks(), trainerAssignments()]); setLinks(l); setAssignments(a) } catch (e) { setError(errorText(e, 'Não foi possível carregar.')) }
+  }, [])
+  useEffect(() => { reload() }, [reload])
+  if (!links) return error ? <Err>{error}</Err> : <div className="muted small">Carregando…</div>
+  return <TrainerSideInner links={links} assignments={assignments} reload={reload} part={part} onSaved={onSaved} />
+}
+
+/** O lado do aluno: meu personal, treinos recebidos e comentários. Quem é personal usa o portal do personal. */
 export default function Personal() {
+  const nav = useNavigate()
   const [links, setLinks] = useState(null)
   const [assignments, setAssignments] = useState([])
   const [error, setError] = useState(null)
@@ -235,7 +252,11 @@ export default function Personal() {
     {!links && !error && <div className="muted small">Carregando…</div>}
     {links && <>
       <StudentSide links={links} assignments={assignments} reload={reload} />
-      <TrainerSide links={links} assignments={assignments} reload={reload} />
+      <div className="card" style={{ marginTop: 16 }}>
+        <div style={{ fontWeight: 700 }}>Você é personal trainer?</div>
+        <div className="muted small">Seus alunos e treinos ficam no portal do personal, separado do seu treino.</div>
+        <div style={{ marginTop: 8 }}><Button variant="primary" onClick={() => nav('/personal')}>Abrir o portal do personal</Button></div>
+      </div>
     </>}
   </div>
 }

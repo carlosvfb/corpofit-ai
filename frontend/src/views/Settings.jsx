@@ -1193,7 +1193,9 @@ export default function Settings({ page = null, find = null, via = null, entryKe
         {MOBILE && <>
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
-          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Personal trainer" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Meu personal" accessory="chevron" onClick={() => nav('/meu-personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Portal do personal" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Portal da academia" accessory="chevron" onClick={() => nav('/academia')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Biblioteca" accessory="chevron" onClick={() => nav('/biblioteca')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Notificações e e-mail" accessory="chevron" onClick={() => nav('/notificacoes')} />}
@@ -1223,7 +1225,9 @@ export default function Settings({ page = null, find = null, via = null, entryKe
         </> : user ? <>
           {useStore.getState().config?.saas?.enabled && <Row icon="crown" iconTint="var(--indigo)" title="Assinatura e plano" accessory="chevron" onClick={() => nav('/assinatura')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Academias" accessory="chevron" onClick={() => nav('/academias')} />}
-          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Personal trainer" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Meu personal" accessory="chevron" onClick={() => nav('/meu-personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Portal do personal" accessory="chevron" onClick={() => nav('/personal')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Portal da academia" accessory="chevron" onClick={() => nav('/academia')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Biblioteca" accessory="chevron" onClick={() => nav('/biblioteca')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Notificações e e-mail" accessory="chevron" onClick={() => nav('/notificacoes')} />}

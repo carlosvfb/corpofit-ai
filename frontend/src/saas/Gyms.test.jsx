@@ -69,92 +69,39 @@ describe('Academias', () => {
     expect(m.nav).toHaveBeenCalledWith('/academias/novo')
   })
 
-  it('o painel mostra as abas conforme o papel', async () => {
-    for (const [role, expected] of [
-      ['GYM_OWNER', ['Visão geral', 'Membros', 'Configurações', 'Atividade', 'Uso da IA', 'Plano']],
-      ['GYM_MANAGER', ['Visão geral', 'Membros', 'Atividade', 'Plano']],
-      ['PERSONAL_TRAINER', ['Visão geral']],
-      ['STUDENT', []]
-    ]) {
-      api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role, status: 'ACTIVE' }] })
-      await mount(<Gym />)
-      expect(tabs(), role).toEqual(expected)
-      act(() => root.unmount()); host.remove()
-    }
+  it('quem gerencia vê só um atalho para o portal da academia, não as telas de gestão', async () => {
+    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
+    await mount(<Gym />)
+    expect(host.textContent).toContain('Você gerencia esta academia')
+    expect([...host.querySelectorAll('[role=tab]')]).toHaveLength(0)
+    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === 'Abrir o portal da academia').click() })
+    expect(m.nav).toHaveBeenCalledWith('/academia/g1')
+  })
+
+  it('o personal da academia vê o atalho do portal do personal', async () => {
+    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'PERSONAL_TRAINER', status: 'ACTIVE' }] })
+    await mount(<Gym />)
+    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === 'Abrir o portal do personal').click() })
+    expect(m.nav).toHaveBeenCalledWith('/personal')
+  })
+
+  it('o aluno vê a escolha da orientação da IA e sai da academia, sem nenhuma tela de gestão', async () => {
+    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'STUDENT', status: 'ACTIVE' }] })
+    await mount(<Gym />)
+    expect(host.textContent).toContain('A academia não vê suas conversas')
+    expect(host.textContent).not.toContain('portal')
+    const box = host.querySelector('input[type=checkbox]')
+    await act(async () => { box.click() }); await flush()
+    expect(api.setAiContext).toHaveBeenCalledWith('g1')
+    window.confirm = vi.fn(() => true)
+    api.leaveOrg.mockResolvedValue({})
+    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === 'Sair desta academia').click() }); await flush()
+    expect(api.leaveOrg).toHaveBeenCalledWith('g1')
   })
 
   it('uma academia que não é do usuário aparece como não encontrada', async () => {
     api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'outra', name: 'X', slug: 'x', role: 'STUDENT', status: 'ACTIVE' }] })
     await mount(<Gym />)
     expect(host.textContent).toContain('Academia não encontrada')
-    expect(api.orgDashboard).not.toHaveBeenCalled()
-  })
-
-  it('o dono vê os membros e convida por e-mail com o papel escolhido', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
-    api.orgMembers.mockResolvedValue([{ userId: 'u9', name: 'Ana', email: 'ana@x.com', role: 'STUDENT', status: 'ACTIVE' }])
-    api.inviteOrgMember.mockResolvedValue({})
-    await mount(<Gym />)
-    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Membros').click() }); await flush()
-    expect(host.textContent).toContain('Ana')
-    const email = host.querySelector('input[type=email]')
-    await act(async () => { const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(email, 'novo@x.com'); email.dispatchEvent(new Event('input', { bubbles: true })) })
-    await act(async () => { host.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }); await flush()
-    expect(api.inviteOrgMember).toHaveBeenCalledWith('g1', 'novo@x.com', 'STUDENT')
-  })
-
-  it('qualquer membro escolhe usar (ou não) a orientação da academia na própria IA', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'STUDENT', status: 'ACTIVE' }] })
-    await mount(<Gym />)
-    const box = host.querySelector('input[type=checkbox]')
-    expect(box.checked).toBe(false)
-    expect(host.textContent).toContain('A academia não vê suas conversas')
-    await act(async () => { box.click() }); await flush()
-    expect(api.setAiContext).toHaveBeenCalledWith('g1')
-  })
-
-  it('o dono vê o consumo de IA da academia, sem conteúdo, com o custo indisponível quando não há preços', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
-    await mount(<Gym />)
-    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Uso da IA').click() }); await flush()
-    expect(api.orgAiUsage).toHaveBeenCalledWith('g1')
-    expect(host.textContent).toContain('12')
-    expect(host.textContent).toContain('indisponível')
-    expect(host.textContent).toContain('Ana')
-    expect(host.textContent).toContain('nunca vê o conteúdo')
-  })
-
-  it('o plano mostra limites e uso, e um plano sem preço configurado não pode ser contratado', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
-    await mount(<Gym />)
-    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Plano').click() }); await flush()
-    expect(api.orgBilling).toHaveBeenCalledWith('g1')
-    expect(host.textContent).toContain('Alunos: 4 de 10')
-    expect(host.textContent).toContain('Profissionais: 1 de 1')
-    expect(host.textContent).toContain('Preço a definir')
-    const choose = [...host.querySelectorAll('button')].filter(b => b.textContent === 'Escolher este plano')
-    expect(choose.length).toBe(1) // só o Start tem preço; Grátis e Pro não são contratáveis
-  })
-
-  it('o dono contrata: o app envia só plano, forma de pagamento e documento; Pix mostra o código', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_OWNER', status: 'ACTIVE' }] })
-    api.startOrgCheckout.mockResolvedValue({ kind: 'pix', payload: '000201pix', image: 'IMG' })
-    await mount(<Gym />)
-    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Plano').click() }); await flush()
-    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === 'Escolher este plano').click() })
-    await act(async () => { const sel = host.querySelector('select[aria-label="Forma de pagamento"]'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, 'PIX'); sel.dispatchEvent(new Event('change', { bubbles: true })) })
-    await act(async () => { const i = host.querySelector('input[aria-label="CPF ou CNPJ"]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(i, '52998224725'); i.dispatchEvent(new Event('input', { bubbles: true })) })
-    await act(async () => { host.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }); await flush()
-    expect(api.startOrgCheckout).toHaveBeenCalledWith('g1', 'GYM_START', 'PIX', '52998224725')
-    expect(host.textContent).toContain('Pague com o Pix')
-  })
-
-  it('o gerente vê o plano mas não contrata nem cancela', async () => {
-    api.orgContexts.mockResolvedValue({ personal: {}, gyms: [{ id: 'g1', name: 'Alfa', slug: 'alfa', role: 'GYM_MANAGER', status: 'ACTIVE' }] })
-    api.orgBilling.mockResolvedValue({ ...BILLING, canManage: false, paid: true })
-    await mount(<Gym />)
-    await act(async () => { [...host.querySelectorAll('[role=tab]')].find(b => b.textContent === 'Plano').click() }); await flush()
-    expect([...host.querySelectorAll('button')].some(b => b.textContent === 'Escolher este plano' || b.textContent === 'Cancelar plano')).toBe(false)
-    expect(host.textContent).toContain('Só o dono da academia contrata')
   })
 })

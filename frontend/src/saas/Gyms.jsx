@@ -15,9 +15,9 @@ import { formatBRL, formatDate, formatDateTime } from './brand.js'
 export const ROLE_LABEL = {
   GYM_OWNER: 'Dono', GYM_ADMIN: 'Administrador', GYM_MANAGER: 'Gerente', PERSONAL_TRAINER: 'Personal trainer', STUDENT: 'Aluno'
 }
-const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
+export const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
 // Espelho do servidor, só para decidir o que mostrar (api/saas/org/rbac.js é quem vale).
-const SEES = {
+export const SEES = {
   GYM_OWNER: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'],
   GYM_MANAGER: ['dashboard', 'members', 'activity', 'plan'], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
 }
@@ -33,7 +33,7 @@ function Header({ title, sub, back = '/' }) {
     <div style={{ flex: 1, marginInlineStart: 12 }}><h1>{title}</h1>{sub && <div className="sub">{sub}</div>}</div>
   </div>
 }
-const Err = ({ children }) => children ? <div className="small" role="alert" style={{ color: 'var(--red)', margin: '8px 0' }}>{children}</div> : null
+export const Err = ({ children }) => children ? <div className="small" role="alert" style={{ color: 'var(--red)', margin: '8px 0' }}>{children}</div> : null
 
 /* ------------------------------ lista de contextos ------------------------------ */
 
@@ -84,7 +84,7 @@ export default function Gyms() {
 
 /* ------------------------------ painel de uma academia ------------------------------ */
 
-function Overview({ id }) {
+export function Overview({ id }) {
   const [d, setD] = useState(null)
   const [err, setErr] = useState(null)
   useEffect(() => { orgDashboard(id).then(setD).catch(e => setErr(errorText(e, 'Não foi possível carregar o painel.'))) }, [id])
@@ -102,7 +102,7 @@ function Overview({ id }) {
   </>
 }
 
-function Members({ id, role }) {
+export function Members({ id, role }) {
   const [list, setList] = useState(null)
   const [err, setErr] = useState(null)
   const [email, setEmail] = useState('')
@@ -150,7 +150,7 @@ function Members({ id, role }) {
   </>
 }
 
-function Settings({ id, onSaved }) {
+export function Settings({ id, onSaved }) {
   const [s, setS] = useState(null)
   const [err, setErr] = useState(null)
   const [ok, setOk] = useState(false)
@@ -190,7 +190,7 @@ function Settings({ id, onSaved }) {
   </form>
 }
 
-function Activity({ id }) {
+export function Activity({ id }) {
   const [rows, setRows] = useState(null)
   const [err, setErr] = useState(null)
   useEffect(() => { orgActivity(id).then(setRows).catch(e => setErr(errorText(e, 'Não foi possível carregar a atividade.'))) }, [id])
@@ -206,7 +206,7 @@ function Activity({ id }) {
 const METHOD = { CREDIT_CARD: 'Cartão de crédito', PIX_AUTOMATIC: 'Pix Automático', PIX: 'Pix (pagamento mensal)' }
 
 /** Plano da academia: limites e uso, planos disponíveis e, para o dono, contratar ou cancelar. */
-function PlanTab({ id }) {
+export function PlanTab({ id }) {
   const [b, setB] = useState(null)
   const [err, setErr] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -269,7 +269,7 @@ function PlanTab({ id }) {
   </>
 }
 
-function AiUsage({ id }) {
+export function AiUsage({ id }) {
   const [u, setU] = useState(null)
   const [err, setErr] = useState(null)
   useEffect(() => { orgAiUsage(id).then(setU).catch(e => setErr(errorText(e, 'Não foi possível carregar o consumo.'))) }, [id])
@@ -293,7 +293,7 @@ function AiUsage({ id }) {
 }
 
 /** Escolha do usuário: usar ou não a orientação desta academia na própria IA. O espaço pessoal é o padrão. */
-function AiChoice({ id }) {
+export function AiChoice({ id }) {
   const [on, setOn] = useState(null)
   const [err, setErr] = useState(null)
   useEffect(() => { aiContext().then(c => setOn(c.tenantId === id)).catch(() => setOn(false)) }, [id])
@@ -306,39 +306,39 @@ function AiChoice({ id }) {
   </div>
 }
 
+/** A academia vista por quem a integra, no aplicativo do aluno (celular). Quem gerencia a academia
+ *  usa o portal da academia (computador): aqui só aparece o atalho para ele. */
 export function Gym() {
   const { id } = useParams()
   const nav = useNavigate()
   const [ctx, setCtx] = useState(null)
   const [error, setError] = useState(null)
-  const [tab, setTab] = useState('dashboard')
-  const [stamp, setStamp] = useState(0)
   useEffect(() => {
     orgContexts().then(c => {
       const g = c.gyms.find(x => x.id === id && x.status === 'ACTIVE')
       if (!g) setError('Academia não encontrada.'); else setCtx(g)
     }).catch(e => setError(errorText(e, 'Não foi possível carregar a academia.')))
-  }, [id, stamp])
+  }, [id])
   if (error) return <div className="page"><Header title="Academia" back="/academias" /><Err>{error}</Err></div>
   if (!ctx) return <div className="page"><Header title="Academia" back="/academias" /><div className="muted small">Carregando…</div></div>
-  const tabs = [['dashboard', 'Visão geral'], ['members', 'Membros'], ['settings', 'Configurações'], ['activity', 'Atividade'], ['ai', 'Uso da IA'], ['plan', 'Plano']].filter(([k]) => SEES[ctx.role].includes(k))
-  const active = tabs.some(([k]) => k === tab) ? tab : tabs[0]?.[0]
+  const staff = SEES[ctx.role].length > 0 && ctx.role !== 'PERSONAL_TRAINER'
   const leave = async () => {
     if (!window.confirm('Sair desta academia? Você perde o acesso a ela.')) return
     try { await leaveOrg(id); nav('/academias') } catch (e) { setError(errorText(e, 'Não foi possível sair.')) }
   }
   return <div className="page">
     <Header title={ctx.name} sub={ROLE_LABEL[ctx.role]} back="/academias" />
-    {tabs.length > 0 && <div role="tablist" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-      {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={active === k} className={'btn ' + (active === k ? 'primary' : 'tinted')} onClick={() => setTab(k)} style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}>{label}</button>)}
+    {staff && <div className="card" style={{ marginBottom: 12 }}>
+      <div style={{ fontWeight: 700 }}>Você gerencia esta academia</div>
+      <div className="muted small">A gestão (membros, planos, configurações e relatórios) fica no portal da academia, feito para o computador.</div>
+      <div style={{ marginTop: 8 }}><Button variant="primary" onClick={() => nav('/academia/' + id)}>Abrir o portal da academia</Button></div>
     </div>}
-    {active === 'dashboard' && <Overview id={id} />}
-    {active === 'members' && <Members id={id} role={ctx.role} />}
-    {active === 'settings' && <Settings id={id} onSaved={() => setStamp(x => x + 1)} />}
-    {active === 'activity' && <Activity id={id} />}
-    {active === 'ai' && <AiUsage id={id} />}
-    {active === 'plan' && <PlanTab id={id} />}
-    {tabs.length === 0 && <div className="card dim small">Você é aluno desta academia. Os recursos para alunos (treinos atribuídos e compartilhamento) chegam nas próximas fases.</div>}
+    {ctx.role === 'PERSONAL_TRAINER' && <div className="card" style={{ marginBottom: 12 }}>
+      <div style={{ fontWeight: 700 }}>Você é personal desta academia</div>
+      <div className="muted small">Seus alunos e treinos ficam no portal do personal.</div>
+      <div style={{ marginTop: 8 }}><Button variant="primary" onClick={() => nav('/personal')}>Abrir o portal do personal</Button></div>
+    </div>}
+    <div className="card dim small">Sua conta de aluno continua só sua: a academia não vê seus treinos nem suas conversas. O que um personal pode ver, quem decide é você, em Privacidade e compartilhamento.</div>
     <AiChoice id={id} />
     <div style={{ marginTop: 24 }}><Button variant="tinted" onClick={leave}>Sair desta academia</Button></div>
   </div>

@@ -23,7 +23,7 @@ export function SaasAdminLink() {
     </div>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
       <div><h2 style={{ margin: 0 }}>Academias e moderação</h2><div className="small muted">As academias, seus planos e a fila de denúncias da biblioteca.</div></div>
-      <Button variant="primary" onClick={() => nav('/admin/plataforma')}>Abrir</Button>
+      <Button variant="primary" onClick={() => nav('/plataforma')}>Abrir o portal da plataforma</Button>
     </div>
   </div>
 }

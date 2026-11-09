@@ -1,0 +1,71 @@
+/* Portais. Academia e administração: layout de computador (menu lateral, conteúdo largo, tabelas).
+   Personal e aluno: celular (uma coluna, barra de navegação embaixo). */
+
+/* ---------- computador: academia e administração ---------- */
+body.desk #app { max-width: none; margin: 0; padding: 0; }
+body.desk { background: var(--bg, #0c0e12); }
+.dk { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100vh; }
+.dk-side { position: sticky; top: 0; height: 100vh; overflow: auto; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px;
+  background: var(--bg-el, #14161b); border-inline-end: 1px solid var(--sep-op, rgba(128, 128, 128, .25)); }
+.dk-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; padding: 4px 8px 2px; }
+.dk-brand i { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-style: normal; color: #fff; background: linear-gradient(135deg, #7c5cff, #5b3fe0); }
+.dk-role { padding: 0 8px 14px; font-size: 12px; opacity: .65; letter-spacing: .04em; text-transform: uppercase; }
+.dk-ctx { margin: 0 4px 12px; padding: 10px 12px; border-radius: 12px; background: var(--acc-soft, rgba(124, 92, 255, .14)); font-size: 13px; overflow-wrap: anywhere; }
+.dk-ctx b { display: block; font-size: 14px; }
+.dk-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: inherit; text-decoration: none; font-size: 14.5px; }
+.dk-link:hover { background: rgba(128, 128, 128, .12); }
+.dk-link.active { background: var(--acc-soft, rgba(124, 92, 255, .16)); color: var(--acc, #7c5cff); font-weight: 650; }
+.dk-spacer { flex: 1; }
+.dk-user { padding: 10px 8px; font-size: 12.5px; opacity: .8; overflow-wrap: anywhere; }
+.dk-main { padding: 28px 40px 60px; max-width: 1240px; width: 100%; }
+.dk-main h1 { font-size: 26px; margin: 0 0 4px; }
+.dk-main .dk-sub { opacity: .65; margin-bottom: 22px; }
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.dk-main .page { padding: 0; max-width: none; }
+.dk-main .hdr { display: none; } /* o cabeçalho de página do app não existe no portal: o título vem do portal */
+.dk-main .card { border-radius: 16px; }
+.dk-main .card div[style*="flex-wrap"] > .btn, .dk-main .card div[style*="display: flex"] > .btn { width: auto; }
+.dk-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.dk-table th { text-align: start; font-weight: 600; opacity: .65; padding: 10px 12px; border-bottom: 1px solid var(--sep-op, rgba(128, 128, 128, .25)); white-space: nowrap; }
+.dk-table td { padding: 12px; border-bottom: 1px solid var(--sep-op, rgba(128, 128, 128, .18)); vertical-align: middle; overflow-wrap: anywhere; }
+.dk-table tr:hover td { background: rgba(128, 128, 128, .06); }
+.dk-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.dk-toolbar .input { width: auto; min-width: 180px; }
+@media (max-width: 900px) {
+  .dk { grid-template-columns: 1fr; }
+  .dk-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 12px; }
+  .dk-role, .dk-spacer, .dk-user { display: none; }
+  .dk-main { padding: 18px 14px 60px; }
+}
+
+/* ---------- login por portal ---------- */
+.pl { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); background: var(--bg, #0c0e12); color: var(--label, #fff); }
+.pl-brand { padding: 56px 56px; display: flex; flex-direction: column; justify-content: center; gap: 18px; background: linear-gradient(145deg, #3b2a9e, #7c5cff); color: #fff; }
+.pl-brand h1 { font-size: 36px; line-height: 1.1; margin: 0; }
+.pl-brand ul { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; font-size: 16px; }
+.pl-brand li::before { content: "✓ "; font-weight: 800; }
+.pl-form { padding: 48px 40px; display: flex; align-items: center; justify-content: center; }
+.pl-card { width: 100%; max-width: 400px; display: grid; gap: 14px; }
+.pl-card h2 { margin: 0; font-size: 24px; }
+.pl-field { display: grid; gap: 6px; }
+.pl-field label { font-size: 13px; opacity: .75; }
+.pl-err { color: var(--red, #ff453a); font-size: 13px; }
+.pl-other { margin-top: 10px; font-size: 13px; opacity: .8; display: grid; gap: 4px; }
+.pl-other a { color: var(--acc, #7c5cff); }
+.pl.mobile { grid-template-columns: 1fr; }
+.pl.mobile .pl-brand { padding: 36px 22px 28px; }
+.pl.mobile .pl-brand h1 { font-size: 28px; }
+.pl.mobile .pl-form { padding: 24px 20px 40px; align-items: flex-start; }
+@media (max-width: 800px) { .pl { grid-template-columns: 1fr; } .pl-brand { padding: 32px 22px; } .pl-brand h1 { font-size: 26px; } .pl-form { padding: 24px 20px 40px; align-items: flex-start; } }
+
+/* ---------- celular: portal do personal ---------- */
+.pt-nav { position: fixed; inset-inline: 0; bottom: 0; z-index: 50; display: flex; justify-content: space-around; padding: 7px 6px calc(6px + var(--sab, 0px));
+  background: var(--bg-el, #14161b); border-top: 1px solid var(--sep-op, rgba(128, 128, 128, .25)); max-width: 560px; margin: 0 auto; }
+.pt-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; font-size: 11px; color: inherit; text-decoration: none; opacity: .65; }
+.pt-nav a.active { opacity: 1; color: var(--acc, #7c5cff); font-weight: 650; }
+.pt-nav a b { font-size: 20px; line-height: 1; font-weight: 400; }
+.pt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; }
+.pt-head h1 { font-size: 24px; margin: 0; }
+.pt-note { margin: 0 0 14px; font-size: 13px; opacity: .7; }
+.dk-toolbar > .btn, .dk-main form > .btn { width: auto; min-height: 40px; padding: 0 16px; }
+.dk-table td:nth-child(5) { white-space: nowrap; }
