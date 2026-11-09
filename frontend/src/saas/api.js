@@ -37,6 +37,21 @@ export const removeOrgMember = (id, userId) => api('/api/orgs/members' + q(id) +
 export const acceptOrgInvite = id => post('/api/orgs/accept' + q(id))
 export const leaveOrg = id => post('/api/orgs/leave' + q(id))
 
+// Personal trainers: vínculos, treinos enviados e comentários. O servidor decide quem vê o quê.
+const qs = (k, v) => '?' + k + '=' + encodeURIComponent(v)
+export const trainerProfile = () => api('/api/trainer/profile').then(r => r.profile)
+export const saveTrainerProfile = body => put('/api/trainer/profile', body).then(r => r.profile)
+export const trainerLinks = () => api('/api/trainer/links')
+export const inviteStudent = email => post('/api/trainer/links', { email })
+export const requestTrainer = email => post('/api/trainer/links', { email, as: 'student' })
+export const answerLink = (id, accept) => put('/api/trainer/links', { id, accept })
+export const endLink = id => api('/api/trainer/links' + qs('id', id), { method: 'DELETE' })
+export const trainerAssignments = linkId => api('/api/trainer/assignments' + (linkId ? qs('link', linkId) : ''))
+export const assignWorkout = (linkId, title, note, bundle) => post('/api/trainer/assignments', { linkId, title, note, bundle })
+export const answerAssignment = (id, status) => put('/api/trainer/assignments', { id, status })
+export const assignmentComments = id => api('/api/trainer/comments' + qs('assignment', id))
+export const addAssignmentComment = (assignmentId, body) => post('/api/trainer/comments', { assignmentId, body })
+
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.
 const CODES = {

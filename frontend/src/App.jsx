@@ -85,6 +85,7 @@ const Checkout = lazyView(() => import('./saas/Checkout.jsx'))
 const CheckoutResult = lazyView(() => import('./saas/Checkout.jsx').then(m => ({ default: m.CheckoutResult })))
 const AdminFinance = lazyView(() => import('./saas/AdminFinance.jsx'))
 const Gyms = lazyView(() => import('./saas/Gyms.jsx'))
+const Personal = lazyView(() => import('./saas/Personal.jsx'))
 const Gym = lazyView(() => import('./saas/Gyms.jsx').then(m => ({ default: m.Gym })))
 const CoachIntake = lazyView(() => import('./views/CoachIntake.jsx'))
 const CoachSetup = lazyView(() => import('./views/CoachSetup.jsx'))
@@ -369,6 +370,7 @@ function Shell() {
       <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
       {saasOn(config) && <Route path="/assinatura" element={<Subscription />} />}
       {saasOn(config) && <Route path="/academias" element={<Gyms />} />}
+      {saasOn(config) && <Route path="/personal" element={<Personal />} />}
       {saasOn(config) && <Route path="/academias/:id" element={<Gym />} />}
       {saasOn(config) && <Route path="/checkout" element={<Checkout />} />}
       {saasOn(config) && <Route path="/checkout/:status" element={<CheckoutResult />} />}

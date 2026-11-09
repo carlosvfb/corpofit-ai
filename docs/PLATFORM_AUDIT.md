@@ -74,3 +74,16 @@ Entregue em `api/saas/org/` (`rbac.js`, `context.js`, `service.js`), rotas `/api
 - **Testes:** `api/test/saas-orgs.test.js` (10), incluindo acesso a academia alheia por ID (404 em todas as operações), IDOR em vínculos, revogação imediata e RLS direto no banco com um papel sem superusuário. Suíte SaaS: 83 de 83.
 
 Ainda não existe interface (telas) para academias: é a Fase 3. Convite de quem ainda não tem conta (por e-mail) também fica para a Fase 3.
+
+## 8. Fase 4 concluída (2026-11-09)
+
+Entregue em `api/saas/org/trainers.js`, rotas `/api/trainer/*`, migração `20261109160000_trainers` e a tela `/personal` (Ajustes > Personal trainer).
+
+- **Perfil profissional** (`TrainerProfile`): nome, bio e especialidades. É um cartão visível entre usuários logados; só o dono altera.
+- **Vínculo** (`TrainerStudent`): o personal convida um aluno que já tem conta, ou o aluno pede um personal que tem perfil. Só o lado que NÃO iniciou aceita. Com `tenantId`, os dois precisam ser membros ativos da academia (personal ou nível acima; aluno), e o pedido entra no registro de atividade dela. Qualquer lado encerra; o personal perde o acesso na hora e os treinos já recebidos ficam com o aluno, arquivados.
+- **Treinos enviados** (`Assignment`): o personal envia uma das rotinas que ele mesmo montou, no formato do link de rotina do app. O servidor limita tamanho e forma; o app do aluno valida e importa pelo mesmo caminho dos links de amigo. Cada edição guarda a versão anterior (até 20) com autor e data; o aluno não edita.
+- **Comentários** dos dois lados em cada treino enviado.
+- **Isolamento:** só as duas partes do vínculo veem vínculo, treinos e comentários (RLS por `app.user_id` no banco e verificação na API; terceiros recebem 404).
+- **Testes:** `api/test/saas-trainers.test.js` (10) + `frontend/src/saas/Personal.test.jsx` (3). Suíte SaaS da API: 93 de 93.
+
+Fora desta fase, de propósito: o personal **não lê** nenhum dado do aluno (treinos feitos, medidas, peso, fotos) nem altera as rotinas dele. Isso entra na Fase 5, com o consentimento por categoria. Sugestões de alteração e notificações também ficam para as próximas fases.

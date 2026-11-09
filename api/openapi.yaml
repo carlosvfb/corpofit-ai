@@ -4049,6 +4049,146 @@ paths:
         '403': { description: The caller's role does not allow it. }
         '404': { description: Not found, or not a member of this gym. }
 
+  /api/trainer/profile:
+    get:
+      tags: [saas]
+      operationId: getTrainerProfile
+      summary: A trainer's professional card (mine, or ?user=)
+      parameters:
+        - { name: user, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    put:
+      tags: [saas]
+      operationId: saveTrainerProfile
+      summary: Create or update my trainer profile
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/links:
+    get:
+      tags: [saas]
+      operationId: listTrainerLinks
+      summary: My trainer/student links, pending and active
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    post:
+      tags: [saas]
+      operationId: createTrainerLink
+      summary: Invite a student (default) or, with as=student, ask a trainer; optional gym tenantId
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    put:
+      tags: [saas]
+      operationId: answerTrainerLink
+      summary: Accept or decline a link the other side started
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    delete:
+      tags: [saas]
+      operationId: endTrainerLink
+      summary: End a link (either side)
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/assignments:
+    get:
+      tags: [saas]
+      operationId: listTrainerAssignments
+      summary: Workouts sent (trainer) or received (student); ?history= for a workout's revisions
+      parameters:
+        - { name: link, in: query, required: false, schema: { type: string } }
+        - { name: history, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    post:
+      tags: [saas]
+      operationId: assignWorkout
+      summary: The trainer sends a workout (one-routine plan file) over an active link
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    put:
+      tags: [saas]
+      operationId: updateAssignment
+      summary: The trainer edits a sent workout (history kept) or the student answers it (status)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
+  /api/trainer/comments:
+    get:
+      tags: [saas]
+      operationId: listAssignmentComments
+      summary: Comments on a workout (either side)
+      parameters:
+        - { name: assignment, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+    post:
+      tags: [saas]
+      operationId: addAssignmentComment
+      summary: Comment on a workout (either side)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for the caller's side of the link. }
+        '404': { description: Not found, or the caller is not a party to it. }
+
   /api/billing/status:
     get:
       tags: [saas]

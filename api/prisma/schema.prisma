@@ -72,6 +72,9 @@ model User {
   payments        Payment[]
   auditLogs       AdminAuditLog[] @relation("AuditActor")
   memberships     Membership[]
+  trainerProfile  TrainerProfile?
+  trainerLinks    TrainerStudent[] @relation("TrainerSide")
+  studentLinks    TrainerStudent[] @relation("StudentSide")
 }
 
 /// Limites e preços por plano (espelho de api/saas/plans.js, que é a fonte da verdade).
@@ -305,4 +308,93 @@ model ActivityLog {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, createdAt])
+}
+
+// ===== Personal trainers =====
+// Um vínculo (TrainerStudent) liga um personal a um aluno, com ou sem academia (`tenantId`). Os dois lados
+// veem o vínculo e as atribuições; ninguém mais (RLS por `app.user_id`, migração 20261109160000_trainers).
+// Nesta fase o personal só ENVIA treinos que ele mesmo criou: não lê dados do aluno (isso exige o
+// consentimento por categoria da fase 5).
+
+enum TrainerLinkStatus {
+  PENDING
+  ACTIVE
+  ENDED
+}
+
+enum LinkInitiator {
+  TRAINER
+  STUDENT
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IMPORTED
+  DECLINED
+  ARCHIVED
+}
+
+model TrainerProfile {
+  userId      String   @id
+  displayName String
+  bio         String   @default("")
+  specialties String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TrainerStudent {
+  id          String            @id @default(cuid())
+  trainerId   String
+  studentId   String
+  tenantId    String?
+  status      TrainerLinkStatus @default(PENDING)
+  initiatedBy LinkInitiator
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  endedAt     DateTime?
+
+  trainer     User         @relation("TrainerSide", fields: [trainerId], references: [id], onDelete: Cascade)
+  student     User         @relation("StudentSide", fields: [studentId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+
+  @@unique([trainerId, studentId])
+  @@index([studentId])
+}
+
+/// Um treino enviado pelo personal ao aluno. `bundle` é o arquivo de plano do app (uma rotina); o
+/// servidor só o guarda (limitado) e o aplicativo do aluno o valida ao importar.
+model Assignment {
+  id        String           @id @default(cuid())
+  linkId    String
+  trainerId String
+  studentId String
+  title     String
+  note      String           @default("")
+  bundle    Json
+  status    AssignmentStatus @default(ASSIGNED)
+  revision  Int              @default(1)
+  history   Json             @default("[]")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  link     TrainerStudent      @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  comments AssignmentComment[]
+
+  @@index([studentId, createdAt])
+  @@index([trainerId, createdAt])
+}
+
+model AssignmentComment {
+  id           String   @id @default(cuid())
+  assignmentId String
+  authorId     String
+  body         String
+  createdAt    DateTime @default(now())
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, createdAt])
 }

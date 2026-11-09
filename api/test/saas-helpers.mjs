@@ -43,7 +43,7 @@ export { db };
 
 export async function resetDb() {
   await db.$executeRawUnsafe(
-    'TRUNCATE "ActivityLog","Membership","TenantSettings","Tenant","AdminAuditLog","ErrorLog","AppSetting","PaymentEvent","Payment","Subscription","BillingCustomer","Plan","UsageRecord","User" RESTART IDENTITY CASCADE'
+    'TRUNCATE "AssignmentComment","Assignment","TrainerStudent","TrainerProfile","ActivityLog","Membership","TenantSettings","Tenant","AdminAuditLog","ErrorLog","AppSetting","PaymentEvent","Payment","Subscription","BillingCustomer","Plan","UsageRecord","User" RESTART IDENTITY CASCADE'
   );
   await db.plan.createMany({
     data: [

@@ -18,6 +18,7 @@ import { AsaasWebhookService, WebhookValidationError, verifyWebhookToken } from 
 import { PrismaBillingRepository } from './asaas/repository.js';
 import * as admin from './admin.js';
 import * as org from './org/service.js';
+import * as trainers from './org/trainers.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -149,6 +150,60 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'POST /api/orgs/leave': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await org.leaveGym(user, tenantOf(req)));
+    }),
+
+    /* ------------------- personal trainers ------------------- */
+    'GET /api/trainer/profile': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const id = new URL(req.url, 'http://x').searchParams.get('user');
+      json(res, 200, { profile: await trainers.getProfile(user, id || user.id) });
+    }),
+    'PUT /api/trainer/profile': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, { profile: await trainers.saveProfile(user, await readBody(req)) });
+    }),
+    'GET /api/trainer/links': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await trainers.listLinks(user));
+    }),
+    'POST /api/trainer/links': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      const fn = b.as === 'student' ? trainers.requestTrainer : trainers.inviteStudent;
+      json(res, 201, await fn(user, { email: b.email, tenantId: typeof b.tenantId === 'string' ? b.tenantId : undefined }));
+    }),
+    'PUT /api/trainer/links': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await trainers.respondLink(user, b.id, b.accept === true));
+    }),
+    'DELETE /api/trainer/links': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await trainers.endLink(user, new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'GET /api/trainer/assignments': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, u.get('history') ? await trainers.assignmentHistory(user, u.get('history')) : await trainers.listAssignments(user, u.get('link')));
+    }),
+    'POST /api/trainer/assignments': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 201, await trainers.assign(user, b.linkId, b));
+    }),
+    'PUT /api/trainer/assignments': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, b.status ? await trainers.answerAssignment(user, b.id, b.status) : await trainers.updateAssignment(user, b.id, b));
+    }),
+    'GET /api/trainer/comments': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await trainers.listComments(user, new URL(req.url, 'http://x').searchParams.get('assignment')));
+    }),
+    'POST /api/trainer/comments': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 201, await trainers.addComment(user, b.assignmentId, b.body));
     }),
 
     'POST /api/billing/cancel': guarded(async (req, res) => {
