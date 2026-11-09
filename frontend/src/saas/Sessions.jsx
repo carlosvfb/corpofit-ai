@@ -15,9 +15,9 @@ const tomorrow9 = () => { const x = new Date(); x.setDate(x.getDate() + 1); x.se
 const Err = ({ children }) => children ? <div className="small" role="alert" style={{ color: 'var(--red)', margin: '8px 0' }}>{children}</div> : null
 
 /** Marcar (linkId fixo ou escolhido entre `students`) ou remarcar (`session`). */
-export function SessionForm({ linkId, students, session, onDone, onCancel }) {
+export function SessionForm({ linkId, students, session, defaultAt, onDone, onCancel }) {
   const [link, setLink] = useState(linkId || session?.linkId || students?.[0]?.linkId || '')
-  const [f, setF] = useState({ title: session?.title || '', at: session ? toInput(session.startsAt) : tomorrow9(), durationMin: session?.durationMin || 60, place: session?.place || '', note: session?.note || '', repeatWeeks: 0, assignmentId: session?.assignmentId || '' })
+  const [f, setF] = useState({ title: session?.title || '', at: session ? toInput(session.startsAt) : (defaultAt || tomorrow9()), durationMin: session?.durationMin || 60, place: session?.place || '', note: session?.note || '', repeatWeeks: 0, assignmentId: session?.assignmentId || '' })
   const [plans, setPlans] = useState([])
   const [err, setErr] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -106,4 +106,47 @@ export function groupByDay(list) {
   const out = []
   for (const s of list) { const k = dayKey(s.startsAt); const g = out.at(-1); if (g && g.k === k) g.items.push(s); else out.push({ k, items: [s] }) }
   return out
+}
+
+/* ------------------------------ calendário mensal ------------------------------ */
+
+export const localDay = d => toInput(d).slice(0, 10)
+const DOT = { PLANNED: '#ffb020', CONFIRMED: '#30d158', DONE: '#8e8e93', MISSED: '#ff453a', CANCELLED: '#636366' }
+const WEEK = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+/** Mês em grade: cada dia mostra pontos coloridos pelo status dos compromissos; tocar no dia seleciona.
+ *  `sessions`: lista do mês; `selected`/`onSelect`: dia 'YYYY-MM-DD'; `month`/`onMonth`: primeiro dia do mês. */
+export function MonthCalendar({ sessions, month, onMonth, selected, onSelect }) {
+  const byDay = {}
+  for (const s of sessions) (byDay[localDay(s.startsAt)] ||= []).push(s)
+  const first = new Date(month.getFullYear(), month.getMonth(), 1)
+  const cells = []
+  for (let i = 0; i < first.getDay(); i++) cells.push(null)
+  for (let d = 1; d <= new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate(); d++) cells.push(new Date(month.getFullYear(), month.getMonth(), d))
+  const today = localDay(new Date())
+  const go = n => onMonth(new Date(month.getFullYear(), month.getMonth() + n, 1))
+  return <div className="card cal" style={{ padding: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <Button variant="tinted" size="sm" onClick={() => go(-1)} aria-label="Mês anterior">‹</Button>
+      <div style={{ textAlign: 'center' }}>
+        <b style={{ textTransform: 'capitalize', fontSize: 17 }}>{month.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</b>
+        <div><button type="button" className="small" style={{ background: 'none', border: 0, color: 'var(--acc, #7c5cff)', padding: 0 }} onClick={() => { const n = new Date(); onMonth(new Date(n.getFullYear(), n.getMonth(), 1)); onSelect(localDay(n)) }}>Hoje</button></div>
+      </div>
+      <Button variant="tinted" size="sm" onClick={() => go(1)} aria-label="Próximo mês">›</Button>
+    </div>
+    <div className="cal-grid">
+      {WEEK.map(w => <div key={w} className="cal-w">{w}</div>)}
+      {cells.map((d, i) => {
+        if (!d) return <div key={'e' + i} />
+        const k = localDay(d), list = byDay[k] || [], on = k === selected
+        return <button key={k} type="button" className={'cal-d' + (on ? ' sel' : '') + (k === today ? ' today' : '')} onClick={() => onSelect(k)} aria-label={`${d.getDate()}, ${list.length} compromisso(s)`} aria-pressed={on}>
+          <span>{d.getDate()}</span>
+          <span className="cal-dots">{list.slice(0, 3).map(s => <i key={s.id} style={{ background: DOT[s.status] }} />)}{list.length > 3 && <small>+{list.length - 3}</small>}</span>
+        </button>
+      })}
+    </div>
+    <div className="small muted" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+      {[['PLANNED', 'Aguardando'], ['CONFIRMED', 'Confirmado'], ['DONE', 'Feito'], ['MISSED', 'Faltou']].map(([k, l]) => <span key={k}><i style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: DOT[k], marginInlineEnd: 4 }} />{l}</span>)}
+    </div>
+  </div>
 }

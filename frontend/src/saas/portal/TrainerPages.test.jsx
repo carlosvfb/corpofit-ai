@@ -9,6 +9,7 @@ import { SessionRow } from '../Sessions.jsx'
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const st = vi.hoisted(() => ({ S: { unit: 'kg', routines: [], customEx: [] } }))
+vi.mock('../../sheets.jsx', () => ({ exercisePicker: vi.fn(), exConfigSheet: vi.fn() }))
 vi.mock('../../store/useStore.js', () => ({ useStore: sel => sel(st) }))
 vi.mock('../api.js', () => ({
   errorText: (e, f) => f,
@@ -19,6 +20,7 @@ vi.mock('../api.js', () => ({
   applyPreset: vi.fn(), myPermissions: vi.fn()
 }))
 import * as api from '../api.js'
+import * as sh from '../../sheets.jsx'
 
 let host, root
 const flush = async () => { for (let i = 0; i < 6; i++) await act(async () => { await Promise.resolve() }) }
@@ -48,16 +50,21 @@ describe('portal do personal: alunos, agenda, ficha e montador', () => {
     expect(t).toContain('Frequência não compartilhada pelo aluno'); expect(t).toContain('Nenhum treino marcado')
   })
 
-  it('agenda: marca um treino com dia e horário e agrupa por dia', async () => {
+  it('agenda: calendário mensal; tocar no dia mostra os compromissos dele e permite marcar nele', async () => {
+    const noon = h => { const d = new Date(); d.setHours(h, 0, 0, 0); return d.toISOString() }
     api.trainerOverview.mockResolvedValue([{ linkId: 'l1', name: 'Bia', flags: [] }])
-    api.trainerSessions.mockResolvedValue([session()])
+    api.trainerSessions.mockResolvedValue([session({ id: 'a', title: 'Treino de pernas', startsAt: noon(8), endsAt: noon(9) }), session({ id: 'b', title: 'Avaliação física', startsAt: noon(15), endsAt: noon(16), status: 'CONFIRMED' })])
     api.createSessions.mockResolvedValue([session()])
     await mount(<Agenda />)
-    expect(host.textContent).toContain('Treino de pernas'); expect(host.textContent).toContain('Aguardando confirmação')
-    await act(async () => { btn('Marcar').click() }); await flush()
+    expect(host.querySelectorAll('.cal-d').length).toBeGreaterThanOrEqual(28)
+    expect(host.querySelectorAll('.cal-d.sel .cal-dots i').length).toBe(2)
+    expect(host.textContent).toContain('2 compromissos'); expect(host.textContent).toContain('Treino de pernas'); expect(host.textContent).toContain('Avaliação física')
+    const other = [...host.querySelectorAll('.cal-d')].find(b => !b.classList.contains('sel') && b.querySelectorAll('i').length === 0)
+    await act(async () => { other.click() }); await flush()
+    expect(host.textContent).toContain('Nenhum compromisso')
+    await act(async () => { btn('Marcar neste dia').click() }); await flush()
     await type(host.querySelector('input[aria-label="Nome do treino"]'), 'Treino B')
     await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === 'Marcar' && b.type === 'submit').click() }); await flush()
-    expect(api.createSessions).toHaveBeenCalledTimes(1)
     const [linkId, body] = api.createSessions.mock.calls[0]
     expect(linkId).toBe('l1'); expect(body.title).toBe('Treino B'); expect(body.durationMin).toBe(60)
     expect(new Date(body.startsAt).toString()).not.toBe('Invalid Date')
@@ -89,22 +96,21 @@ describe('portal do personal: alunos, agenda, ficha e montador', () => {
     expect(api.addTrainerNote).toHaveBeenCalledWith('l1', 'Joelho direito')
   })
 
-  it('montador: busca o exercício pelo nome e envia o treino com séries e repetições', async () => {
+  it('montador: usa o seletor de exercícios do app e envia o treino configurado ao aluno', async () => {
     api.assignWorkout.mockResolvedValue({ id: 'a1' })
     const onDone = vi.fn()
     await mount(<WorkoutBuilder link={{ id: 'l1', other: { name: 'Bia' } }} onDone={onDone} onCancel={() => {}} />)
     expect(btn('Enviar ao aluno').disabled).toBe(true)
     await type(host.querySelector('input[aria-label="Nome do treino"]'), 'Treino A')
-    await type(host.querySelector('#wb-q'), 'supino')
-    const first = [...host.querySelectorAll('button')].find(b => b.className === 'small' && b.type === 'button')
-    expect(first).toBeTruthy()
-    await act(async () => { first.click() }); await flush()
+    await act(async () => { btn('Adicionar exercício').click() }); await flush()
+    expect(sh.exercisePicker).toHaveBeenCalledTimes(1)
+    await act(async () => { sh.exercisePicker.mock.calls[0][0]({ id: '0025' }, true) }); await flush()
     expect(host.textContent).toContain('1.')
     await act(async () => { btn('Enviar ao aluno').click() }); await flush()
     expect(api.assignWorkout).toHaveBeenCalledTimes(1)
     const [linkId, title, , bundle] = api.assignWorkout.mock.calls[0]
     expect(linkId).toBe('l1'); expect(title).toBe('Treino A')
-    expect(bundle.routines).toHaveLength(1); expect(bundle.routines[0].ex[0]).toMatchObject({ sets: 3, reps: 10 })
+    expect(bundle.routines).toHaveLength(1); expect(bundle.routines[0].ex[0].id).toBe('0025')
     expect(onDone).toHaveBeenCalled()
   })
 })

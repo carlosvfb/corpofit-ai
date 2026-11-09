@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import ShareWithTrainer from '../saas/ShareWithTrainer.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { dayPhotosOf } from '../lib/day-photos.js'
@@ -876,6 +877,8 @@ export default function Stats() {
         <button className="iconbtn" onClick={reportSheet} aria-label={t('Performance report')} title={t('Performance report')}><Icon name="note" /></button>
         <button className="iconbtn" data-tour="stats-history" onClick={() => nav('/history')} aria-label={t('History')}><Icon name="history" /></button>
       </div></div>
+    <ShareWithTrainer categories={['WORKOUTS', 'EXERCISE_HISTORY', 'ACTIVITY']} what="seus treinos, cargas e estatísticas" />
+    <ShareWithTrainer categories={['BODY_WEIGHT']} what="seu peso corporal" />
 
     {/* The page in four parts (redesign 1.4.5, P5), each with its own heading, and a sticky index
         that jumps to them and follows the scroll. It is still one page: every card is where a

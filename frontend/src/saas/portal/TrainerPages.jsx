@@ -1,17 +1,19 @@
 // Páginas do portal do personal: alunos com sinais de atenção, agenda com dia e horário exatos, a ficha de cada
 // aluno (treinos, agenda, progresso, anotações privadas, acesso) e o montador de treinos.
 // O que o aluno faz fica no app dele; aqui o personal só vê o que o aluno autorizou (o servidor confere a cada leitura).
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import '../saas.css'
 import './portal.css'
 import { Button } from '../../components/ui.jsx'
 import { useStore } from '../../store/useStore.js'
-import { EXIDX, allExercises, isCardio, isHold, searchExercises } from '../../lib/exercises.js'
+import { EXIDX, isCardio, isHold } from '../../lib/exercises.js'
+import { pickedExerciseConfig } from '../../lib/history.js'
+import { exConfigSheet, exercisePicker } from '../../sheets.jsx'
 import { exerciseNameFor } from '../../lib/i18n-core.js'
 import { readRoutineBundle, routineLinkBundle } from '../../lib/routine-link.js'
 import { Comments, DataView } from '../Personal.jsx'
-import { SessionForm, SessionRow, groupByDay, when } from '../Sessions.jsx'
+import { MonthCalendar, SessionForm, SessionRow, localDay, when } from '../Sessions.jsx'
 import {
   addTrainerNote, answerLink, assignWorkout, deleteTrainerNote, endLink, errorText, inviteStudent, readStudentData, shareCategories, sharedWithMe,
   trainerAssignments, trainerLinks, trainerNotes, trainerOverview, trainerSessions, updateAssignment
@@ -29,36 +31,37 @@ const FLAG = { inactive: 'Está sem treinar', 'no-workouts': 'Ainda não treinou
 
 /* ------------------------------ montador de treino ------------------------------ */
 
-const toItem = e => ({ id: e.id, sets: e.sets || 3, reps: e.reps ?? 10, sec: e.sec ?? 30, min: e.min ?? 20, weight: e.weight || '', restSec: e.restSec || 60, mode: e.mode })
-const itemKind = id => (isCardio(id) ? 'cardio' : isHold(id) ? 'time' : 'reps')
+const summary = e => {
+  const mode = e.mode || (isCardio(e.id) ? 'cardio' : isHold(e.id) ? 'time' : 'reps')
+  const w = e.weight ? ` · ${e.weight}` : ''
+  const r = e.restSec ? ` · descanso ${e.restSec}s` : ''
+  if (mode === 'cardio') return `${e.min ?? '?'} min${e.speed ? ' · vel. ' + e.speed : ''}`
+  if (Array.isArray(e.pyramid) && e.pyramid.length) return `${e.pyramid.length} séries em pirâmide${w}${r}`
+  if (mode === 'time') return `${e.sets} × ${e.sec ?? '?'} s${w}${r}`
+  return `${e.sets} × ${e.reps ?? e.repsMin ?? '?'}${e.repsMax ? '–' + e.repsMax : ''}${w}${r}`
+}
 
-/** Escolhe exercícios do catálogo, define séries, repetições (ou tempo), carga e descanso, e envia ao aluno. */
+/** O mesmo montador da área do aluno: o seletor de exercícios do app (catálogo completo, busca, filtros, os seus próprios
+ *  exercícios) e a tela de configuração de cada exercício (séries, repetições, carga, descanso, progressão, superséries).
+ *  O treino montado vai para um aluno e fica como rotina dele. */
 export function WorkoutBuilder({ link, initial, onDone, onCancel }) {
   const S = useStore(s => s.S)
   const [title, setTitle] = useState(initial?.title || '')
   const [note, setNote] = useState(initial?.note || '')
-  const [items, setItems] = useState(() => { try { return initial ? readRoutineBundle(initial.bundle, S?.unit || 'kg').routines[0].ex.map(toItem) : [] } catch { return [] } })
-  const [q, setQ] = useState('')
+  const [items, setItems] = useState(() => { try { return initial ? readRoutineBundle(initial.bundle, S?.unit || 'kg').routines[0].ex : [] } catch { return [] } })
   const [err, setErr] = useState(null)
   const [busy, setBusy] = useState(false)
-  const all = useMemo(() => allExercises(S), [S])
-  const found = useMemo(() => (q.trim().length >= 2 ? searchExercises(all, q).slice(0, 25) : []), [all, q])
-  const patch = (i, p) => setItems(a => a.map((x, j) => j === i ? { ...x, ...p } : x))
+  const pseudo = { id: 'builder', name: title.trim() || 'Treino', ex: items }
+  const add = () => exercisePicker((ex, quick) => {
+    if (quick) setItems(a => [...a, { id: ex.id, ...pickedExerciseConfig(ex.id) }])
+    else exConfigSheet(ex, null, cfg => setItems(a => [...a, { id: ex.id, ...cfg }]), null, pseudo, null, null, undefined, { backups: true })
+  })
+  const edit = i => exConfigSheet(EXIDX[items[i].id] || { id: items[i].id, n: items[i].id }, items[i], cfg => setItems(a => a.map((x, j) => j === i ? { id: x.id, ...cfg } : x)), () => setItems(a => a.filter((_, j) => j !== i)), pseudo)
   const move = (i, d) => setItems(a => { const b = [...a]; const j = i + d; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b })
-  const num = (v, min, max) => Math.max(min, Math.min(max, Math.round(Number(v)) || min))
   const send = async () => {
     setErr(null); setBusy(true)
     try {
-      const ex = items.map(it => {
-        const k = itemKind(it.id)
-        const base = { id: it.id, sets: num(it.sets, 1, 20) }
-        if (k === 'cardio') return { ...base, sets: 1, mode: 'cardio', min: num(it.min, 1, 300) }
-        const o = k === 'time' ? { ...base, mode: 'time', sec: num(it.sec, 5, 600) } : { ...base, reps: num(it.reps, 1, 100) }
-        if (Number(it.weight) > 0) o.weight = Number(it.weight)
-        if (Number(it.restSec) > 0) o.restSec = num(it.restSec, 5, 600)
-        return o
-      })
-      const bundle = routineLinkBundle(S, { id: 'builder', name: title.trim(), ex }, { weights: true })
+      const bundle = routineLinkBundle(S, { ...pseudo, name: title.trim() }, { weights: true })
       if (initial) await updateAssignment(initial.id, { title: title.trim(), note, bundle })
       else await assignWorkout(link.id, title.trim(), note, bundle)
       onDone?.()
@@ -69,36 +72,19 @@ export function WorkoutBuilder({ link, initial, onDone, onCancel }) {
     <Err>{err}</Err>
     <input className="input" style={{ marginTop: 8 }} value={title} maxLength={80} onChange={e => setTitle(e.target.value)} placeholder="Nome do treino (ex.: Treino A, peito e tríceps)" aria-label="Nome do treino" />
     <textarea className="input" style={{ marginTop: 6 }} rows={2} maxLength={1000} value={note} onChange={e => setNote(e.target.value)} placeholder="Orientações para o aluno (opcional)" aria-label="Orientações" />
-    {items.map((it, i) => {
-      const k = itemKind(it.id)
-      return <div key={i} style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--sep, rgba(128,128,128,.25))' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-          <b style={{ overflowWrap: 'anywhere' }}>{i + 1}. {exerciseNameFor(EXIDX[it.id]) || it.id}</b>
-          <span style={{ display: 'flex', gap: 4, flex: 'none' }}>
-            <Button variant="tinted" size="sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Subir">↑</Button>
-            <Button variant="tinted" size="sm" onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label="Descer">↓</Button>
-            <Button variant="tinted" size="sm" onClick={() => setItems(a => a.filter((_, j) => j !== i))} aria-label="Remover">✕</Button>
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-          {k !== 'cardio' && <label className="small muted">Séries<input className="input" type="number" inputMode="numeric" min={1} max={20} value={it.sets} onChange={e => patch(i, { sets: e.target.value })} style={{ width: 70 }} /></label>}
-          {k === 'reps' && <label className="small muted">Repetições<input className="input" type="number" inputMode="numeric" min={1} max={100} value={it.reps} onChange={e => patch(i, { reps: e.target.value })} style={{ width: 80 }} /></label>}
-          {k === 'time' && <label className="small muted">Segundos<input className="input" type="number" inputMode="numeric" min={5} max={600} value={it.sec} onChange={e => patch(i, { sec: e.target.value })} style={{ width: 80 }} /></label>}
-          {k === 'cardio' && <label className="small muted">Minutos<input className="input" type="number" inputMode="numeric" min={1} max={300} value={it.min} onChange={e => patch(i, { min: e.target.value })} style={{ width: 80 }} /></label>}
-          {k !== 'cardio' && <label className="small muted">Carga ({S?.unit || 'kg'})<input className="input" type="number" inputMode="decimal" min={0} value={it.weight} onChange={e => patch(i, { weight: e.target.value })} placeholder="livre" style={{ width: 80 }} /></label>}
-          {k !== 'cardio' && <label className="small muted">Descanso (s)<input className="input" type="number" inputMode="numeric" min={0} max={600} value={it.restSec} onChange={e => patch(i, { restSec: e.target.value })} style={{ width: 80 }} /></label>}
-        </div>
-      </div>
-    })}
-    <label className="small muted" htmlFor="wb-q" style={{ display: 'block', marginTop: 12 }}>Adicionar exercício (busque pelo nome, em português)</label>
-    <input id="wb-q" className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="Ex.: supino, agachamento, remada" />
-    {found.length > 0 && <div style={{ maxHeight: 240, overflow: 'auto', marginTop: 6 }}>
-      {found.map(ex => <button key={ex.id} type="button" className="small" style={{ display: 'block', width: '100%', textAlign: 'start', padding: '8px 4px', background: 'none', border: 0, borderBottom: '1px solid var(--sep, rgba(128,128,128,.2))', color: 'inherit' }}
-        onClick={() => { setItems(a => [...a, toItem({ id: ex.id })]); setQ('') }}>
-        {exerciseNameFor(ex)} <span className="muted">· {ex.bp}</span>
-      </button>)}
-    </div>}
-    {q.trim().length >= 2 && found.length === 0 && <div className="dim small" style={{ marginTop: 6 }}>Nenhum exercício encontrado.</div>}
+    {items.length === 0 && <div className="dim small" style={{ marginTop: 10 }}>Nenhum exercício ainda. Toque em “Adicionar exercício”.</div>}
+    {items.map((it, i) => <div key={i} style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--sep, rgba(128,128,128,.25))', display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center' }}>
+      <button type="button" className="wb-ex" onClick={() => edit(i)} style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', padding: 0, flex: 1, minWidth: 0 }}>
+        <b style={{ overflowWrap: 'anywhere' }}>{i + 1}. {exerciseNameFor(EXIDX[it.id]) || it.id}</b>
+        <div className="muted small">{summary(it)} · toque para editar</div>
+      </button>
+      <span style={{ display: 'flex', gap: 4, flex: 'none' }}>
+        <Button variant="tinted" size="sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Subir">↑</Button>
+        <Button variant="tinted" size="sm" onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label="Descer">↓</Button>
+        <Button variant="tinted" size="sm" onClick={() => setItems(a => a.filter((_, j) => j !== i))} aria-label="Remover">✕</Button>
+      </span>
+    </div>)}
+    <div style={{ marginTop: 12 }}><Button variant="tinted" onClick={add}>Adicionar exercício</Button></div>
     <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
       <Button variant="primary" disabled={busy || title.trim().length < 2 || items.length === 0} onClick={send}>{initial ? 'Salvar nova versão' : 'Enviar ao aluno'}</Button>
       <Button variant="tinted" onClick={onCancel}>Cancelar</Button>
@@ -155,30 +141,35 @@ export function StudentsHome() {
 /* ------------------------------ agenda geral ------------------------------ */
 
 export function Agenda() {
+  const now = new Date()
+  const [month, setMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
+  const [selected, setSelected] = useState(localDay(now))
   const [list, setList] = useState(null)
   const [students, setStudents] = useState([])
   const [creating, setCreating] = useState(false)
   const [err, setErr] = useState(null)
   const load = useCallback(async () => {
     try {
-      const from = new Date(Date.now() - 2 * 86_400_000).toISOString()
-      const [s, o] = await Promise.all([trainerSessions({ from }), trainerOverview()])
+      const from = new Date(month.getFullYear(), month.getMonth(), 1).toISOString()
+      const to = new Date(month.getFullYear(), month.getMonth() + 1, 1).toISOString()
+      const [s, o] = await Promise.all([trainerSessions({ from, to }), trainerOverview()])
       setList(s); setStudents(o)
     } catch (e) { setErr(errorText(e, 'Não foi possível carregar a agenda.')) }
-  }, [])
+  }, [month])
   useEffect(() => { load() }, [load])
-  const shown = (list || []).filter(s => s.status !== 'CANCELLED' || new Date(s.startsAt) > new Date())
-  return <Page title="Agenda" note="Os treinos marcados com cada aluno, com dia e horário. O aluno confirma pelo app dele."
-    action={students.length > 0 && !creating ? <Button variant="primary" onClick={() => setCreating(true)}>Marcar</Button> : null}>
+  const day = (list || []).filter(s => localDay(s.startsAt) === selected)
+  const label = new Date(selected + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+  return <Page title="Agenda" note="Toque em um dia para ver todos os compromissos dele. O aluno confirma pelo app dele.">
     <Err>{err}</Err>
-    {creating && <SessionForm students={students} onDone={() => { setCreating(false); load() }} onCancel={() => setCreating(false)} />}
+    <MonthCalendar sessions={(list || []).filter(s => s.status !== 'CANCELLED')} month={month} onMonth={setMonth} selected={selected} onSelect={d => { setSelected(d); setCreating(false) }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 4px 8px', gap: 8 }}>
+      <div><b style={{ textTransform: 'capitalize' }}>{label}</b><div className="muted small">{day.length === 0 ? 'Nenhum compromisso' : day.length + (day.length === 1 ? ' compromisso' : ' compromissos')}</div></div>
+      {students.length > 0 && !creating && <Button variant="primary" size="sm" onClick={() => setCreating(true)}>Marcar neste dia</Button>}
+    </div>
+    {creating && <SessionForm students={students} defaultAt={selected + 'T09:00'} onDone={() => { setCreating(false); load() }} onCancel={() => setCreating(false)} />}
     {!list && !err && <div className="muted small">Carregando…</div>}
     {list && students.length === 0 && <div className="card dim small">Aceite um aluno em “Alunos” para marcar treinos.</div>}
-    {list && students.length > 0 && shown.length === 0 && !creating && <div className="card dim small">Nada marcado. Toque em “Marcar” para combinar o próximo treino.</div>}
-    {groupByDay(shown).map(g => <div key={g.k}>
-      <div className="muted small" style={{ margin: '14px 4px 6px', textTransform: 'capitalize' }}>{g.k}</div>
-      {g.items.map(s => <SessionRow key={s.id} s={s} role="trainer" onChange={load} />)}
-    </div>)}
+    {day.map(s => <SessionRow key={s.id} s={s} role="trainer" onChange={load} />)}
   </Page>
 }
 
@@ -189,13 +180,22 @@ const TABS = [['treinos', 'Treinos'], ['agenda', 'Agenda'], ['progresso', 'Progr
 function TabTreinos({ link }) {
   const [list, setList] = useState(null)
   const [building, setBuilding] = useState(null) // null | 'new' | assignment
+  const S = useStore(s => s.S)
+  const routines = (S?.routines || []).filter(r => Array.isArray(r.ex) && r.ex.length)
+  const sendOwn = r => { setErr(null); assignWorkout(link.id, r.name, '', routineLinkBundle(S, r, { weights: true })).then(() => load()).catch(e => setErr(errorText(e, 'Não foi possível enviar.'))) }
   const [err, setErr] = useState(null)
   const load = useCallback(() => trainerAssignments(link.id).then(setList).catch(e => setErr(errorText(e, 'Não foi possível carregar.'))), [link.id])
   useEffect(() => { load() }, [load])
   return <>
     <Err>{err}</Err>
     {building ? <WorkoutBuilder link={link} initial={building === 'new' ? null : building} onDone={() => { setBuilding(null); load() }} onCancel={() => setBuilding(null)} />
-      : <Button variant="primary" onClick={() => setBuilding('new')}>Montar novo treino</Button>}
+      : <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Button variant="primary" onClick={() => setBuilding('new')}>Montar novo treino</Button>
+        {routines.length > 0 && <select className="input" style={{ width: 'auto', flex: 1, minWidth: 160 }} value="" aria-label="Enviar uma rotina do meu plano" onChange={e => { const r = routines.find(x => x.id === e.target.value); if (r) sendOwn(r) }}>
+          <option value="">Enviar uma rotina do meu plano…</option>
+          {routines.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>}
+      </div>}
     {!list && !err && <div className="muted small" style={{ marginTop: 8 }}>Carregando…</div>}
     {list?.length === 0 && !building && <div className="card dim small" style={{ marginTop: 8 }}>Nenhum treino enviado a este aluno ainda. Monte um escolhendo os exercícios, as séries e as repetições.</div>}
     {list?.map(a => <div className="card" key={a.id} style={{ marginTop: 8 }}>

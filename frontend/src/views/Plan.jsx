@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import ShareWithTrainer from '../saas/ShareWithTrainer.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -182,6 +183,7 @@ export default function Plan() {
         <button className="iconbtn" data-tour="plan-menu" onClick={openMenu} aria-label={t('Plan options')} title={t('Plan options')}><Icon name="share" /></button>
       </div>
     </div>
+    <ShareWithTrainer categories={['ROUTINES']} what="suas rotinas e o seu plano" />
     <input ref={fileRef} type="file" accept="application/json,.json" onChange={pickFile} hidden />
     <Segmented className="plan-views" tour="plan-views" value={view} onChange={setView}
       options={[{ value: 'schedule', label: t('Schedule') }, { value: 'routines', label: t('Routines') }]} />

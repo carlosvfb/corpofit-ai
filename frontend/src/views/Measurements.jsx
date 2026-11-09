@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ShareWithTrainer from '../saas/ShareWithTrainer.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -219,6 +220,7 @@ export default function Measurements() {
       <div style={{ flex: 1, marginInlineStart: 12 }}><h1>{t('Body measurements')}</h1><div className="sub">{t('Circumference & composition')}</div></div>
       <button className="iconbtn" onClick={manageMeasurementsSheet} aria-label={t('Choose measurements')}><Icon name="gear" /></button>
     </div>
+    <ShareWithTrainer categories={['BODY_WEIGHT', 'MEASUREMENTS']} what="seu peso e suas medidas" />
 
     <div className="card">
       <div className="row between" style={{ marginBottom: 10 }}>

@@ -65,7 +65,8 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
   - **Progresso:** treinos feitos, séries e cargas, peso, medidas, observações, só o que o aluno liberou. Cada leitura fica registrada para o aluno.
   - **Notas:** anotações privadas (lesões, metas, combinados). O aluno nunca as vê.
   - **Acesso:** o que o aluno compartilha com você e o botão de encerrar o vínculo (a agenda futura entre vocês é cancelada).
-- **Agenda geral:** aba **Agenda** mostra os treinos de todos os alunos, agrupados por dia.
+- **Agenda geral:** a aba **Agenda** é um calendário do mês. Cada dia mostra pontos coloridos (amarelo aguardando, verde confirmado, cinza feito, vermelho faltou); **toque no dia** para ver todos os compromissos dele, com as ações de cada um, e use **Marcar neste dia**.
+- **Montar treino igual à área do aluno:** o botão *Adicionar exercício* abre o mesmo seletor de exercícios do app (catálogo completo, busca, filtros, seus exercícios) e a mesma tela de configuração (séries, repetições, carga, descanso, progressão, superséries). Também dá para enviar uma rotina do seu próprio Plano.
 - **Aluno novo:** *Convidar aluno* por e-mail (a pessoa precisa já ter conta). O aluno também pode pedir um personal pelo e-mail dele.
 - **Enviar treino:** em um aluno ativo → *Enviar treino* → escolha uma das **suas** rotinas. O aluno vê o treino em **Ajustes → Meu personal** (app do aluno) e toca em *Adicionar às minhas rotinas*. Cada edição guarda a versão anterior.
 - **Sugestão para uma rotina do aluno:** só aparece se o aluno liberou "Ver e sugerir" nas rotinas.
@@ -74,6 +75,7 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 
 ## 7. Privacidade (Ajustes → Privacidade e compartilhamento)
 - **Atalho ao aceitar um personal:** o app pergunta se ele pode acompanhar seu treino. "Acompanhar meu treino" libera treinos feitos, histórico de cargas, frequência e deixa ele sugerir mudanças nas rotinas; "Treino, medidas e peso" libera também o corpo e as observações; "Não compartilhar" não libera nada. Você ajusta depois, categoria por categoria, e revoga quando quiser.
+- **Enviar ao personal, em qualquer tela:** com um personal vinculado, as telas **Plano**, **Estatísticas** e **Medidas** mostram um aviso com o botão *Enviar ao personal*. Um toque libera (a mesma permissão de Privacidade) as rotinas, os treinos e estatísticas, ou o peso e as medidas, e o personal passa a ver sempre o dado atualizado. *Parar de enviar* revoga na hora. Os treinos marcados entre vocês já aparecem para os dois.
 - **Treinos marcados:** em Ajustes → Meu personal, a seção "Treinos marcados com seu personal" mostra dia e horário e tem **Confirmar** e **Não posso**.
 - Para cada personal vinculado, escolha por categoria: *Não compartilhar* (padrão), *Ver* ou, nas rotinas, *Ver e sugerir*.
 - **Revogar tudo** de um personal, **histórico de consentimento** e **Quem leu seus dados**.
