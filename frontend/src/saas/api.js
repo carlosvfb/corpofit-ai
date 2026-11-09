@@ -77,12 +77,22 @@ export const favoriteItem = (id, on) => post('/api/community/favorite', { id, on
 export const importCommunityItem = id => post('/api/community/import', { id })
 export const reportItem = (id, reason, note) => post('/api/community/report', { id, reason, note })
 export const moderationQueue = tenantId => api('/api/community/moderation' + qs('tenant', tenantId))
-export const moderateItem = (id, action, tenantId) => post('/api/community/moderate', { id, action, tenantId })
+export const moderateItem = (id, action, tenantId, scope) => post('/api/community/moderate', { id, action, tenantId, scope })
+export const moderationQueuePlatform = () => api('/api/community/moderation?scope=platform')
 
 // Plano da academia. Preço e limites vêm do servidor; aqui só se escolhe plano e forma de pagamento.
 export const orgBilling = id => api('/api/orgs/billing' + q(id))
 export const startOrgCheckout = (id, planCode, method, cpfCnpj) => post('/api/orgs/billing/checkout' + q(id), { planCode, method, cpfCnpj })
 export const cancelOrgSubscription = id => post('/api/orgs/billing/cancel' + q(id))
+
+// E-mail confirmado, avisos e painel da plataforma.
+export const emailVerification = () => api('/api/account/verification')
+export const sendEmailCode = () => post('/api/account/verification/send')
+export const confirmEmailCode = code => post('/api/account/verification/confirm', { code })
+export const listNotifications = () => api('/api/notifications')
+export const markNotificationsRead = ids => post('/api/notifications/read', { ids })
+export const cancelPendingInvite = (id, pendingId) => api('/api/orgs/pending' + q(id) + '&id=' + encodeURIComponent(pendingId), { method: 'DELETE' })
+export const adminGyms = () => api('/api/admin/saas/orgs')
 
 // A mensagem do servidor em português: as rotas do SaaS já respondem em pt-BR; as de login e cadastro
 // do openGym respondem em inglês com um `code` estável, traduzido aqui.

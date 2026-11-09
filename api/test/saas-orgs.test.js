@@ -111,7 +111,9 @@ describe('academias: vínculos, permissões e isolamento', () => {
     await status(org.inviteMember(asUser(owner), gym.id, { userId: guest.id, role: 'STUDENT' }), 409);
     await org.acceptInvite(asUser(guest), gym.id);
     assert.equal((await org.getSettings(asUser(guest), gym.id)).slug, 'academia-gama');
-    await status(org.inviteMember(asUser(owner), gym.id, { email: 'ninguem@nao-existe.com', role: 'STUDENT' }), 404);
+    // e-mail sem conta: vira convite pendente (não é mais erro); id inexistente continua 404
+    assert.equal((await org.inviteMember(asUser(owner), gym.id, { email: 'ninguem@nao-existe.com', role: 'STUDENT' })).status, 'PENDING_SIGNUP');
+    await status(org.inviteMember(asUser(owner), gym.id, { userId: 'id-que-nao-existe', role: 'STUDENT' }), 404);
   });
 
   dbTest('papéis: cada nível só gerencia os de baixo', async () => {

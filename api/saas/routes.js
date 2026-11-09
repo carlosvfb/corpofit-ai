@@ -24,6 +24,10 @@ import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
 import * as orgBilling from './org/billing.js';
 import { exportMyData } from './org/lgpd.js';
+import * as notif from './org/notify.js';
+import * as emailVerify from './org/verify.js';
+import { sendMail } from './mailer.js';
+import { listGyms } from './org/admin-orgs.js';
 
 const METHODS = new Set(['CREDIT_CARD', 'PIX_AUTOMATIC', 'PIX']);
 
@@ -242,6 +246,34 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
       const user = session(req, res); if (!user) return;
       json(res, 200, await exportMyData(user));
     }),
+    /* ------------------- e-mail confirmado, convites pendentes e avisos ------------------- */
+    'GET /api/account/verification': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await emailVerify.status(user));
+    }),
+    'POST /api/account/verification/send': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await emailVerify.sendCode(user, sendMail));
+    }),
+    'POST /api/account/verification/confirm': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await emailVerify.verify(user, b.code));
+    }),
+    'DELETE /api/orgs/pending': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await org.cancelPendingInvite(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'GET /api/notifications': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await notif.listNotifications(user));
+    }),
+    'POST /api/notifications/read': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await notif.markRead(user, b.ids === 'all' ? 'all' : b.ids));
+    }),
+
     'GET /api/trainer/shared': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await privacy.sharedWithMe(user));
@@ -410,6 +442,10 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
 
     /* ------------------------------ admin ------------------------------ */
 
+    'GET /api/admin/saas/orgs': guarded(async (req, res) => {
+      const actor = requireAdmin(req, res); if (!actor) return;
+      json(res, 200, await listGyms(actor));
+    }),
     'GET /api/admin/saas/overview': guarded(async (req, res) => {
       if (!requireAdmin(req, res)) return;
       json(res, 200, { overview: await admin.adminOverview(), settings: await admin.getSettings() });

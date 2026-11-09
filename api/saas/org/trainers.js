@@ -8,6 +8,7 @@ import { ensureUser } from '../access.js';
 import { withContext } from './context.js';
 import { rankOf } from './rbac.js';
 import { levelFor } from './privacy.js';
+import { notify } from './notify.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Não encontrado.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para isso.', 'forbidden');
@@ -59,6 +60,7 @@ async function createLink(actor, { trainerId, studentId, initiatedBy, tenantId }
     const link = existing
       ? await tx.trainerStudent.update({ where: { id: existing.id }, data })
       : await tx.trainerStudent.create({ data: { trainerId, studentId, ...data } });
+    await notify(tx, initiatedBy === 'TRAINER' ? studentId : trainerId, { kind: 'trainer-link', title: initiatedBy === 'TRAINER' ? `${actor.name || 'Um personal'} convidou você para ser aluno(a)` : `${actor.name || 'Um aluno'} pediu para ser atendido(a) por você`, body: 'Responda em Ajustes > Personal trainer.', link: '/personal', dedupeKey: `trainer-link:${link.id}:${link.updatedAt.getTime()}` });
     if (tenantId) await tx.activityLog.create({ data: { tenantId, actorUserId: actor.id, action: 'trainer-link.requested', targetType: 'user', targetId: initiatedBy === 'TRAINER' ? studentId : trainerId, after: { initiatedBy } } });
     return link;
   });
@@ -96,6 +98,7 @@ export async function respondLink(user, id, accept) {
     const mySide = l.trainerId === user.id ? 'TRAINER' : 'STUDENT';
     if (l.status !== 'PENDING' || l.initiatedBy === mySide) throw new SaasError(409, 'Esse convite não está esperando a sua resposta.', 'not-pending');
     const u = await tx.trainerStudent.update({ where: { id: l.id }, data: accept ? { status: 'ACTIVE' } : { status: 'ENDED', endedAt: new Date() } });
+    await notify(tx, l.initiatedBy === 'TRAINER' ? l.trainerId : l.studentId, { kind: 'trainer-link', title: `${user.name || 'A outra pessoa'} ${accept ? 'aceitou' : 'recusou'} o vínculo`, link: '/personal', dedupeKey: `trainer-link-answer:${l.id}:${u.updatedAt.getTime()}` });
     return summarize(u, user);
   });
 }
@@ -156,6 +159,7 @@ export async function assign(user, linkId, input) {
     // Sugerir mudanças numa rotina do aluno exige a permissão dele (ROUTINES = SUGGEST), conferida agora.
     if (kind === 'SUGGESTION' && (await levelFor(tx, l.studentId, user.id, 'ROUTINES')) !== 'SUGGEST') throw new SaasError(403, 'O aluno não permitiu sugestões nas rotinas dele.', 'suggest-not-allowed');
     const a = await tx.assignment.create({ data: { linkId: l.id, trainerId: l.trainerId, studentId: l.studentId, title, note, bundle, kind, target } });
+    await notify(tx, l.studentId, { kind: kind === 'SUGGESTION' ? 'suggestion' : 'assignment', title: kind === 'SUGGESTION' ? `${user.name || 'Seu personal'} sugeriu uma mudança na rotina${target ? ' “' + target + '”' : ''}` : `${user.name || 'Seu personal'} enviou um treino: ${title}`, body: 'Veja em Ajustes > Personal trainer.', link: '/personal', dedupeKey: `assignment:${a.id}` });
     return asg(a);
   });
 }
@@ -215,6 +219,7 @@ export async function addComment(user, assignmentId, body) {
     const a = await tx.assignment.findUnique({ where: { id: String(assignmentId) } });
     if (!a || (a.trainerId !== user.id && a.studentId !== user.id)) throw NOT_FOUND();
     const c = await tx.assignmentComment.create({ data: { assignmentId: a.id, authorId: user.id, body: text } });
+    await notify(tx, a.trainerId === user.id ? a.studentId : a.trainerId, { kind: 'comment', title: `${user.name || 'Alguém'} comentou em “${a.title}”`, body: text.slice(0, 120), link: '/personal', dedupeKey: `comment:${c.id}` });
     return { id: c.id, authorId: c.authorId, body: c.body, createdAt: c.createdAt };
   });
 }

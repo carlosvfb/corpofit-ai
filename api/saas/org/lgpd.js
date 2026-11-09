@@ -71,7 +71,9 @@ export async function eraseUserData(uid) {
     access: (await tx.accessLog.deleteMany({ where: { OR: [{ studentId: uid }, { actorId: uid }] } })).count,
     communityItems: (await tx.communityItem.deleteMany({ where: { authorId: uid } })).count,
     favorites: (await tx.communityFavorite.deleteMany({ where: { userId: uid } })).count,
-    reports: (await tx.communityReport.deleteMany({ where: { reporterId: uid } })).count
+    reports: (await tx.communityReport.deleteMany({ where: { reporterId: uid } })).count,
+    notifications: (await tx.notification.deleteMany({ where: { userId: uid } })).count,
+    verification: (await tx.emailVerification.deleteMany({ where: { userId: uid } })).count
   }));
   await db.user.updateMany({ where: { id: uid }, data: { aiTenantId: null } });
   return { ...out, ...r };

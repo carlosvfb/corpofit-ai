@@ -9,6 +9,9 @@ import { ensureUser } from '../access.js';
 import { withContext } from './context.js';
 import { can, canAssign, canManage, isRole, rankOf } from './rbac.js';
 import { assertCapacity } from './billing.js';
+import { notify } from './notify.js';
+import { sendMail } from '../mailer.js';
+import { claimInvites, requireVerified } from './verify.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Academia não encontrada.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para isso.', 'forbidden');
@@ -38,6 +41,7 @@ const publicMember = (m, u) => ({ userId: m.userId, name: u?.name ?? null, email
 /* ------------------------------- academia ------------------------------- */
 
 export async function createGym(user, input) {
+  await requireVerified(user); // só exige se REQUIRE_VERIFIED_EMAIL=1
   const name = String(input?.name || '').trim();
   if (name.length < 2 || name.length > 80) throw new SaasError(400, 'Informe o nome da academia (2 a 80 caracteres).', 'invalid-name');
   const slug = slugify(input?.slug || name);
@@ -61,6 +65,7 @@ export async function createGym(user, input) {
 /** Os contextos do usuário: o espaço pessoal e cada academia em que tem vínculo (ou convite pendente). */
 export async function myContexts(user) {
   await ensureUser(user);
+  await claimInvites(user).catch(() => 0); // e-mail já confirmado: convites feitos antes da conta aparecem aqui
   const rows = await withContext({ userId: user.id }, tx => tx.membership.findMany({
     where: { userId: user.id, status: { in: ['ACTIVE', 'INVITED'] } },
     include: { tenant: true },
@@ -81,11 +86,21 @@ export async function listMembers(user, tenantId) {
   });
   const users = await db.user.findMany({ where: { id: { in: rows.map(r => r.userId) } }, select: { id: true, name: true, email: true } });
   const by = new Map(users.map(u => [u.id, u]));
-  return rows.map(r => publicMember(r, by.get(r.userId)));
+  const pending = await withContext({ userId: user.id, tenantId }, tx => tx.pendingInvite.findMany({ where: { tenantId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' } }));
+  return [...rows.map(r => publicMember(r, by.get(r.userId))), ...pending.map(p => ({ userId: null, pendingId: p.id, name: null, email: p.email, role: p.role, status: 'PENDING_SIGNUP', since: p.createdAt }))];
 }
 
 /** Convida um usuário que já tem conta (por e-mail ou id). O vínculo só vale depois do aceite dele. */
 export async function inviteMember(user, tenantId, input) {
+  const out = await inviteMemberCore(user, tenantId, input);
+  if (out.status === 'PENDING_SIGNUP') {
+    const gym = out._gym; delete out._gym;
+    sendMail(out.email, `Convite para a academia ${gym}`, `Você foi convidado(a) para a academia ${gym} no CorpoFit AI.\n\nCrie sua conta com este e-mail, confirme-o com o código que enviamos e o convite aparece em Ajustes > Academias.`).catch(() => {});
+  }
+  return out;
+}
+
+async function inviteMemberCore(user, tenantId, input) {
   const role = input?.role;
   if (!isRole(role)) throw new SaasError(400, 'Papel inválido.', 'invalid-role');
   const email = String(input?.email || '').trim().toLowerCase();
@@ -95,7 +110,16 @@ export async function inviteMember(user, tenantId, input) {
   return withContext({ userId: user.id, tenantId }, async tx => {
     const actor = await requirePermission(tx, tenantId, user.id, 'members:invite');
     if (!canAssign(actor, role)) throw FORBIDDEN();
-    if (!target || target.deletedAt) throw new SaasError(404, 'Não há uma conta com esse e-mail. Peça para a pessoa se cadastrar primeiro.', 'user-not-found');
+    if (!target || target.deletedAt) {
+      // Sem conta ainda: guarda um convite pendente. Só vira convite de verdade quando alguém com esse e-mail CONFIRMADO entrar.
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new SaasError(404, 'Não há uma conta com esse id.', 'user-not-found');
+      await assertCapacity(tx, tenantId, role);
+      const exp = new Date(Date.now() + 30 * 86_400_000);
+      await tx.pendingInvite.upsert({ where: { email_tenantId: { email, tenantId } }, create: { email, tenantId, role, invitedById: user.id, expiresAt: exp }, update: { role, invitedById: user.id, expiresAt: exp } });
+      await log(tx, tenantId, user.id, 'member.invited-pending', { targetType: 'email', after: { role } });
+      const t = await tx.tenant.findUnique({ where: { id: tenantId } });
+      return { userId: null, name: null, email, role, status: 'PENDING_SIGNUP', since: new Date(), _gym: t?.name || '' };
+    }
     const existing = await tx.membership.findUnique({ where: { tenantId_userId: { tenantId, userId: target.id } } });
     if (existing && existing.status !== 'REMOVED') throw new SaasError(409, 'Essa pessoa já faz parte da academia ou já foi convidada.', 'already-member');
     await assertCapacity(tx, tenantId, role); // limite de alunos e profissionais do plano
@@ -103,7 +127,20 @@ export async function inviteMember(user, tenantId, input) {
       ? await tx.membership.update({ where: { id: existing.id }, data: { role, status: 'INVITED', invitedById: user.id } })
       : await tx.membership.create({ data: { tenantId, userId: target.id, role, status: 'INVITED', invitedById: user.id } });
     await log(tx, tenantId, user.id, 'member.invited', { targetType: 'user', targetId: target.id, before: existing ? { role: existing.role, status: existing.status } : undefined, after: { role, status: 'INVITED' } });
+    const gymRow = await tx.tenant.findUnique({ where: { id: tenantId } });
+    await notify(tx, target.id, { kind: 'gym-invite', title: `Convite da academia ${gymRow?.name || ''}`.trim(), body: 'Aceite em Ajustes > Academias.', link: '/academias', dedupeKey: `gym-invite:${tenantId}:${m.id}:${m.updatedAt.getTime()}` });
     return publicMember(m, target);
+  });
+}
+
+/** Cancela um convite feito a um e-mail que ainda não tem conta. */
+export async function cancelPendingInvite(user, tenantId, pendingId) {
+  return withContext({ userId: user.id, tenantId }, async tx => {
+    await requirePermission(tx, tenantId, user.id, 'members:invite');
+    const r = await tx.pendingInvite.deleteMany({ where: { id: String(pendingId), tenantId } });
+    if (!r.count) throw new SaasError(404, 'Convite não encontrado.', 'not-found');
+    await log(tx, tenantId, user.id, 'member.pending-cancelled', { targetType: 'email' });
+    return { cancelled: true };
   });
 }
 

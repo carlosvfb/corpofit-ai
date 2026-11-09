@@ -7,7 +7,7 @@ import './saas.css'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import {
-  acceptOrgInvite, aiContext, cancelOrgSubscription, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgAiUsage, orgContexts,
+  acceptOrgInvite, aiContext, cancelOrgSubscription, cancelPendingInvite, changeOrgRole, createOrg, errorText, inviteOrgMember, leaveOrg, orgActivity, orgAiUsage, orgContexts,
   orgBilling, orgDashboard, orgMembers, orgSettings, removeOrgMember, saveOrgSettings, setAiContext, startOrgCheckout
 } from './api.js'
 import { formatBRL, formatDate, formatDateTime } from './brand.js'
@@ -122,10 +122,16 @@ function Members({ id, role }) {
         {assignable.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
       </select>
       <div style={{ marginTop: 10 }}><Button variant="primary" type="submit" disabled={busy || !email.includes('@')}>Enviar convite</Button></div>
-      <div className="dim small" style={{ marginTop: 6 }}>A pessoa precisa já ter uma conta e aceitar o convite.</div>
+      <div className="dim small" style={{ marginTop: 6 }}>Se a pessoa ainda não tem conta, o convite fica pendente até ela se cadastrar e confirmar o e-mail; depois é só aceitar.</div>
     </form>
     {!list && !err && <div className="muted small">Carregando…</div>}
-    {list?.map(m => <div className="card" key={m.userId} style={{ marginBottom: 8 }}>
+    {list?.filter(m => m.status === 'PENDING_SIGNUP').map(m => <div className="card" key={'p' + m.pendingId} style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+        <div style={{ minWidth: 0 }}><div style={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{m.email}</div><div className="small">{ROLE_LABEL[m.role]} · aguardando cadastro</div></div>
+        <Button variant="tinted" disabled={busy} onClick={() => act(() => cancelPendingInvite(id, m.pendingId))}>Cancelar</Button>
+      </div>
+    </div>)}
+    {list?.filter(m => m.status !== 'PENDING_SIGNUP').map(m => <div className="card" key={m.userId} style={{ marginBottom: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{m.name || 'Sem nome'}</div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './saas.css'
 import { useStore } from '../store/useStore.js'
-import { getAiUsage, getBilling } from './api.js'
+import { emailVerification, getAiUsage, getBilling, listNotifications } from './api.js'
 import { BRAND, formatDate, saasOn } from './brand.js'
 
 export function PlanCard() {
@@ -13,6 +13,11 @@ export function PlanCard() {
   const user = useStore(s => s.user)
   const coachOn = useStore(s => !!s.config?.coach?.enabled)
   const [info, setInfo] = useState(null)
+  const [alerts, setAlerts] = useState({ unread: 0, unverified: false })
+  useEffect(() => {
+    if (!on || !user) return
+    Promise.all([listNotifications().catch(() => null), emailVerification().catch(() => null)]).then(([n, v]) => setAlerts({ unread: n?.unread || 0, unverified: !!(v && v.email && !v.verified) }))
+  }, [on, user?.id])
   useEffect(() => {
     if (!on || !user) return
     let alive = true
@@ -23,6 +28,9 @@ export function PlanCard() {
   const { b, ai } = info
   const pct = Math.min(100, Math.round((ai.used / Math.max(1, ai.limit)) * 100))
   return <div className="card" style={{ marginBottom: 12 }}>
+    {(alerts.unread > 0 || alerts.unverified) && <button className="btn tinted" onClick={() => nav('/notificacoes')} style={{ width: '100%', marginBottom: 10, minHeight: 40, borderRadius: 12 }}>
+      {alerts.unread > 0 ? `${alerts.unread} notificação(ões) nova(s)` : 'Confirme seu e-mail'}{alerts.unread > 0 && alerts.unverified ? ' · confirme seu e-mail' : ''}
+    </button>}
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
       <div><div className="muted small">Seu plano</div><div style={{ fontSize: 18, fontWeight: 700 }}>{b.plan.name}</div></div>
       <button className="btn tinted" onClick={() => nav(b.plan.isPremium ? '/assinatura' : '/checkout')} style={{ minHeight: 40, padding: '0 14px', borderRadius: 12 }}>

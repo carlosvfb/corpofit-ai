@@ -5,6 +5,7 @@
 import { SaasError } from '../errors.js';
 import { withContext } from './context.js';
 import { AVAILABLE, CATEGORIES, project } from './projection.js';
+import { notify } from './notify.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Não encontrado.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para ver isso.', 'forbidden');
@@ -40,6 +41,7 @@ export async function setPermission(user, trainerId, category, level) {
       create: { studentId: user.id, trainerId: String(trainerId), category, level }, update: { level }
     });
     await tx.consentRecord.create({ data: { studentId: user.id, trainerId: String(trainerId), category, previousLevel: previous, level, action: level === 'OFF' ? 'REVOKE' : previous === 'OFF' ? 'GRANT' : 'CHANGE', actorUserId: user.id } });
+    await notify(tx, String(trainerId), { kind: 'sharing', title: `${user.name || 'Um aluno'} ${level === 'OFF' ? 'parou de compartilhar' : 'alterou o que compartilha'}: ${CATEGORIES[category].label}`, link: '/personal', dedupeKey: `sharing:${user.id}:${category}:${Date.now()}` });
     return { category, level, changed: true };
   });
 }

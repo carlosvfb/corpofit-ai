@@ -29,16 +29,20 @@ export async function tenantEntitlements(tenantId, now = new Date()) {
   return { plan, planCode: plan.code, paid: !!live, subscription: live ? { status: live.status, currentPeriodEnd: live.currentPeriodEnd, graceUntil: live.graceUntil, cancelRequestedAt: live.cancelRequestedAt } : null, limits: plan.limits };
 }
 
-async function usageIn(tx, tenantId) {
-  const rows = await tx.membership.findMany({ where: { tenantId, status: { in: COUNTED } }, select: { role: true } });
-  return { students: rows.filter(r => STUDENT_ROLES.includes(r.role)).length, professionals: rows.filter(r => PRO_ROLES.includes(r.role)).length };
+async function usageIn(tx, tenantId, ignorePending = '') {
+  const [rows, pending] = await Promise.all([
+    tx.membership.findMany({ where: { tenantId, status: { in: COUNTED } }, select: { role: true } }),
+    tx.pendingInvite.findMany({ where: { tenantId, expiresAt: { gt: new Date() }, ...(ignorePending ? { id: { not: ignorePending } } : {}) }, select: { role: true } })
+  ]);
+  const all = [...rows, ...pending];
+  return { students: all.filter(r => STUDENT_ROLES.includes(r.role)).length, professionals: all.filter(r => PRO_ROLES.includes(r.role)).length };
 }
 
 /** Lança 402 se acrescentar uma pessoa com este papel passaria do limite do plano. Outros papéis não contam. */
-export async function assertCapacity(tx, tenantId, role) {
+export async function assertCapacity(tx, tenantId, role, { ignorePending = '' } = {}) {
   const kind = STUDENT_ROLES.includes(role) ? 'students' : PRO_ROLES.includes(role) ? 'professionals' : null;
   if (!kind) return;
-  const [ent, used] = await Promise.all([tenantEntitlements(tenantId), usageIn(tx, tenantId)]);
+  const [ent, used] = await Promise.all([tenantEntitlements(tenantId), usageIn(tx, tenantId, ignorePending)]);
   const max = kind === 'students' ? ent.limits.maxStudents : ent.limits.maxProfessionals;
   if (used[kind] >= max) {
     throw new SaasError(402, `O plano ${ent.plan.name} permite até ${max} ${kind === 'students' ? 'alunos' : 'profissionais'}. Faça upgrade do plano para adicionar mais.`, 'plan-limit');

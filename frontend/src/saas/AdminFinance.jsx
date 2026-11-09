@@ -21,6 +21,10 @@ export function SaasAdminLink() {
       <div><h2 style={{ margin: 0 }}>Financeiro e IA</h2><div className="small muted">Assinaturas, cobranças, webhooks, Premium manual e consumo da IA.</div></div>
       <Button variant="primary" onClick={() => nav('/admin/financeiro')}>Abrir</Button>
     </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+      <div><h2 style={{ margin: 0 }}>Academias e moderação</h2><div className="small muted">As academias, seus planos e a fila de denúncias da biblioteca.</div></div>
+      <Button variant="primary" onClick={() => nav('/admin/plataforma')}>Abrir</Button>
+    </div>
   </div>
 }
 

@@ -73,6 +73,9 @@ model User {
   auditLogs       AdminAuditLog[] @relation("AuditActor")
   /// A academia cuja orientação de IA o usuário escolheu usar no Coach (null = espaço pessoal). Validada a cada uso.
   aiTenantId      String?
+  /// E-mail confirmado por um código enviado a ele. Mudou o e-mail, deixa de valer (compara-se com emailVerifiedFor).
+  emailVerifiedAt DateTime?
+  emailVerifiedFor String?
   memberships     Membership[]
   trainerProfile  TrainerProfile?
   trainerLinks    TrainerStudent[] @relation("TrainerSide")
@@ -562,4 +565,47 @@ model CommunityReport {
 
   @@unique([itemId, reporterId])
   @@index([status, createdAt])
+}
+
+// ===== Verificação de e-mail, convites a quem ainda não tem conta e notificações =====
+
+/// Código de 6 dígitos (guardado só como hash) enviado ao e-mail da conta; vale 15 minutos e 5 tentativas.
+model EmailVerification {
+  userId    String   @id
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  sentAt    DateTime @default(now())
+}
+
+/// Convite a um e-mail que ainda não tem conta. Só vira um convite de verdade (Membership INVITED) quando
+/// alguém com esse e-mail CONFIRMADO entra; antes disso nada é concedido.
+model PendingInvite {
+  id          String    @id @default(cuid())
+  email       String
+  tenantId    String
+  role        OrgRole
+  invitedById String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  @@unique([email, tenantId])
+  @@index([tenantId])
+}
+
+/// Aviso dentro do app. `dedupeKey` evita avisar duas vezes o mesmo evento.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String    @default("")
+  link      String    @default("")
+  dedupeKey String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt])
 }

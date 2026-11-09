@@ -30,13 +30,13 @@ async function detectAutoRole() {
 /** Para testes: esquece a detecção. */
 export const _resetAutoRole = () => { autoRole = undefined; };
 
-export async function withContext({ userId, tenantId = '', moderator = '', counter = '', eraser = '' }, fn) {
+export async function withContext({ userId, tenantId = '', moderator = '', counter = '', eraser = '', claimEmail = '' }, fn) {
   const role = process.env.RLS_ROLE || (await detectAutoRole());
   if (role && !ROLE.test(role)) throw new Error('RLS_ROLE inválido');
   return prisma().$transaction(async tx => {
     await tx.$executeRaw`SELECT set_config('app.user_id', ${String(userId || '')}, true), set_config('app.tenant_id', ${String(tenantId || '')}, true)`;
     // Só código do servidor, depois de verificar o papel, passa estes três (ver as migrações da biblioteca e do apagamento).
-    if (moderator || counter || eraser) await tx.$executeRaw`SELECT set_config('app.moderator', ${String(moderator)}, true), set_config('app.counter', ${String(counter)}, true), set_config('app.eraser', ${String(eraser)}, true)`;
+    if (moderator || counter || eraser || claimEmail) await tx.$executeRaw`SELECT set_config('app.moderator', ${String(moderator)}, true), set_config('app.counter', ${String(counter)}, true), set_config('app.eraser', ${String(eraser)}, true), set_config('app.claim_email', ${String(claimEmail)}, true)`;
     if (role) await tx.$executeRawUnsafe(`SET LOCAL ROLE ${role}`);
     return fn(tx);
   }, { timeout: 15_000 });

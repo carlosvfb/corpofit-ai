@@ -88,6 +88,8 @@ const Gyms = lazyView(() => import('./saas/Gyms.jsx'))
 const Personal = lazyView(() => import('./saas/Personal.jsx'))
 const Privacy = lazyView(() => import('./saas/Privacy.jsx'))
 const CommunityLibrary = lazyView(() => import('./saas/Library.jsx'))
+const Notifications = lazyView(() => import('./saas/Notifications.jsx'))
+const AdminPlatform = lazyView(() => import('./saas/AdminPlatform.jsx'))
 const Gym = lazyView(() => import('./saas/Gyms.jsx').then(m => ({ default: m.Gym })))
 const CoachIntake = lazyView(() => import('./views/CoachIntake.jsx'))
 const CoachSetup = lazyView(() => import('./views/CoachSetup.jsx'))
@@ -375,6 +377,8 @@ function Shell() {
       {saasOn(config) && <Route path="/personal" element={<Personal />} />}
       {saasOn(config) && <Route path="/privacidade" element={<Privacy />} />}
       {saasOn(config) && <Route path="/biblioteca" element={<CommunityLibrary />} />}
+      {saasOn(config) && <Route path="/notificacoes" element={<Notifications />} />}
+      {saasOn(config) && <Route path="/admin/plataforma" element={user?.admin ? <AdminPlatform /> : <Navigate to="/home" replace />} />}
       {saasOn(config) && <Route path="/academias/:id" element={<Gym />} />}
       {saasOn(config) && <Route path="/checkout" element={<Checkout />} />}
       {saasOn(config) && <Route path="/checkout/:status" element={<CheckoutResult />} />}

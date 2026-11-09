@@ -4525,6 +4525,87 @@ paths:
         '200': { description: The data as JSON (LGPD access and portability). }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/account/verification:
+    get:
+      tags: [saas]
+      operationId: getEmailVerification
+      summary: Whether the account e-mail is confirmed
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/account/verification/send:
+    post:
+      tags: [saas]
+      operationId: sendEmailCode
+      summary: E-mail a 6-digit confirmation code (valid 15 minutes, one a minute)
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/account/verification/confirm:
+    post:
+      tags: [saas]
+      operationId: confirmEmailCode
+      summary: Confirm the e-mail with the code; invites made to it before sign-up become real invites
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/orgs/pending:
+    delete:
+      tags: [saas]
+      operationId: cancelPendingOrgInvite
+      summary: Cancel an invite made to an e-mail that had no account
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/notifications:
+    get:
+      tags: [saas]
+      operationId: listNotifications
+      summary: My in-app notifications and the unread count
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/notifications/read:
+    post:
+      tags: [saas]
+      operationId: markNotificationsRead
+      summary: Mark notifications as read (ids, or all)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found. }
+
+  /api/admin/saas/orgs:
+    get:
+      tags: [saas]
+      operationId: adminListGyms
+      summary: The gyms with plan and member counts (platform admin only)
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not an admin. }
+
   /api/billing/status:
     get:
       tags: [saas]
