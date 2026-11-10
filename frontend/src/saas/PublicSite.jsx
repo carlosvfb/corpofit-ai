@@ -2,6 +2,7 @@
 // privacidade, contato, licença/código-fonte, e as telas de entrar, cadastrar e recuperar a senha.
 // Aparece no lugar da tela de login do openGym quando o servidor está em SAAS_MODE (GET /api/config).
 // Tudo em português do Brasil; o resto do app usa os pacotes de idioma do openGym (DEFAULT_LANG=pt-BR).
+import GoogleSignIn from './GoogleSignIn.jsx'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import './saas.css'
@@ -268,6 +269,7 @@ function Register() {
     <h1 className="ff-h1" style={{ fontSize: 30 }}>Criar conta</h1>
     <p className="ff-muted" style={{ marginTop: -6 }}>Grátis, sem cartão de crédito.</p>
     <form className="ff-form" onSubmit={submit} noValidate>
+      <GoogleSignIn />
       <Field id="name" label="Nome"><input id="name" className="ff-input" autoComplete="name" maxLength={40} value={f.name} onChange={set('name')} /></Field>
       <Field id="email" label="E-mail"><input id="email" className="ff-input" type="email" autoComplete="email" inputMode="email" value={f.email} onChange={set('email')} /></Field>
       <Field id="pw" label="Senha"><input id="pw" className="ff-input" type="password" autoComplete="new-password" value={f.pw} onChange={set('pw')} /><div className="ff-muted" style={{ fontSize: 12, marginTop: 4 }}>Ao menos {MIN_PASSWORD} caracteres. Algumas palavras sem relação formam uma boa senha.</div></Field>

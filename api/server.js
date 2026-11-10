@@ -35,6 +35,8 @@ import {
   dropWatchLinks, boxOf, putSnapshot, pushEvents, queuedEvents, ackEvents
 } from './watch-relay.js';
 import { startAdminSocket } from './admin-socket.js';
+import { googleEnabled, newState, authUrl, stateOk, profileFromCode, downloadPicture } from './google-auth.js';
+import { createAvatarStore, MAX_AVATAR } from './avatar.js';
 import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from './media.js';
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
@@ -1290,7 +1292,8 @@ function loginTarget(body) {
 }
 const acctKey = u => 'acct:' + u.id;
 const passkeyCount = u => db.creds.filter(c => c.userId === u.id).length;
-const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u), ...(isOwner(u) ? { owner: true } : {}) });
+const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u), ...(isOwner(u) ? { owner: true } : {}), ...(u.avatar ? { avatar: u.avatar } : {}) });
+const avatars = createAvatarStore(DATA);
 const POLICY_ERRORS = {
   'too-short': `the password needs at least ${MIN_LENGTH} characters`,
   'too-long': `the password can have at most ${MAX_LENGTH} characters`,
@@ -1457,6 +1460,89 @@ function removeAccount(u) {
 
 const FORGOT_BY_ADDRESS = scoped('FORGOT_BY_ADDRESS', () => createWindow({ max: 5, windowMs: 3600000 }), limiterCodec);
 const FORGOT_BY_EMAIL = scoped('FORGOT_BY_EMAIL', () => createWindow({ max: 3, windowMs: 3600000 }), limiterCodec);
+/* ---------- entrar com o Google e foto de perfil ----------
+   Só existem com GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET. O e-mail precisa estar verificado pelo Google. Uma conta já
+   existente com o mesmo e-mail é vinculada ao Google, e a senha dela (se houver) é removida e as sessões antigas
+   encerradas: sem isso, alguém que cadastrou o e-mail de outra pessoa antes dela continuaria dono da conta. */
+const GSTATE = 'cf_gstate';
+const gClear = `${GSTATE}=; Path=/api/auth/google; Max-Age=0; HttpOnly;${SECURE} SameSite=Lax`;
+const PORTAL_HOME = { personal: '/#/personal', academia: '/#/academia', plataforma: '/#/plataforma' };
+const redirect = (res, to, cookies = []) => { res.writeHead(302, { Location: to, 'Cache-Control': 'no-store', ...(cookies.length ? { 'Set-Cookie': cookies } : {}) }); res.end(); };
+const cookieOf = (req, name) => (String(req.headers.cookie || '').split(/;\s*/).find(c => c.startsWith(name + '=')) || '').slice(name.length + 1);
+const googleRoutes = {
+  'GET /api/auth/google/start': async (req, res) => {
+    if (!googleEnabled()) return redirect(res, '/#/entrar?google=off');
+    const portal = new URL(req.url, 'http://x').searchParams.get('portal') || '';
+    const state = newState();
+    redirect(res, authUrl({ clientId: process.env.GOOGLE_CLIENT_ID, origin: ORIGIN, state }), [`${GSTATE}=${state}.${PORTAL_HOME[portal] ? portal : 'app'}; Path=/api/auth/google; Max-Age=600; HttpOnly;${SECURE} SameSite=Lax`]);
+  },
+  'GET /api/auth/google/callback': async (req, res) => {
+    const q = new URL(req.url, 'http://x').searchParams;
+    const [cState, portal] = cookieOf(req, GSTATE).split('.');
+    const back = code => redirect(res, '/#/entrar?google=' + code, [gClear]);
+    if (!googleEnabled()) return back('off');
+    if (q.get('error')) return back('cancelled');
+    if (!stateOk(q.get('state'), cState)) return back('state');
+    let p;
+    try { p = await profileFromCode({ code: q.get('code'), clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, origin: ORIGIN }); }
+    catch (e) { audit(req, 'auth.google.fail', { ok: false, msg: String(e.code || 'error') }); return back(e.code === 'email-unverified' ? 'unverified' : 'failed'); }
+    let user = db.users.find(u => u.google?.sub === p.sub);
+    let how = 'google';
+    if (!user) {
+      const same = db.users.find(u => u.email === p.email);
+      if (same) {
+        user = same; user.google = { sub: p.sub }; how = 'google-linked';
+        if (hasPassword(user)) { delete user.pw; user.sv = sessionVersion(user) + 1; }
+      } else {
+        if (INVITE_ONLY) { audit(req, 'auth.register.denied', { ok: false, msg: 'google-invite-only' }); return back('invite'); }
+        let name = p.name || 'Aluno', n = 1;
+        while (nameTaken(name)) name = `${(p.name || 'Aluno').slice(0, 36)} ${++n}`;
+        user = { id: crypto.randomBytes(12).toString('base64url'), name, created: new Date().toISOString(), email: p.email, google: { sub: p.sub } };
+        claimFirstAdmin(req, user);
+        db.users.push(user);
+        how = 'google-new';
+      }
+    }
+    if (user.disabled) { audit(req, 'auth.google.fail', { ok: false, user, msg: 'account-disabled' }); return back('disabled'); }
+    if (!user.avatar || user.avatarSource === 'google') {
+      const buf = p.picture ? await downloadPicture(p.picture) : null;
+      if (buf) { try { user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'google'; } catch { /* a foto é opcional */ } }
+    }
+    saveDb();
+    audit(req, 'auth.google.ok', { user, msg: how });
+    redirect(res, PORTAL_HOME[portal] || '/#/home', [...sessionCookie(user), gClear]);
+  }
+};
+const readImageBody = body => {
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(typeof body?.image === 'string' ? body.image : '');
+  return m ? Buffer.from(m[2], 'base64') : null;
+};
+const avatarRoutes = {
+  'GET /api/account/avatar': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const a = avatars.read(user.id);
+    if (!a) return json(res, 404, { error: 'no photo' });
+    res.writeHead(200, { 'Content-Type': a.mime, 'Content-Length': a.buf.length, 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    res.end(a.buf);
+  },
+  'PUT /api/account/avatar': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const buf = readImageBody(await readBody(req));
+    if (!buf) return json(res, 400, { error: 'send a JPEG, PNG or WebP image', code: 'avatar-type' });
+    try { user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'upload'; }
+    catch (e) { return json(res, e.code === 'avatar-size' ? 413 : 400, { error: e.code === 'avatar-size' ? `photo is larger than ${MAX_AVATAR / 1024} KB` : 'unsupported image', code: e.code || 'avatar' }); }
+    saveDb();
+    json(res, 200, { avatar: user.avatar });
+  },
+  'DELETE /api/account/avatar': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    avatars.remove(user.id); delete user.avatar; delete user.avatarSource; saveDb();
+    json(res, 200, { avatar: null });
+  }
+};
 const passwordRoutes = {
   'POST /api/login/password': async (req, res) => {
     const body = await readBody(req);
@@ -2228,7 +2314,7 @@ const routes = {
     if (!dataWritable()) return json(res, 503, { ok: false, writable: false });
     let ai; // SaaS: diz se a IA está configurada e, se não, por quê (nunca expõe a chave)
     try { ai = saas ? saas.ensureAi() : undefined; } catch (err) { ai = { configured: false, reason: 'erro: ' + String(err?.message || err).slice(0, 120) }; }
-    json(res, 200, { ok: true, users: db.users.length, writable: true, ...(ai ? { ai } : {}) });
+    json(res, 200, { ok: true, users: db.users.length, writable: true, ...(ai ? { ai, mail: !!(process.env.RESEND_API_KEY && process.env.MAIL_FROM), google: googleEnabled() } : {}) });
   },
 
   // Public config the login screen needs before anyone is signed in. `coach` is absent unless
@@ -2254,6 +2340,7 @@ const routes = {
       invite_only: INVITE_ONLY, allow_guest: ALLOW_GUEST,
       // Only when on, so an instance without passwords answers exactly as it did before (#118).
       ...(PASSWORD_LOGIN ? { password_login: true } : {}),
+      ...(googleEnabled() ? { google_login: true } : {}),
       // Public: the sign-in and the public pages need it before anyone is signed in.
       ...(SAAS_MODE ? { saas: { enabled: true, brand: process.env.BRAND_NAME || 'CorpoFit AI', sourceCodeUrl: process.env.SOURCE_CODE_URL || null, supportEmail: process.env.SUPPORT_EMAIL || null } } : {}),
       // Public: the sign-in screen is the first thing that reads it.
@@ -2621,6 +2708,8 @@ const routes = {
 
   // Absent entirely while PASSWORD_LOGIN is off, so each of them is a plain 404.
   ...(PASSWORD_LOGIN ? passwordRoutes : {}),
+  ...googleRoutes,
+  ...avatarRoutes,
 
   // Always there: more passkeys and device links need nothing an instance has to switch on.
   ...passkeyRoutes,

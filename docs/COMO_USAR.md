@@ -27,6 +27,12 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 | Confirmar o e-mail | **Ajustes → Notificações e e-mail** → *Enviar código* → digitar os 6 números. Libera convites feitos ao seu e-mail antes de você ter conta. |
 | Virar admin da plataforma | A primeira conta só vira admin se `FIRST_USER_ADMIN=1` estiver ligado no momento do cadastro; senão, use `ADMIN_UIDS` (veja DEPLOY.md). |
 
+### Entrar com o Google e foto de perfil
+- **Continuar com o Google** aparece nas telas de entrada e cadastro quando o servidor tem `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. A conta é criada (ou encontrada pelo e-mail) e a **foto do Google vira a foto de perfil**. Só vale e-mail verificado pelo Google.
+- Se já existia uma conta com o mesmo e-mail, ela passa a entrar pelo Google; a senha antiga é removida e as sessões antigas encerradas (proteção contra quem cadastrou o e-mail de outra pessoa antes).
+- **Foto de perfil para quem entrou de outro jeito:** Ajustes → **Foto de perfil** (ou Perfil no portal do personal, ou o seu nome no menu lateral dos portais de computador). A foto é reduzida no aparelho (256 px) e guardada no servidor; dá para trocar ou remover.
+- **E-mails (Resend):** código de confirmação, redefinição de senha e convites saem pelo Resend quando `RESEND_API_KEY` e `MAIL_FROM` estão definidos. O `MAIL_FROM` precisa ser de um domínio verificado no Resend. `/api/health` mostra `mail: true` quando está configurado. Se o Resend recusar o envio, o motivo aparece nos logs da Vercel (`[mail] Resend recusou…`).
+
 ## 2. Treino (base do app)
 - **Início**: o treino do dia, calendário da semana, começar um treino.
 - **Plano**: suas rotinas e dias; **Plano inicial** traz os planos prontos (PPL, Superior/Inferior, Full Body, 5×5, ABC, ABCD, Em casa, Glúteos e pernas).

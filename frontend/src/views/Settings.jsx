@@ -1197,6 +1197,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Portal do personal" accessory="chevron" onClick={() => nav('/personal')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Portal da academia" accessory="chevron" onClick={() => nav('/academia')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="personCircle" iconTint="var(--indigo)" title="Foto de perfil" accessory="chevron" onClick={() => nav('/foto')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Biblioteca" accessory="chevron" onClick={() => nav('/biblioteca')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Notificações e e-mail" accessory="chevron" onClick={() => nav('/notificacoes')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
@@ -1330,7 +1331,7 @@ function SettingsRoot({ ctx, preview, open, user, sync, home, go, entryKey }) {
     </Section> : <div className="sp-empty">{t('No setting matches “{0}”.', q.trim())}</div>) : <>
       <Section>
         <button className="lrow tap sp-acct" data-tour="settings-account" onClick={() => open('account')}>
-          <span className={'sp-avatar' + (initial ? ' on' : '')} aria-hidden="true">{initial || <Icon name="personCircle" />}</span>
+          <span className={'sp-avatar' + (initial ? ' on' : '')} aria-hidden="true">{user?.avatar && !DEMO ? <img src={'/api/account/avatar?v=' + encodeURIComponent(user.avatar)} alt="" width="56" height="56" style={{ borderRadius: '50%', objectFit: 'cover' }} /> : (initial || <Icon name="personCircle" />)}</span>
           <span className="lrow-m"><span className="lrow-t">{acct.title}</span><span className="lrow-s">{acct.sub}</span></span>
           <Icon name="chevronRight" className="lrow-c" />
         </button>

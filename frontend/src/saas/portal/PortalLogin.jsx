@@ -7,6 +7,7 @@ import './portal.css'
 import { useStore } from '../../store/useStore.js'
 import { useUI } from '../../store/useUI.js'
 import { passwordLogin } from '../../lib/api.js'
+import GoogleSignIn from '../GoogleSignIn.jsx'
 import { askAddDeviceData } from '../../sheets.jsx'
 import { hasData } from '../../store/useStore.js'
 import { BRAND } from '../brand.js'
@@ -69,6 +70,7 @@ export default function PortalLogin({ portal, mode = 'login' }) {
     <section className="pl-form">
       <form className="pl-card" onSubmit={submit} noValidate>
         <h2>{register ? 'Criar conta' : 'Entrar'}</h2>
+        <GoogleSignIn portal={p.key} />
         {register && <div className="pl-field"><label htmlFor="pl-name">Nome</label><input id="pl-name" className="input" autoComplete="name" maxLength={40} value={f.name} onChange={set('name')} /></div>}
         <div className="pl-field"><label htmlFor="pl-email">E-mail</label><input id="pl-email" className="input" type="email" autoComplete="username" inputMode="email" value={f.email} onChange={set('email')} /></div>
         <div className="pl-field"><label htmlFor="pl-pw">Senha</label><input id="pl-pw" className="input" type="password" autoComplete={register ? 'new-password' : 'current-password'} value={f.pw} onChange={set('pw')} /></div>

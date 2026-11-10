@@ -4407,6 +4407,54 @@ paths:
         '403': { description: Not allowed for this role or link. }
         '404': { description: Not found, or the caller is not a party to it. }
 
+  /api/auth/google/start:
+    get:
+      tags: [saas]
+      operationId: startGoogleLogin
+      summary: Start signing in with Google (redirects to Google)
+      parameters:
+        - { name: portal, in: query, required: false, schema: { type: string } }
+      responses:
+        '302': { description: Redirect to Google, or back to the sign-in screen when Google login is not configured. }
+
+  /api/auth/google/callback:
+    get:
+      tags: [saas]
+      operationId: finishGoogleLogin
+      summary: Google redirects here after sign-in; sets the session and redirects into the app
+      responses:
+        '302': { description: Redirect into the app with a session cookie, or to the sign-in screen with a google error code. }
+
+  /api/account/avatar:
+    get:
+      tags: [saas]
+      operationId: getAvatar
+      summary: My profile photo
+      responses:
+        '200': { description: The image (JPEG, PNG or WebP). }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: No photo set. }
+    put:
+      tags: [saas]
+      operationId: setAvatar
+      summary: Set my profile photo from a data URL image of at most 200 KB
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '400': { description: Not a JPEG, PNG or WebP image. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { description: The photo is too large. }
+    delete:
+      tags: [saas]
+      operationId: deleteAvatar
+      summary: Remove my profile photo
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /api/orgs/ai-context:
     get:
       tags: [saas]

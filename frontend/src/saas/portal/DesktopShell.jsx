@@ -5,6 +5,7 @@ import '../saas.css'
 import './portal.css'
 import { useStore } from '../../store/useStore.js'
 import { BRAND } from '../brand.js'
+import { Avatar } from '../Avatar.jsx'
 
 /** nav: [{ to, label, end? }]; context: { title, sub } mostra a academia em uso. */
 export default function DesktopShell({ role, nav, context, title, sub, children }) {
@@ -23,7 +24,7 @@ export default function DesktopShell({ role, nav, context, title, sub, children 
       </nav>
       <div className="dk-spacer" />
       <NavLink to="/home" className="dk-link">Meu treino (app do aluno)</NavLink>
-      <div className="dk-user">{user?.name}</div>
+      <NavLink to="/foto" className="dk-user" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'inherit', textDecoration: 'none' }} title="Alterar foto de perfil"><Avatar user={user} size={34} /><span>{user?.name}</span></NavLink>
       <button className="btn tinted" onClick={leave} style={{ minHeight: 40 }}>Sair</button>
     </aside>
     <main className="dk-main" id="conteudo">

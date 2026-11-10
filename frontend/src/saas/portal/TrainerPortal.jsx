@@ -12,6 +12,7 @@ import ExerciseLibrary from '../../views/Library.jsx'
 import { Agenda, StudentDetail, StudentsHome } from './TrainerPages.jsx'
 import Notifications from '../Notifications.jsx'
 import { Err } from '../Gyms.jsx'
+import { ProfilePhoto } from '../Avatar.jsx'
 import { errorText, trainerAssignments, trainerLinks, trainerProfile } from '../api.js'
 import { formatDateTime } from '../brand.js'
 
@@ -49,6 +50,7 @@ function Profile() {
   const user = useStore(s => s.user)
   const signOut = useStore(s => s.signOut)
   return <Page title="Meu perfil">
+    <ProfilePhoto />
     <TrainerSide part="profile" />
     <div className="card" style={{ marginTop: 14 }}>
       <div className="muted small">Conta: {user?.name}</div>

@@ -134,3 +134,7 @@ export const trainerNotes = linkId => api('/api/trainer/notes' + qs('link', link
 export const addTrainerNote = (linkId, body) => post('/api/trainer/notes', { linkId, body })
 export const deleteTrainerNote = id => api('/api/trainer/notes' + qs('id', id), { method: 'DELETE' })
 export const applyPreset = (trainerId, preset) => post('/api/privacy/preset', { trainerId, preset })
+
+// Foto de perfil (data URL JPEG/PNG/WebP de até 200 KB, já reduzida no aparelho).
+export const uploadAvatar = image => put('/api/account/avatar', { image })
+export const removeAvatar = () => api('/api/account/avatar', { method: 'DELETE' })
