@@ -757,7 +757,7 @@ const clearCookie = COOKIE === LEGACY_COOKIE
 // token in the Authorization header, which no browser attaches on its own.
 // The Asaas webhook is called by a server, never a browser: it answers to the token in its
 // asaas-access-token header, which no page can attach.
-const CSRF_EXEMPT = new Set(['POST /api/pair/redeem', 'POST /api/watch/redeem', 'POST /api/watch/box', 'POST /api/webhooks/asaas']);
+const CSRF_EXEMPT = new Set(['POST /api/access/check', 'POST /api/pair/redeem', 'POST /api/watch/redeem', 'POST /api/watch/box', 'POST /api/webhooks/asaas']);
 // The routes that answer to the credential in the body and never to a Bearer. No Bearer is the
 // credential that acts there, so none buys the shortcut below: any valid token would do, the
 // attacker's own included.
@@ -1509,6 +1509,8 @@ const googleRoutes = {
       if (buf) { try { user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'google'; } catch { /* a foto é opcional */ } }
     }
     saveDb();
+    // Google já verificou o e-mail: vale como confirmado para vincular matrículas e convites da academia.
+    if (saas) await saas.onGoogleSignIn({ id: user.id, name: user.name, email: user.email });
     audit(req, 'auth.google.ok', { user, msg: how });
     redirect(res, PORTAL_HOME[portal] || '/#/home', [...sessionCookie(user), gClear]);
   }

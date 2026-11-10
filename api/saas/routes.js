@@ -22,6 +22,8 @@ import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
 import * as schedule from './org/schedule.js';
 import * as gymOps from './org/gym-ops.js';
+import * as desk from './org/gym-desk.js';
+import * as floor from './org/gym-floor.js';
 import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
 import * as orgBilling from './org/billing.js';
@@ -181,6 +183,111 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'GET /api/orgs/workouts': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await gymOps.gymWorkouts(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('limit')));
+    }),
+
+    /* ------------------- recepção: matrícula, mensalidades, aparelhos e acesso ------------------- */
+    'GET /api/my-gym': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await desk.myGym(user));
+    }),
+    'POST /api/my-gym/face-revoke': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await desk.revokeMyFace(user, tenantOf(req)));
+    }),
+    'GET /api/orgs/membership-plans': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await desk.listPlans(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/membership-plans': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await desk.savePlan(user, tenantOf(req), await readBody(req)));
+    }),
+    'GET /api/orgs/students': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await desk.listStudents(user, tenantOf(req), { q: u.get('q') || '', status: u.get('status') || '' }));
+    }),
+    'POST /api/orgs/students': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 201, await desk.enroll(user, tenantOf(req), await readBody(req)));
+    }),
+    'GET /api/orgs/student': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await desk.getStudent(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'PUT /api/orgs/student': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, b.status ? await desk.setStudentStatus(user, tenantOf(req), b.id, b.status, b.reason) : await desk.updateStudent(user, tenantOf(req), b.id, b));
+    }),
+    'GET /api/orgs/charges': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await desk.listCharges(user, tenantOf(req), { status: u.get('status') || '', month: u.get('month') || '', q: u.get('q') || '' }));
+    }),
+    'POST /api/orgs/charges': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      if (b.action === 'pay') return json(res, 200, await desk.recordPayment(user, tenantOf(req), b.id, b));
+      if (b.action === 'cancel') return json(res, 200, await desk.cancelCharge(user, tenantOf(req), b.id, b.reason));
+      json(res, 200, await desk.generateCharges(user, tenantOf(req), b.month));
+    }),
+    'POST /api/orgs/student-face': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      if (typeof b.image === 'string') {
+        const m = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(b.image);
+        if (!m) throw new SaasError(400, 'Envie uma foto JPEG, PNG ou WebP.', 'invalid-image');
+        return json(res, 200, await desk.saveFacePhoto(user, tenantOf(req), b.id, Buffer.from(m[1], 'base64')));
+      }
+      json(res, 200, await desk.setFaceConsent(user, tenantOf(req), b.id, b.consent === true));
+    }),
+    'GET /api/orgs/student-face': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const f = await desk.readFacePhoto(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('id'));
+      res.writeHead(200, { 'Content-Type': f.mime, 'Content-Length': f.buf.length, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
+      res.end(f.buf);
+    }),
+    'GET /api/orgs/equipment': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.listEquipment(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/equipment': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.saveEquipment(user, tenantOf(req), await readBody(req)));
+    }),
+    'DELETE /api/orgs/equipment': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.deleteEquipment(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'GET /api/orgs/devices': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.listDevices(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/devices': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, b.id ? 200 : 201, b.id ? await floor.updateDevice(user, tenantOf(req), b.id, b) : await floor.createDevice(user, tenantOf(req), b.name));
+    }),
+    'DELETE /api/orgs/devices': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.deleteDevice(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('id')));
+    }),
+    'GET /api/orgs/access-events': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await floor.accessEvents(user, tenantOf(req), { limit: new URL(req.url, 'http://x').searchParams.get('limit') }));
+    }),
+    // Leitores e catracas: autenticam pelo token do leitor (Authorization: Bearer gd_...), nunca por cookie.
+    'POST /api/access/check': guarded(async (req, res) => {
+      json(res, 200, await floor.deviceCheck(req.headers.authorization, await readBody(req)));
+    }),
+    'GET /api/access/people': guarded(async (req, res) => {
+      json(res, 200, await floor.devicePeople(req.headers.authorization));
+    }),
+    'GET /api/access/face': guarded(async (req, res) => {
+      const f = await floor.deviceFace(req.headers.authorization, new URL(req.url, 'http://x').searchParams.get('number'));
+      res.writeHead(200, { 'Content-Type': f.mime, 'Content-Length': f.buf.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+      res.end(f.buf);
     }),
 
     /* ------------------- personal trainers ------------------- */

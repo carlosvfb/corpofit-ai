@@ -4515,6 +4515,312 @@ paths:
         '403': { description: Not allowed for this role. }
         '404': { description: Not found, or the caller is not a member of this gym. }
 
+  /api/my-gym:
+    get:
+      tags: [saas]
+      operationId: getMyGym
+      summary: My enrollment, plan, monthly charges and access status in each gym
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/my-gym/face-revoke:
+    post:
+      tags: [saas]
+      operationId: revokeMyFaceConsent
+      summary: Withdraw my face consent for a gym and delete my access photo
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: I am not an enrolled student of this gym. }
+
+  /api/orgs/membership-plans:
+    get:
+      tags: [saas]
+      operationId: listGymPlans
+      summary: Membership plans of the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: saveGymPlan
+      summary: Create or update a membership plan
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/students:
+    get:
+      tags: [saas]
+      operationId: listGymStudents
+      summary: Enrolled students of the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: enrollGymStudent
+      summary: Front desk enrolls a student with the full registration
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/student:
+    get:
+      tags: [saas]
+      operationId: getGymStudent
+      summary: One student record, with sensitive fields only for front desk and management
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: id, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    put:
+      tags: [saas]
+      operationId: updateGymStudent
+      summary: Update the registration or the status of a student
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/charges:
+    get:
+      tags: [saas]
+      operationId: listGymCharges
+      summary: Monthly charges of the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: month, in: query, required: false, schema: { type: string } }
+        - { name: q, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: actOnGymCharges
+      summary: Generate the month charges, register a payment or cancel a charge
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/student-face:
+    get:
+      tags: [saas]
+      operationId: getStudentFacePhoto
+      summary: Access photo of a student, front desk only
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: id, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: saveStudentFace
+      summary: Record or revoke the face consent, or save the access photo
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/equipment:
+    get:
+      tags: [saas]
+      operationId: listGymEquipment
+      summary: Numbered equipment of the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: saveGymEquipment
+      summary: Create or update a piece of equipment
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    delete:
+      tags: [saas]
+      operationId: deleteGymEquipment
+      summary: Remove a piece of equipment
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: id, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/devices:
+    get:
+      tags: [saas]
+      operationId: listGymDevices
+      summary: Turnstiles and readers of the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    post:
+      tags: [saas]
+      operationId: saveGymDevice
+      summary: Create a reader (the token is shown once), or update, deactivate or rotate it
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+    delete:
+      tags: [saas]
+      operationId: deleteGymDevice
+      summary: Remove a reader
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: id, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/access-events:
+    get:
+      tags: [saas]
+      operationId: listGymAccessEvents
+      summary: Latest entries and denials at the gym
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/access/check:
+    post:
+      tags: [saas]
+      operationId: checkGymAccess
+      summary: A turnstile asks whether it may open for a QR code or enrollment number
+      description: Reader token in the Authorization header (Bearer gd_...), no cookie.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '400': { description: Missing QR code or enrollment number. }
+        '401': { description: Unknown or inactive reader token. }
+        '404': { description: Not found. }
+
+  /api/access/people:
+    get:
+      tags: [saas]
+      operationId: listGymAccessPeople
+      summary: People known to the gym with whether they may enter today, for terminal sync
+      description: Reader token in the Authorization header (Bearer gd_...), no cookie.
+      responses:
+        '200': { description: OK. }
+        '400': { description: Missing QR code or enrollment number. }
+        '401': { description: Unknown or inactive reader token. }
+        '404': { description: Not found. }
+
+  /api/access/face:
+    get:
+      tags: [saas]
+      operationId: getGymAccessFace
+      summary: Access photo of one enrolled student for a face terminal
+      description: Reader token in the Authorization header (Bearer gd_...), no cookie.
+      parameters:
+        - { name: number, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '400': { description: Missing QR code or enrollment number. }
+        '401': { description: Unknown or inactive reader token. }
+        '404': { description: Not found. }
+
   /api/orgs/ai-context:
     get:
       tags: [saas]

@@ -1,4 +1,5 @@
 import ProfilePhotoPage from './saas/Avatar.jsx'
+import MyGym from './saas/MyGym.jsx'
 import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { hideBoot } from './lib/boot.js'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
@@ -387,6 +388,7 @@ function Shell() {
       {(saasOn(config) || !config) && <Route path="/plataforma/*" element={<AdminPortal />} />}
       {(saasOn(config) || !config) && <Route path="/privacidade" element={<Privacy />} />}
       {(saasOn(config) || !config) && <Route path="/foto" element={<ProfilePhotoPage />} />}
+      {(saasOn(config) || !config) && <Route path="/minha-academia" element={<MyGym />} />}
       {(saasOn(config) || !config) && <Route path="/biblioteca" element={<CommunityLibrary />} />}
       {(saasOn(config) || !config) && <Route path="/notificacoes" element={<Notifications />} />}
       {(saasOn(config) || !config) && <Route path="/admin/plataforma" element={<Navigate to="/plataforma" replace />} />}

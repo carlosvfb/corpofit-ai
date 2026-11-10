@@ -270,11 +270,11 @@ export async function dashboard(user, tenantId) {
     const rows = await tx.membership.findMany({ where: { tenantId, status: { not: 'REMOVED' } }, select: { role: true, status: true, createdAt: true } });
     const since = Date.now() - 30 * 86_400_000;
     const active = rows.filter(r => r.status === 'ACTIVE');
-    const byRole = Object.fromEntries(['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER', 'PERSONAL_TRAINER', 'STUDENT'].map(r => [r, active.filter(x => x.role === r).length]));
+    const byRole = Object.fromEntries(['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER', 'INSTRUCTOR', 'RECEPTIONIST', 'PERSONAL_TRAINER', 'STUDENT'].map(r => [r, active.filter(x => x.role === r).length]));
     return {
       members: { active: active.length, invited: rows.length - active.length, byRole },
       students: { active: byRole.STUDENT, joinedLast30Days: active.filter(r => r.role === 'STUDENT' && r.createdAt.getTime() >= since).length },
-      professionals: { active: byRole.PERSONAL_TRAINER + byRole.GYM_MANAGER }
+      professionals: { active: byRole.PERSONAL_TRAINER + byRole.GYM_MANAGER + byRole.INSTRUCTOR + byRole.RECEPTIONIST }
     };
   });
 }

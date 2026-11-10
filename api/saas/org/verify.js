@@ -74,6 +74,16 @@ export async function verify(user, code) {
   return { verified: true, invitesClaimed: await claimInvites(user) };
 }
 
+/** Entrou pelo Google: o Google já verificou o e-mail, então vale como confirmado e as matrículas/convites desse e-mail
+ *  são vinculados na hora. Só chamar com um e-mail que o PROVEDOR confirmou (nunca com o que a pessoa digitou). */
+export async function markVerifiedByProvider(user) {
+  const email = lower(user.email);
+  if (!email) return { claimed: 0 };
+  await ensureUser(user);
+  await db.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date(), emailVerifiedFor: email } });
+  return { claimed: await claimInvites(user) };
+}
+
 /** Transforma os convites feitos ao e-mail (já confirmado) em convites de verdade. Devolve quantos. */
 export async function claimInvites(user) {
   if (!(await isVerified(user))) return 0;
@@ -87,12 +97,20 @@ export async function claimInvites(user) {
         if (!existing || existing.status === 'REMOVED') {
           await assertCapacity(tx, inv.tenantId, inv.role, { ignorePending: inv.id });
           const t = await tx.tenant.findUnique({ where: { id: inv.tenantId } });
-          if (existing) await tx.membership.update({ where: { id: existing.id }, data: { role: inv.role, status: 'INVITED', invitedById: inv.invitedById } });
-          else await tx.membership.create({ data: { tenantId: inv.tenantId, userId: user.id, role: inv.role, status: 'INVITED', invitedById: inv.invitedById } });
-          await tx.activityLog.createMany({ data: [{ tenantId: inv.tenantId, actorUserId: inv.invitedById, action: 'member.invited', targetType: 'user', targetId: user.id, after: { role: inv.role, status: 'INVITED', viaPendingInvite: true } }] });
-          await notify(tx, user.id, { kind: 'gym-invite', title: `Convite da academia ${t?.name || ''}`.trim(), body: 'Aceite em Ajustes > Academias.', link: '/academias', dedupeKey: `gym-invite:${inv.tenantId}:${inv.id}` });
+          const status = inv.autoAccept ? 'ACTIVE' : 'INVITED';
+          if (existing) await tx.membership.update({ where: { id: existing.id }, data: { role: inv.role, status, invitedById: inv.invitedById } });
+          else await tx.membership.create({ data: { tenantId: inv.tenantId, userId: user.id, role: inv.role, status, invitedById: inv.invitedById } });
+          await tx.activityLog.createMany({ data: [{ tenantId: inv.tenantId, actorUserId: inv.invitedById, action: inv.autoAccept ? 'student.account-linked' : 'member.invited', targetType: 'user', targetId: user.id, after: { role: inv.role, status, viaPendingInvite: true } }] });
+          if (inv.autoAccept) {
+            // Matrícula feita na recepção: liga a conta ao cadastro da academia (o aluno não precisa aceitar de novo).
+            await tx.gymStudent.updateMany({ where: { tenantId: inv.tenantId, email, userId: null }, data: { userId: user.id } });
+            await notify(tx, user.id, { kind: 'gym', title: `Você agora faz parte da academia ${t?.name || ''}`.trim(), body: 'Veja seu plano, mensalidades e aparelhos em Ajustes > Minha academia.', link: '/minha-academia', dedupeKey: `gym-linked:${inv.tenantId}:${inv.id}` });
+          } else {
+            await notify(tx, user.id, { kind: 'gym-invite', title: `Convite da academia ${t?.name || ''}`.trim(), body: 'Aceite em Ajustes > Academias.', link: '/academias', dedupeKey: `gym-invite:${inv.tenantId}:${inv.id}` });
+          }
           claimed++;
         }
+        if (inv.autoAccept) await tx.gymStudent.updateMany({ where: { tenantId: inv.tenantId, email, userId: null }, data: { userId: user.id } });
         await tx.pendingInvite.deleteMany({ where: { id: inv.id } });
       });
     } catch { /* sem vaga no plano ou outro problema: o convite fica pendente e a academia vê o motivo ao tentar de novo */ }

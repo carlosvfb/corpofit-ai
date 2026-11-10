@@ -18,7 +18,7 @@ import { DEFAULT_GYM_PLAN, gymPlan, gymPlans, publicGymPlans } from './gym-plans
 const NOT_FOUND = () => new SaasError(404, 'Academia não encontrada.', 'not-found');
 const uuid = v => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
 const STUDENT_ROLES = ['STUDENT'];
-const PRO_ROLES = ['PERSONAL_TRAINER', 'GYM_MANAGER'];
+const PRO_ROLES = ['PERSONAL_TRAINER', 'GYM_MANAGER', 'INSTRUCTOR', 'RECEPTIONIST'];
 const COUNTED = ['ACTIVE', 'INVITED'];
 
 /** O plano em vigor da academia e seus limites. */

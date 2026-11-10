@@ -11,7 +11,7 @@ import GoogleSignIn from '../GoogleSignIn.jsx'
 import { askAddDeviceData } from '../../sheets.jsx'
 import { hasData } from '../../store/useStore.js'
 import { BRAND } from '../brand.js'
-import { errorText, registerAccount } from '../api.js'
+import { errorText, registerAccount, sendEmailCode } from '../api.js'
 import { PORTALS } from './portals.js'
 
 const MIN_PASSWORD = 10
@@ -57,6 +57,7 @@ export default function PortalLogin({ portal, mode = 'login' }) {
       const st = useStore.getState()
       st.setUser(u)
       if (hasData(useStore.getState().S)) await st.pushState(); else await st.pullState()
+      Promise.resolve(sendEmailCode()).catch(() => {}) // código de confirmação do e-mail (libera convites e matrícula de academia)
       nav(p.home, { replace: true })
     } catch (ex) { setErr(errorText(ex, 'Não foi possível criar a conta.')) } finally { setBusy(false) }
   }

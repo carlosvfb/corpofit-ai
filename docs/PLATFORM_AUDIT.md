@@ -206,3 +206,13 @@ Verificação do RLS em produção (somente leitura): conectado como o dono do b
 - **App:** portal da academia com Visão geral (números), Alunos, Equipe, Agenda (calendário), Treinos e Membros e convites.
 - **Testes:** `saas-gymops.test.js` (5, sob papel que obedece ao RLS); suíte SaaS 158 de 158; frontend `src/saas` 44 de 44.
 - **Não feito:** relatório de frequência por aluno para a gestão (depende de permissão do aluno), cobrança de mensalidade dos alunos pela academia, e criação de treinos diretamente pela gestão.
+
+## 16. Recepção, mensalidades, aparelhos, acesso, Google e foto (2026-11-10 a 12)
+- **Entrar com o Google** (`api/google-auth.js`): fluxo OAuth com `state` em cookie, e-mail verificado pelo Google (conta existente com o mesmo e-mail é vinculada e perde a senha, contra pré-sequestro), foto do Google baixada e guardada como avatar. Entrar pelo Google conta como e-mail confirmado e vincula matrículas e convites (`markVerifiedByProvider`). Foto de perfil por upload em Ajustes (`api/avatar.js`).
+- **E-mail:** `api/saas/mailer.js` via Resend (HTML com a marca, motivo da recusa nos logs, `/api/health` mostra `mail`). Cadastro por e-mail envia o código de confirmação na hora.
+- **Papéis novos:** Professor (INSTRUCTOR) e Recepção (RECEPTIONIST) com permissões próprias (`rbac.js`); o professor trabalha pelo portal do personal com vínculo aceito pelo aluno.
+- **Banco** (`20261112100000_gym_roles`, `20261112110000_gym_front_desk`): GymStudent, GymPlan, GymCharge, GymEquipment, GymDevice, GymAccessEvent, com RLS por academia e leitura do próprio aluno; `PendingInvite.autoAccept` faz a matrícula virar ativa ao confirmar o e-mail.
+- **API:** `gym-desk.js` (matrícula, planos, mensalidades, ficha, foto, `myGym`), `gym-floor.js` (aparelhos, leitores, decisão de acesso, registros); rotas em `openapi.yaml`. Token do leitor guardado só como hash.
+- **Privacidade:** CPF, endereço e pagamentos só para recepção, gerente, admin e dono; o professor vê a ficha sem eles; a gestão não vê dados de treino do aluno. Foto facial só com consentimento registrado, revogável pelo aluno.
+- **Testes:** `saas-gymdesk.test.js` (9, sob papel que obedece ao RLS), `google-avatar.test.js` (7), `GymFront.test.jsx` (5); API SaaS 174 de 174, frontend `src/saas` 49 de 49.
+- **Não feito (decisão ou dependência externa):** cobrança automática no cartão do aluno (exige conta Asaas por academia e tokenização, sem guardar cartão); reconhecimento facial próprio e integração com marcas de catraca; edição direta das rotinas do aluno pelo professor (hoje o professor envia e versiona treinos, o aluno aceita); RIPD e revisão jurídica do termo de matrícula.

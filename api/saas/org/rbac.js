@@ -1,15 +1,20 @@
 /* Papéis e permissões das academias. Um papel não é uma permissão absoluta: vale só dentro do vínculo
    (Membership) do usuário com aquela academia. Toda checagem passa por `can` e `canManage`. */
 
-export const ROLES = ['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER', 'PERSONAL_TRAINER', 'STUDENT'];
+export const ROLES = ['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER', 'INSTRUCTOR', 'RECEPTIONIST', 'PERSONAL_TRAINER', 'STUDENT'];
 
 // Quanto maior, mais alto. Ninguém gerencia (convida, promove, remove) quem tem o mesmo nível ou mais.
-const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 };
+const RANK = { GYM_OWNER: 7, GYM_ADMIN: 6, GYM_MANAGER: 5, INSTRUCTOR: 4, RECEPTIONIST: 3, PERSONAL_TRAINER: 2, STUDENT: 1 };
 
+const FRONT_DESK = ['students:read', 'students:enroll', 'students:update', 'charges:manage', 'access:read'];
 const PERMISSIONS = {
-  GYM_OWNER: ['tenant:delete', 'settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate', 'billing:read', 'billing:manage'],
-  GYM_ADMIN: ['settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate', 'billing:read'],
-  GYM_MANAGER: ['settings:read', 'members:read', 'members:invite', 'dashboard:read', 'activity:read', 'billing:read'],
+  GYM_OWNER: ['tenant:delete', 'settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate', 'billing:read', 'billing:manage', ...FRONT_DESK, 'plans:manage', 'equipment:manage', 'devices:manage'],
+  GYM_ADMIN: ['settings:read', 'settings:write', 'members:read', 'members:invite', 'members:update', 'members:remove', 'dashboard:read', 'activity:read', 'ai:read', 'community:moderate', 'billing:read', ...FRONT_DESK, 'plans:manage', 'equipment:manage', 'devices:manage'],
+  GYM_MANAGER: ['settings:read', 'members:read', 'members:invite', 'dashboard:read', 'activity:read', 'billing:read', ...FRONT_DESK, 'plans:manage', 'equipment:manage', 'devices:manage'],
+  // Professor da academia: acompanha o treino dos alunos (pelo portal do personal, com o vínculo aceito pelo aluno) e vê a ficha de treino deles.
+  INSTRUCTOR: ['settings:read', 'dashboard:read', 'students:read', 'students:train'],
+  // Recepção: matricula, atualiza o cadastro, registra pagamentos, tira a foto de acesso e vê quem entrou.
+  RECEPTIONIST: ['settings:read', 'students:read', 'students:enroll', 'students:update', 'charges:manage', 'access:read'],
   PERSONAL_TRAINER: ['settings:read', 'dashboard:read'],
   STUDENT: ['settings:read']
 };

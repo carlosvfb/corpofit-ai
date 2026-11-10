@@ -16,7 +16,7 @@ import { formatDateTime } from './brand.js'
 
 const KIND = { ROUTINE: 'Rotina', TIP: 'Dica', ARTICLE: 'Artigo', PLAN: 'Plano' }
 const REASON = { INAPPROPRIATE: 'Conteúdo inadequado', COPYRIGHT: 'Direitos autorais', PERSONAL_DATA: 'Dados pessoais', SPAM: 'Spam', OTHER: 'Outro motivo' }
-const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
+const RANK = { GYM_OWNER: 7, GYM_ADMIN: 6, GYM_MANAGER: 5, INSTRUCTOR: 4, RECEPTIONIST: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
 const Err = ({ children }) => children ? <div className="small" role="alert" style={{ color: 'var(--red)', margin: '8px 0' }}>{children}</div> : null
 
 function Card({ it, onChange, onNotice }) {

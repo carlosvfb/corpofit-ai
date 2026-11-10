@@ -1198,6 +1198,7 @@ export default function Settings({ page = null, find = null, via = null, entryKe
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Portal da academia" accessory="chevron" onClick={() => nav('/academia')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Privacidade e compartilhamento" accessory="chevron" onClick={() => nav('/privacidade')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="personCircle" iconTint="var(--indigo)" title="Foto de perfil" accessory="chevron" onClick={() => nav('/foto')} />}
+          {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Minha academia" accessory="chevron" onClick={() => nav('/minha-academia')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="dumbbell" iconTint="var(--indigo)" title="Biblioteca" accessory="chevron" onClick={() => nav('/biblioteca')} />}
           {useStore.getState().config?.saas?.enabled && <Row icon="shield" iconTint="var(--indigo)" title="Notificações e e-mail" accessory="chevron" onClick={() => nav('/notificacoes')} />}
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}

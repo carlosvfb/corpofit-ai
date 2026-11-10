@@ -16,6 +16,7 @@ const schemaName = 'ff_' + path.basename(process.argv[1] || 'test').replace(/\.[
 export const TEST_DB_URL = `${BASE_DB_URL.split('?')[0]}?schema=${schemaName}`;
 
 process.env.DATABASE_URL = TEST_DB_URL;
+process.env.DATA_DIR ||= path.join((await import('node:os')).tmpdir(), 'corpofit-test-data');
 process.env.ASAAS_API_KEY = 'test_key_not_real';
 process.env.ASAAS_ENV = 'sandbox';
 process.env.ASAAS_WEBHOOK_TOKEN = 'test-webhook-token-test-webhook-token';
@@ -43,7 +44,7 @@ export { db };
 
 export async function resetDb() {
   await db.$executeRawUnsafe(
-    'TRUNCATE "TrainerNote","TrainingSession","Notification","PendingInvite","EmailVerification","CommunityReport","CommunityFavorite","CommunityItem","AccessLog","ConsentRecord","SharingPermission","AssignmentComment","Assignment","TrainerStudent","TrainerProfile","ActivityLog","Membership","TenantSettings","Tenant","AdminAuditLog","ErrorLog","AppSetting","PaymentEvent","Payment","Subscription","BillingCustomer","Plan","UsageRecord","User" RESTART IDENTITY CASCADE'
+    'TRUNCATE "GymAccessEvent","GymCharge","GymStudent","GymPlan","GymEquipment","GymDevice","TrainerNote","TrainingSession","Notification","PendingInvite","EmailVerification","CommunityReport","CommunityFavorite","CommunityItem","AccessLog","ConsentRecord","SharingPermission","AssignmentComment","Assignment","TrainerStudent","TrainerProfile","ActivityLog","Membership","TenantSettings","Tenant","AdminAuditLog","ErrorLog","AppSetting","PaymentEvent","Payment","Subscription","BillingCustomer","Plan","UsageRecord","User" RESTART IDENTITY CASCADE'
   );
   await db.plan.createMany({
     data: [

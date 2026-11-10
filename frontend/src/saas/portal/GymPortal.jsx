@@ -7,21 +7,25 @@ import DesktopShell from './DesktopShell.jsx'
 import { Activity, AiUsage, Err, Overview, PlanTab, ROLE_LABEL, RANK, SEES, Settings } from '../Gyms.jsx'
 import { Moderation } from '../Library.jsx'
 import { GymAgenda, GymWorkouts, OpsSummary, StudentsPanel, TeamPanel } from './GymOps.jsx'
+import { AccessPanel, ChargesPanel, EquipmentPanel, ReceptionPanel } from './GymFront.jsx'
 import {
   acceptOrgInvite, cancelPendingInvite, changeOrgRole, createOrg, errorText, inviteOrgMember, orgContexts, orgMembers, removeOrgMember
 } from '../api.js'
 import { formatDate } from '../brand.js'
 
 const STAFF = ['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER']
+// A recepção também usa o portal da academia (matrícula, mensalidades, acesso). Professor e personal usam o portal do personal.
+const PORTAL = [...STAFF, 'RECEPTIONIST']
+const FRONT = ['reception', 'charges', 'equipment', 'access']
 const SECTIONS = [
-  ['geral', 'Visão geral', 'dashboard'], ['alunos', 'Alunos', 'students'], ['equipe', 'Equipe', 'team'], ['agenda', 'Agenda', 'schedule'], ['treinos', 'Treinos', 'workouts'],
+  ['geral', 'Visão geral', 'dashboard'], ['recepcao', 'Recepção e matrícula', 'reception'], ['mensalidades', 'Mensalidades e planos', 'charges'], ['alunos', 'Alunos', 'students'], ['equipe', 'Equipe', 'team'], ['agenda', 'Agenda', 'schedule'], ['treinos', 'Treinos', 'workouts'], ['aparelhos', 'Aparelhos', 'equipment'], ['acesso', 'Acesso (catraca)', 'access'],
   ['membros', 'Membros e convites', 'members'], ['configuracoes', 'Configurações', 'settings'],
   ['atividade', 'Atividade', 'activity'], ['ia', 'Uso da IA', 'ai'], ['plano', 'Plano e cobrança', 'plan'], ['moderacao', 'Moderação da biblioteca', 'moderation']
 ]
 // A moderação é do dono e do administrador (a mesma regra do servidor).
 // Alunos, equipe, agenda e treinos são da gestão (dono, administrador e gerente), como a lista de membros.
 const OPS = ['students', 'team', 'schedule', 'workouts']
-const sees = (role, key) => key === 'moderation' ? ['GYM_OWNER', 'GYM_ADMIN'].includes(role) : OPS.includes(key) ? STAFF.includes(role) : SEES[role].includes(key)
+const sees = (role, key) => key === 'moderation' ? ['GYM_OWNER', 'GYM_ADMIN'].includes(role) : OPS.includes(key) ? STAFF.includes(role) : FRONT.includes(key) ? PORTAL.includes(role) : (SEES[role] || []).includes(key)
 
 /* ------------------------------- lista e criação ------------------------------- */
 
@@ -33,8 +37,8 @@ function GymHome() {
   const [busy, setBusy] = useState(false)
   const load = useCallback(() => orgContexts().then(setData).catch(e => setError(errorText(e, 'Não foi possível carregar suas academias.'))), [])
   useEffect(() => { load() }, [load])
-  const staff = data?.gyms.filter(g => g.status === 'ACTIVE' && STAFF.includes(g.role)) || []
-  const invites = data?.gyms.filter(g => g.status === 'INVITED' && STAFF.includes(g.role)) || []
+  const staff = data?.gyms.filter(g => g.status === 'ACTIVE' && PORTAL.includes(g.role)) || []
+  const invites = data?.gyms.filter(g => g.status === 'INVITED' && PORTAL.includes(g.role)) || []
   const create = async e => { e.preventDefault(); setBusy(true); setError(null); try { const g = await createOrg(name.trim()); nav('/academia/' + g.id) } catch (x) { setError(errorText(x, 'Não foi possível criar a academia.')) } finally { setBusy(false) } }
   return <DesktopShell role="Portal da academia" nav={[{ to: '/academia', label: 'Minhas academias', end: true }]} title="Minhas academias" sub="Escolha uma academia para gerenciar ou cadastre a sua.">
     <Err>{error}</Err>
@@ -118,14 +122,14 @@ export function MembersTable({ id, role }) {
 /* ----------------------------- uma academia (seções) ----------------------------- */
 
 function GymLayout() {
-  const { id, section } = useParams()
+  const { id, section, sub } = useParams()
   const nav = useNavigate()
   const [ctx, setCtx] = useState(null)
   const [error, setError] = useState(null)
   const [stamp, setStamp] = useState(0)
   useEffect(() => {
     orgContexts().then(c => {
-      const g = c.gyms.find(x => x.id === id && x.status === 'ACTIVE' && STAFF.includes(x.role))
+      const g = c.gyms.find(x => x.id === id && x.status === 'ACTIVE' && PORTAL.includes(x.role))
       if (!g) setError('Você não gerencia esta academia (ou ela não existe).'); else setCtx(g)
     }).catch(e => setError(errorText(e, 'Não foi possível carregar a academia.')))
   }, [id, stamp])
@@ -137,6 +141,10 @@ function GymLayout() {
   const navItems = [...visible.map(([k, label]) => ({ to: `/academia/${id}/${k}`, label })), { to: '/academia', label: '← Trocar de academia', end: true }]
   return <DesktopShell role="Portal da academia" nav={navItems} context={{ title: ctx.name, sub: ROLE_LABEL[ctx.role] }} title={current[1]} sub={ctx.name}>
     {key === 'dashboard' && <><OpsSummary id={id} /><Overview id={id} /></>}
+    {key === 'reception' && <ReceptionPanel id={id} role={ctx.role} sub={sub} />}
+    {key === 'charges' && <ChargesPanel id={id} role={ctx.role} />}
+    {key === 'equipment' && <EquipmentPanel id={id} role={ctx.role} />}
+    {key === 'access' && <AccessPanel id={id} role={ctx.role} />}
     {key === 'students' && <StudentsPanel id={id} />}
     {key === 'team' && <TeamPanel id={id} />}
     {key === 'schedule' && <GymAgenda id={id} />}
@@ -157,6 +165,7 @@ export default function GymPortal() {
     <Route path="cadastro" element={<Navigate to="/academia" replace />} />
     <Route path=":id" element={<GymLayout />} />
     <Route path=":id/:section" element={<GymLayout />} />
+    <Route path=":id/:section/:sub" element={<GymLayout />} />
     <Route path="*" element={<Navigate to="/academia" replace />} />
   </Routes>
 }

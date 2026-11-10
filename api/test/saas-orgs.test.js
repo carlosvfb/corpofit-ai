@@ -179,7 +179,7 @@ describe('academias: vínculos, permissões e isolamento', () => {
   dbTest('painel: só contagens reais', async () => {
     const { gym, owner } = await gymWith();
     const d = await org.dashboard(asUser(owner), gym.id);
-    assert.deepEqual(d.members.byRole, { GYM_OWNER: 1, GYM_ADMIN: 1, GYM_MANAGER: 1, PERSONAL_TRAINER: 1, STUDENT: 1 });
+    assert.deepEqual(d.members.byRole, { GYM_OWNER: 1, GYM_ADMIN: 1, GYM_MANAGER: 1, INSTRUCTOR: 0, RECEPTIONIST: 0, PERSONAL_TRAINER: 1, STUDENT: 1 });
     assert.equal(d.students.active, 1);
     assert.equal(d.students.joinedLast30Days, 1);
     assert.equal(d.professionals.active, 2);

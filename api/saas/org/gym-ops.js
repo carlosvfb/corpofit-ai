@@ -9,7 +9,7 @@ import { notify } from './notify.js';
 import { requirePermission } from './service.js';
 
 const DAY = 86_400_000;
-const TRAINER_ROLES = ['PERSONAL_TRAINER', 'GYM_MANAGER', 'GYM_ADMIN', 'GYM_OWNER'];
+const TRAINER_ROLES = ['PERSONAL_TRAINER', 'INSTRUCTOR', 'GYM_MANAGER', 'GYM_ADMIN', 'GYM_OWNER'];
 const isOpen = s => s === 'PLANNED' || s === 'CONFIRMED';
 const nameMap = async ids => new Map((await db.user.findMany({ where: { id: { in: [...new Set(ids)] } }, select: { id: true, name: true, email: true } })).map(u => [u.id, u]));
 

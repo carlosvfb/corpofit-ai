@@ -12,7 +12,7 @@ import { passwordLogin, passwordResetRedeem } from '../lib/api.js'
 import { askAddDeviceData } from '../sheets.jsx'
 import { hasData } from '../store/useStore.js'
 import { BRAND, formatBRL } from './brand.js'
-import { errorText, forgotPassword, getPlans, registerAccount } from './api.js'
+import { errorText, forgotPassword, getPlans, registerAccount, sendEmailCode } from './api.js'
 import PortalLogin from './portal/PortalLogin.jsx'
 import { portalOf } from './portal/portals.js'
 
@@ -260,8 +260,10 @@ function Register() {
       const st = useStore.getState()
       st.setUser(u)
       if (hasData(useStore.getState().S)) await st.pushState(); else await st.pullState()
-      useUI.getState().toast(`Bem-vindo, ${u.name}!`)
-      nav('/home', { replace: true })
+      useUI.getState().toast(`Bem-vindo, ${u.name}! Enviamos um código para o seu e-mail.`)
+      // Confirmar o e-mail libera os convites e a matrícula feita por uma academia com este endereço.
+      Promise.resolve(sendEmailCode()).catch(() => {})
+      nav('/notificacoes', { replace: true })
     } catch (ex) { setErr(errorText(ex, 'Não foi possível criar a conta.')) }
     finally { setBusy(false) }
   }

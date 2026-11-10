@@ -18,6 +18,7 @@ import { asaasConfigured } from './asaas/config.js';
 import { cancelSubscription } from './asaas/cancel.js';
 import { PLANS } from './plans.js';
 import { sendMail } from './mailer.js';
+import { markVerifiedByProvider } from './org/verify.js';
 
 export async function createSaas({ json, readBody, readSession, requireAdmin, findUser, cfgStore, jobs, asaasClient, readState }) {
   if (!env().DATABASE_URL) throw new Error('SAAS_MODE=1 exige DATABASE_URL (PostgreSQL).');
@@ -95,5 +96,8 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
     }
   }
 
-  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail };
+  /** Entrada pelo Google (e-mail verificado pelo provedor): marca como confirmado e vincula matrículas e convites. */
+  const onGoogleSignIn = user => markVerifiedByProvider(user).catch(err => logError(db, 'google-verify', err));
+
+  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail, onGoogleSignIn };
 }

@@ -67,6 +67,17 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 | Uso da IA | Menu **Uso da IA** (dono e admin): mensagens, tokens, custo estimado e contagem por membro. |
 | Plano da academia | Menu **Plano e cobrança** (dono, admin e gerente veem; só o dono contrata): limites e uso, planos, contratar e cancelar. |
 
+### Recepção, mensalidades, aparelhos e catraca (portal da academia)
+**Funções da academia:** Dono, Administrador, Gerente, **Professor**, **Recepção**, Personal (de fora, sem vínculo direto) e Aluno. Convide em *Membros e convites*. A Recepção usa o portal `/#/academia` e só vê Recepção, Mensalidades, Aparelhos e Acesso. O Professor usa o **portal do personal** (cria o perfil profissional) e acompanha os alunos que a academia vincular a ele.
+
+1. **Matrícula (Recepção e matrícula → Nova matrícula):** nome, e-mail (é o login do aluno), CPF (validado), nascimento, endereço, contato de emergência, saúde, plano, dia do vencimento e tolerância de atraso. Menor de idade exige responsável com CPF. É preciso registrar que o aluno aceitou o **termo de matrícula**; a autorização para os professores acompanharem o treino é separada.
+2. **O aluno entra:** recebe um e-mail (Resend) e entra **com o Google** (já vem com a foto) **ou criando conta com e-mail e senha e confirmando o e-mail com o código**. Ao confirmar, ele já aparece **ativo e vinculado** à academia, em *Ajustes → Minha academia*. Quem se cadastra sozinho, sem academia, usa o app normalmente.
+3. **Mensalidade:** a academia cria os **planos** (gerente/admin), gera as mensalidades do mês e a recepção **registra o pagamento** (dinheiro, Pix, cartão na maquininha, transferência). O primeiro pagamento ativa a matrícula. **O sistema não cobra nem guarda número de cartão**: a cobrança direta no cartão do aluno por assinatura exigiria uma conta própria da academia no Asaas e ainda não existe aqui.
+4. **Acesso:** o aluno em dia entra; quem passou da tolerância de atraso, suspenso ou cancelado é barrado (a saída nunca é bloqueada). A recepção vê todas as passagens.
+5. **Aparelhos:** gerente/admin cadastra cada aparelho com **número**, nome, categoria, músculos, exercícios do catálogo, local e situação (em uso, manutenção, desativado). Alunos e professores veem a lista no app.
+6. **Catraca (Acesso → Catracas e leitores):** cadastre o leitor e copie o **token** (aparece uma vez). O leitor consulta `POST /api/access/check` com o QR do aluno ou a matrícula. Para terminais com **reconhecimento facial**, a recepção registra o **consentimento específico** do aluno e tira a foto na ficha; o terminal baixa a lista (`GET /api/access/people`) e as fotos (`GET /api/access/face?number=`) e faz a comparação do rosto por conta própria. **Este sistema não compara rostos e não fala com marcas específicas de catraca**: é preciso uma integração do fabricante (Control iD, Intelbras etc.) sobre essa API.
+7. **LGPD:** foto facial é dado sensível. Só com consentimento registrado (com quem o recebeu), responsável para menores, revogável pela recepção ou pelo próprio aluno (a foto é apagada na hora). Antes de usar em produção, faça o RIPD e informe a finalidade e a retenção na política de privacidade da academia.
+
 ## 6. Portal do personal (celular): `/#/personal`
 - **Virar personal:** entre em `/#/personal/entrar` (ou crie conta em `/#/personal/cadastro`) e preencha o perfil profissional.
 - **Abas (barra de baixo):** Alunos, Agenda, Exercícios (catálogo completo, com busca por nome em português), Biblioteca e Perfil (inclui "Treinos enviados").

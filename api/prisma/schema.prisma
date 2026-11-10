@@ -255,6 +255,8 @@ enum OrgRole {
   GYM_OWNER
   GYM_ADMIN
   GYM_MANAGER
+  INSTRUCTOR
+  RECEPTIONIST
   PERSONAL_TRAINER
   STUDENT
 }
@@ -277,6 +279,12 @@ model Tenant {
   memberships Membership[]
   settings    TenantSettings?
   activity    ActivityLog[]
+  gymPlans       GymPlan[]
+  gymStudents    GymStudent[]
+  gymCharges     GymCharge[]
+  gymEquipment   GymEquipment[]
+  gymDevices     GymDevice[]
+  gymAccessEvents GymAccessEvent[]
 }
 
 /// Identidade visual, configuração de IA e recursos habilitados da academia (JSON validado na API).
@@ -589,6 +597,8 @@ model PendingInvite {
   tenantId    String
   role        OrgRole
   invitedById String
+  /// Matrícula feita na recepção: ao confirmar o e-mail, a pessoa já entra ATIVA na academia (a recepção a identificou).
+  autoAccept  Boolean   @default(false)
   createdAt   DateTime  @default(now())
   expiresAt   DateTime
 
@@ -662,4 +672,162 @@ model TrainerNote {
   link TrainerStudent @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId, createdAt])
+}
+
+// ===== Recepção da academia: matrícula, mensalidade, aparelhos e acesso =====
+// Cada linha pertence a UMA academia e tem RLS (migração 20261112110000_gym_front_desk). A recepção cadastra o aluno; o aluno
+// entra com o mesmo e-mail e já cai vinculado. A mensalidade é registrada pela academia (dinheiro, Pix, maquininha): o sistema
+// NUNCA guarda número de cartão. Biometria facial: só a foto de cadastro, com consentimento específico registrado.
+
+enum GymStudentStatus {
+  ENROLLED
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum GymChargeStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum GymEquipmentStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+model GymPlan {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String   @default("")
+  priceCents  Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  students GymStudent[]
+
+  @@index([tenantId])
+}
+
+model GymStudent {
+  id               String           @id @default(cuid())
+  tenantId         String
+  /// A conta do aluno, preenchida quando ele entra com o e-mail do cadastro.
+  userId           String?
+  /// Número de matrícula, por academia.
+  number           Int
+  /// Código do QR e da catraca; nunca é o número da matrícula.
+  accessCode       String           @unique
+  fullName         String
+  email            String
+  phone            String           @default("")
+  document         String           @default("")
+  birthDate        DateTime?        @db.Date
+  address          String           @default("")
+  emergencyName    String           @default("")
+  emergencyPhone   String           @default("")
+  healthNotes      String           @default("")
+  guardianName     String           @default("")
+  guardianDocument String           @default("")
+  notes            String           @default("")
+  status           GymStudentStatus @default(ENROLLED)
+  planId           String?
+  billingDay       Int              @default(10)
+  graceDays        Int              @default(3)
+  termsAcceptedAt  DateTime?
+  trainingConsentAt DateTime?
+  faceConsentAt    DateTime?
+  faceConsentBy    String?
+  hasFacePhoto     Boolean          @default(false)
+  createdById      String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  tenant  Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan    GymPlan?    @relation(fields: [planId], references: [id], onDelete: SetNull)
+  charges GymCharge[]
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, email])
+  @@index([userId])
+  @@index([tenantId, status])
+}
+
+model GymCharge {
+  id           String          @id @default(cuid())
+  tenantId     String
+  studentId    String
+  planId       String?
+  /// "2026-11" para a mensalidade do mês, "matricula" para a primeira cobrança.
+  reference    String
+  description  String
+  amountCents  Int
+  dueDate      DateTime        @db.Date
+  status       GymChargeStatus @default(PENDING)
+  paidAt       DateTime?
+  method       String?
+  recordedById String?
+  note         String          @default("")
+  createdAt    DateTime        @default(now())
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  student GymStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, reference])
+  @@index([tenantId, status, dueDate])
+}
+
+model GymEquipment {
+  id          String             @id @default(cuid())
+  tenantId    String
+  number      Int
+  name        String
+  category    String             @default("")
+  muscles     String[]           @default([])
+  /// Ids do catálogo de exercícios que este aparelho executa (só texto; sem mídia).
+  exerciseIds String[]           @default([])
+  location    String             @default("")
+  status      GymEquipmentStatus @default(ACTIVE)
+  notes       String             @default("")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, number])
+}
+
+/// Catraca ou leitor. Autentica pelo token (guardado só como hash) e consulta POST /api/access/check.
+model GymDevice {
+  id         String    @id @default(cuid())
+  tenantId   String
+  name       String
+  tokenHash  String    @unique
+  active     Boolean   @default(true)
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model GymAccessEvent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  studentId String?
+  deviceId  String?
+  method    String
+  direction String   @default("IN")
+  allowed   Boolean
+  reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
 }

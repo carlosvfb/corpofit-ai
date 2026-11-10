@@ -13,13 +13,13 @@ import {
 import { formatBRL, formatDate, formatDateTime } from './brand.js'
 
 export const ROLE_LABEL = {
-  GYM_OWNER: 'Dono', GYM_ADMIN: 'Administrador', GYM_MANAGER: 'Gerente', PERSONAL_TRAINER: 'Personal trainer', STUDENT: 'Aluno'
+  GYM_OWNER: 'Dono', GYM_ADMIN: 'Administrador', GYM_MANAGER: 'Gerente', INSTRUCTOR: 'Professor', RECEPTIONIST: 'Recepção', PERSONAL_TRAINER: 'Personal trainer', STUDENT: 'Aluno'
 }
-export const RANK = { GYM_OWNER: 5, GYM_ADMIN: 4, GYM_MANAGER: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
+export const RANK = { GYM_OWNER: 7, GYM_ADMIN: 6, GYM_MANAGER: 5, INSTRUCTOR: 4, RECEPTIONIST: 3, PERSONAL_TRAINER: 2, STUDENT: 1 }
 // Espelho do servidor, só para decidir o que mostrar (api/saas/org/rbac.js é quem vale).
 export const SEES = {
   GYM_OWNER: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'], GYM_ADMIN: ['dashboard', 'members', 'settings', 'activity', 'ai', 'plan'],
-  GYM_MANAGER: ['dashboard', 'members', 'activity', 'plan'], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
+  GYM_MANAGER: ['dashboard', 'members', 'activity', 'plan'], INSTRUCTOR: [], RECEPTIONIST: [], PERSONAL_TRAINER: ['dashboard'], STUDENT: []
 }
 const ACTION_LABEL = {
   'tenant.created': 'Academia criada', 'member.invited': 'Convite enviado', 'member.joined': 'Entrou na academia',
