@@ -23,11 +23,12 @@ export function createAvatarStore(dataDir) {
       if (!mime) throw Object.assign(new Error('unsupported image'), { code: 'avatar-type' });
       if (buf.length > MAX_AVATAR) throw Object.assign(new Error('image too large'), { code: 'avatar-size' });
       fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-      fs.writeFileSync(file(uid), buf, { mode: 0o600 });
+      // Em base64 (texto): o armazenamento da Vercel guarda arquivos como texto UTF-8 e recusa os bytes nulos de uma imagem.
+      fs.writeFileSync(file(uid), buf.toString('base64'), { mode: 0o600 });
       return { mime, size: buf.length, version: Date.now().toString(36) };
     },
     read(uid) {
-      try { const buf = fs.readFileSync(file(uid)); const mime = sniff(buf); return mime ? { buf, mime } : null; } catch { return null; }
+      try { const buf = Buffer.from(String(fs.readFileSync(file(uid), 'utf8')), 'base64'); const mime = sniff(buf); return mime ? { buf, mime } : null; } catch { return null; }
     },
     remove(uid) { try { fs.unlinkSync(file(uid)); } catch { /* já não existia */ } }
   };
