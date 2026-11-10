@@ -227,6 +227,7 @@ function Login() {
   return <section className="ff-wrap"><div className="ff-auth ff-fade">
     <h1 className="ff-h1" style={{ fontSize: 30 }}>Entrar</h1>
     <form className="ff-form" onSubmit={submit} noValidate>
+      <GoogleSignIn />
       <Field id="email" label="E-mail"><input id="email" className="ff-input" type="email" autoComplete="username" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
       <Field id="pw" label="Senha"><input id="pw" className="ff-input" type="password" autoComplete="current-password" value={pw} onChange={e => setPw(e.target.value)} /></Field>
       {err && <div className="ff-err" role="alert">{err}</div>}
