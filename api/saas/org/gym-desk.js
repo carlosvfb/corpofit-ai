@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { db } from '../db.js';
 import { SaasError } from '../errors.js';
-import { DATA_ROOT } from '../../store/fs.js';
+import { DATA_ROOT, storage } from '../../store/fs.js';
 import { createAvatarStore } from '../../avatar.js';
 import { withContext } from './context.js';
 import { can } from './rbac.js';
@@ -28,6 +28,7 @@ const digits = (v, max) => String(v ?? '').replace(/\D/g, '').slice(0, max);
 const isoDay = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: TZ });
 const asDate = iso => new Date(iso + 'T00:00:00Z');
 const faceStore = tenantId => createAvatarStore(path.join(DATA_ROOT, 'gym-faces', String(tenantId).replace(/[^a-f0-9-]/gi, '')));
+const prep = (tenantId, studentId) => faceStore(tenantId).prepare(studentId);
 
 export function cpfOk(v) {
   const c = digits(v, 14);
@@ -278,6 +279,7 @@ export async function setFaceConsent(user, tenantId, id, given) {
       if (s.birthDate && ageOn(s.birthDate, isoDay()) < 18 && !s.guardianName) throw new SaasError(400, 'Aluno menor de idade: cadastre o responsável antes do consentimento.', 'guardian-required');
       await tx.gymStudent.update({ where: { id: s.id }, data: { faceConsentAt: new Date(), faceConsentBy: user.id } });
     } else {
+      await prep(tenantId, s.id);
       faceStore(tenantId).remove(s.id);
       await tx.gymStudent.update({ where: { id: s.id }, data: { faceConsentAt: null, faceConsentBy: null, hasFacePhoto: false } });
     }
@@ -291,6 +293,7 @@ export async function saveFacePhoto(user, tenantId, id, buf) {
     await requirePermission(tx, tenantId, user.id, 'students:update');
     const s = await loadStudent(tx, tenantId, id);
     if (!s.faceConsentAt) throw new SaasError(409, 'Registre antes o consentimento do aluno para a foto de acesso.', 'consent-required');
+    await prep(tenantId, s.id);
     try { faceStore(tenantId).save(s.id, buf); } catch (e) { throw new SaasError(e.code === 'avatar-size' ? 413 : 400, e.code === 'avatar-size' ? 'A foto é grande demais.' : 'Envie uma foto JPEG, PNG ou WebP.', e.code || 'invalid-image'); }
     await tx.gymStudent.update({ where: { id: s.id }, data: { hasFacePhoto: true } });
     await tx.activityLog.createMany({ data: [{ tenantId, actorUserId: user.id, action: 'student.face-photo', targetType: 'student', targetId: s.id }] });
@@ -302,6 +305,7 @@ export async function readFacePhoto(user, tenantId, id) {
   return withContext({ userId: user.id, tenantId }, async tx => {
     await requirePermission(tx, tenantId, user.id, 'students:update');
     const s = await loadStudent(tx, tenantId, id);
+    if (s.hasFacePhoto) await prep(tenantId, s.id);
     const f = s.hasFacePhoto ? faceStore(tenantId).read(s.id) : null;
     if (!f) throw NOT_FOUND();
     return f;
@@ -328,6 +332,7 @@ export async function myGym(user) {
 export async function readFaceForDevice(tenantId, actorId, number) {
   return withContext({ userId: actorId, tenantId }, async tx => {
     const s = Number.isInteger(number) ? await tx.gymStudent.findUnique({ where: { tenantId_number: { tenantId, number } } }) : null;
+    if (s && s.hasFacePhoto) await prep(tenantId, s.id);
     const f = s && s.hasFacePhoto && s.faceConsentAt && s.status !== 'CANCELLED' ? faceStore(tenantId).read(s.id) : null;
     if (!f) throw NOT_FOUND();
     return f;
@@ -339,6 +344,7 @@ export async function revokeMyFace(user, tenantId) {
   return withContext({ userId: user.id, tenantId }, async tx => {
     const s = await tx.gymStudent.findFirst({ where: { tenantId, userId: user.id } });
     if (!s) throw NOT_FOUND();
+    await prep(tenantId, s.id);
     faceStore(tenantId).remove(s.id);
     await tx.gymStudent.update({ where: { id: s.id }, data: { faceConsentAt: null, faceConsentBy: null, hasFacePhoto: false } });
     await tx.activityLog.createMany({ data: [{ tenantId, actorUserId: user.id, action: 'student.face-revoked-by-student', targetType: 'student', targetId: s.id }] });

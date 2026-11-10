@@ -1,8 +1,9 @@
 /* Foto de perfil: um arquivo por pessoa em DATA_DIR/avatars/<uid>. O app reduz a imagem no aparelho (256 px); aqui só se
    confere o tipo pelos primeiros bytes (JPEG, PNG ou WebP) e o tamanho. Nenhuma decodificação, nenhuma dependência.
    Quem pede só alcança a própria foto: o nome do arquivo vem da sessão, nunca da requisição. */
+import crypto from 'node:crypto';
 import path from 'node:path';
-import fs from './store/fs.js';
+import fs, { storage, DATA_ROOT } from './store/fs.js';
 
 // Pequeno de propósito: a foto fica no PostgreSQL (em base64, +33%). Uma foto de perfil de 256 px pesa 15 a 30 KB.
 export const MAX_AVATAR = 80 * 1024;
@@ -17,8 +18,11 @@ export function sniff(buf) {
 
 export function createAvatarStore(dataDir) {
   const dir = path.join(dataDir, 'avatars');
-  const file = uid => path.join(dir, String(uid).replace(/[^A-Za-z0-9_-]/g, '_'));
+  // O nome NÃO contém o id: na Vercel cada requisição carrega os arquivos cujo nome tem o id do usuário, e a foto não deve ir junto de toda chamada.
+  const file = uid => path.join(dir, crypto.createHash('sha256').update(String(uid)).digest('hex').slice(0, 32));
   return {
+    /** Carrega o arquivo no armazenamento da Vercel (só quando a foto é lida, trocada ou apagada). Sem efeito em disco comum. */
+    async prepare(uid) { if (storage) await storage.hydrate({ exact: [path.relative(DATA_ROOT, file(uid)).split(path.sep).join('/')] }); },
     save(uid, buf) {
       const mime = sniff(buf);
       if (!mime) throw Object.assign(new Error('unsupported image'), { code: 'avatar-type' });

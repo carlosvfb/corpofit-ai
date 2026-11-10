@@ -1506,7 +1506,7 @@ const googleRoutes = {
     if (user.disabled) { audit(req, 'auth.google.fail', { ok: false, user, msg: 'account-disabled' }); return back('disabled'); }
     if (!user.avatar || user.avatarSource === 'google') {
       const buf = p.picture ? await downloadPicture(p.picture) : null;
-      if (buf) { try { user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'google'; } catch { /* a foto é opcional */ } }
+      if (buf) { try { await avatars.prepare(user.id); user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'google'; } catch { /* a foto é opcional */ } }
     }
     saveDb();
     // Google já verificou o e-mail: vale como confirmado para vincular matrículas e convites da academia.
@@ -1523,9 +1523,11 @@ const avatarRoutes = {
   'GET /api/account/avatar': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
+    await avatars.prepare(user.id);
     const a = avatars.read(user.id);
     if (!a) return json(res, 404, { error: 'no photo' });
-    res.writeHead(200, { 'Content-Type': a.mime, 'Content-Length': a.buf.length, 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    // A URL leva a versão (?v=), que muda a cada troca: o aparelho guarda a foto e não pede de novo.
+    res.writeHead(200, { 'Content-Type': a.mime, 'Content-Length': a.buf.length, 'Cache-Control': 'private, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' });
     res.end(a.buf);
   },
   'PUT /api/account/avatar': async (req, res) => {
@@ -1533,6 +1535,7 @@ const avatarRoutes = {
     if (!user) return json(res, 401, { error: 'not signed in' });
     const buf = readImageBody(await readBody(req));
     if (!buf) return json(res, 400, { error: 'send a JPEG, PNG or WebP image', code: 'avatar-type' });
+    await avatars.prepare(user.id);
     try { user.avatar = avatars.save(user.id, buf).version; user.avatarSource = 'upload'; }
     catch (e) { return json(res, e.code === 'avatar-size' ? 413 : 400, { error: e.code === 'avatar-size' ? `photo is larger than ${MAX_AVATAR / 1024} KB` : 'unsupported image', code: e.code || 'avatar' }); }
     saveDb();
@@ -1541,6 +1544,7 @@ const avatarRoutes = {
   'DELETE /api/account/avatar': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
+    await avatars.prepare(user.id);
     avatars.remove(user.id); delete user.avatar; delete user.avatarSource; saveDb();
     json(res, 200, { avatar: null });
   }
