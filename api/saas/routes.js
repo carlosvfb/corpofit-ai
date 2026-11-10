@@ -21,6 +21,7 @@ import * as org from './org/service.js';
 import * as trainers from './org/trainers.js';
 import * as privacy from './org/privacy.js';
 import * as schedule from './org/schedule.js';
+import * as gymOps from './org/gym-ops.js';
 import * as orgAi from './org/ai.js';
 import * as community from './org/community.js';
 import * as orgBilling from './org/billing.js';
@@ -160,6 +161,26 @@ export function saasRoutes({ json, readBody, readSession, requireAdmin, findUser
     'POST /api/orgs/leave': guarded(async (req, res) => {
       const user = session(req, res); if (!user) return;
       json(res, 200, await org.leaveGym(user, tenantOf(req)));
+    }),
+
+    /* ------------------- gestão da academia: alunos, equipe, agenda e treinos ------------------- */
+    'GET /api/orgs/roster': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await gymOps.roster(user, tenantOf(req)));
+    }),
+    'POST /api/orgs/assign-trainer': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const b = await readBody(req);
+      json(res, 200, await gymOps.assignTrainer(user, tenantOf(req), { studentId: b.studentId, trainerId: b.trainerId || null }));
+    }),
+    'GET /api/orgs/schedule': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      const u = new URL(req.url, 'http://x').searchParams;
+      json(res, 200, await gymOps.gymSchedule(user, tenantOf(req), { from: u.get('from') || undefined, to: u.get('to') || undefined, trainerId: u.get('trainer') || undefined }));
+    }),
+    'GET /api/orgs/workouts': guarded(async (req, res) => {
+      const user = session(req, res); if (!user) return;
+      json(res, 200, await gymOps.gymWorkouts(user, tenantOf(req), new URL(req.url, 'http://x').searchParams.get('limit')));
     }),
 
     /* ------------------- personal trainers ------------------- */

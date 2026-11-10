@@ -197,3 +197,12 @@ Verificação do RLS em produção (somente leitura): conectado como o dono do b
 - **App:** portal do personal com barra Alunos | Agenda | Exercícios | Biblioteca | Perfil; ficha do aluno com abas Treinos, Agenda, Progresso, Notas, Acesso; montador de treino a partir do catálogo (só texto, sem mídia); no app do aluno, treinos marcados com confirmar/recusar e o atalho de compartilhamento ao aceitar um personal.
 - **Testes:** `saas-schedule.test.js` (10), `TrainerPages.test.jsx` (5); suíte SaaS da API 153 de 153; frontend `src/saas` 41 de 41.
 - **Não verificado:** uso real em celular e produção (a verificação visual fica por conta do primeiro uso após o deploy); notificação push da agenda (só aviso dentro do app).
+
+## 15. Gestão da academia (2026-11-10)
+- **Banco:** migração `20261111100000_gym_ops`: a gestão (dono, administrador, gerente) lê e atualiza os vínculos com `tenantId` da própria academia e lê a agenda e os treinos enviados desses vínculos. Insert/update de vínculo só com a academia em uso e vínculo ativo de gestão.
+- **API:** `api/saas/org/gym-ops.js` e `/api/orgs/roster|assign-trainer|schedule|workouts` (em `openapi.yaml`). Vincular aluno a personal é proposta (o aluno aceita); trocar encerra o vínculo anterior e cancela a agenda futura; tudo vai para o registro de atividade e avisa as partes.
+- **Privacidade:** a gestão não lê dados de treino do aluno nem anotações privadas do personal; o aluno é avisado no app de que a academia vê o vínculo, a agenda e os treinos enviados.
+- **Falha evitada:** com a nova política de leitura, `listLinks` e `listAssignments` dependiam só do RLS; agora filtram explicitamente por participante.
+- **App:** portal da academia com Visão geral (números), Alunos, Equipe, Agenda (calendário), Treinos e Membros e convites.
+- **Testes:** `saas-gymops.test.js` (5, sob papel que obedece ao RLS); suíte SaaS 158 de 158; frontend `src/saas` 44 de 44.
+- **Não feito:** relatório de frequência por aluno para a gestão (depende de permissão do aluno), cobrança de mensalidade dos alunos pela academia, e criação de treinos diretamente pela gestão.

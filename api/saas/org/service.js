@@ -288,4 +288,4 @@ export async function recentActivity(user, tenantId, limit = 50) {
   });
 }
 
-export { rankOf };
+export { rankOf, requirePermission };

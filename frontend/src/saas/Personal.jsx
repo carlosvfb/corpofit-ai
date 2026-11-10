@@ -193,7 +193,7 @@ function StudentSide({ links, assignments, reload }) {
   return <>
     <Section>MEU PERSONAL</Section>
     <div className="card" style={{ marginBottom: 8 }}>
-      <div className="small">Por padrão, seu personal não vê nenhum dado seu.</div>
+      <div className="small">Por padrão, seu personal não vê nenhum dado seu. Se o vínculo veio de uma academia, ela vê quem atende você, a agenda e os treinos enviados, mas nunca os seus dados de treino.</div>
       <div style={{ marginTop: 8 }}><Button variant="tinted" onClick={() => nav('/privacidade')}>Privacidade e compartilhamento</Button></div>
     </div>
     <Err>{err}</Err>

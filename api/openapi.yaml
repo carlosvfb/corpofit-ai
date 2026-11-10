@@ -4455,6 +4455,66 @@ paths:
         '200': { description: OK. }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/orgs/roster:
+    get:
+      tags: [saas]
+      operationId: getGymRoster
+      summary: Gym students with their trainer, the team with each load, and the month numbers
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/assign-trainer:
+    post:
+      tags: [saas]
+      operationId: assignGymTrainer
+      summary: Propose the trainer of a gym student, or end the gym link with null. The student must accept
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/schedule:
+    get:
+      tags: [saas]
+      operationId: getGymSchedule
+      summary: Sessions of the gym trainer-student links in a period
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: from, in: query, required: false, schema: { type: string } }
+        - { name: to, in: query, required: false, schema: { type: string } }
+        - { name: trainer, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
+  /api/orgs/workouts:
+    get:
+      tags: [saas]
+      operationId: getGymWorkouts
+      summary: Workouts sent by the gym trainers to students, without the exercise content
+      parameters:
+        - { name: tenant, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Not allowed for this role. }
+        '404': { description: Not found, or the caller is not a member of this gym. }
+
   /api/orgs/ai-context:
     get:
       tags: [saas]

@@ -138,3 +138,9 @@ export const applyPreset = (trainerId, preset) => post('/api/privacy/preset', { 
 // Foto de perfil (data URL JPEG/PNG/WebP de até 200 KB, já reduzida no aparelho).
 export const uploadAvatar = image => put('/api/account/avatar', { image })
 export const removeAvatar = () => api('/api/account/avatar', { method: 'DELETE' })
+
+// Gestão da academia: operação, vínculo aluno-personal, agenda e treinos enviados.
+export const gymRoster = id => api('/api/orgs/roster' + q(id))
+export const assignGymTrainer = (id, studentId, trainerId) => post('/api/orgs/assign-trainer' + q(id), { studentId, trainerId })
+export const gymSchedule = (id, p = {}) => api('/api/orgs/schedule' + q(id) + Object.entries(p).filter(([, v]) => v).map(([k, v]) => '&' + k + '=' + encodeURIComponent(v)).join(''))
+export const gymWorkouts = id => api('/api/orgs/workouts' + q(id))

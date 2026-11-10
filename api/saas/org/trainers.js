@@ -116,7 +116,7 @@ export async function endLink(user, id) {
 }
 
 export async function listLinks(user) {
-  const rows = await withContext({ userId: user.id }, tx => tx.trainerStudent.findMany({ where: { status: { not: 'ENDED' } }, orderBy: { createdAt: 'desc' } }));
+  const rows = await withContext({ userId: user.id }, tx => tx.trainerStudent.findMany({ where: { status: { not: 'ENDED' }, OR: [{ trainerId: user.id }, { studentId: user.id }] }, orderBy: { createdAt: 'desc' } }));
   const ids = [...new Set(rows.flatMap(r => [r.trainerId, r.studentId]))];
   const users = await db.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } });
   const by = new Map(users.map(u => [u.id, u]));
@@ -194,7 +194,7 @@ export async function assignmentHistory(user, id) {
 /** Do ponto de vista de quem pergunta: o que enviei (personal) ou o que recebi (aluno). */
 export async function listAssignments(user, linkId) {
   const rows = await withContext({ userId: user.id }, tx => tx.assignment.findMany({
-    where: { ...(linkId ? { linkId: String(linkId) } : {}) }, orderBy: { createdAt: 'desc' }, take: 100
+    where: { OR: [{ trainerId: user.id }, { studentId: user.id }], ...(linkId ? { linkId: String(linkId) } : {}) }, orderBy: { createdAt: 'desc' }, take: 100
   }));
   return rows.map(a => asg(a));
 }

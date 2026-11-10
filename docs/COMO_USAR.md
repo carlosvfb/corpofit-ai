@@ -57,6 +57,12 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 | Aceitar convite | Quem gerencia: em **Minhas academias** → *Convites*. Aluno ou personal: Ajustes → Minhas academias (no app do celular). |
 | Papéis | Dono, administrador, gerente, personal, aluno. Cada um só gerencia quem está abaixo. |
 | Marca e IA da academia | Menu **Configurações**: nome, cor, logo (https), contato, instruções para a IA e limite mensal. |
+| Operação da academia | **Visão geral** mostra alunos sem personal, alunos com personal, treinos dos próximos 7 dias, feitos e faltas dos últimos 30 dias. |
+| Alunos | Menu **Alunos**: busca, filtro "só sem personal", próximo treino, treinos feitos e faltas de cada um. No seletor da coluna **Personal responsável** você vincula ou troca o personal: é uma **proposta**, o aluno aceita em Ajustes → Meu personal. Trocar encerra o vínculo anterior e cancela a agenda futura dele. |
+| Equipe | Menu **Equipe**: cada personal com número de alunos, propostas aguardando, treinos da semana, feitos, faltas e treinos enviados. Convidar, mudar função ou remover continua em **Membros e convites**. |
+| Agenda | Menu **Agenda**: calendário do mês de todos os personais (filtro por personal); toque no dia para ver os compromissos. |
+| Treinos | Menu **Treinos**: tudo o que os personais enviaram aos alunos (sem o conteúdo dos exercícios) e a biblioteca de rotinas publicadas só para a academia. |
+| O que a gestão NÃO vê | Dados de treino, peso e medidas do aluno (só o personal, e só com a permissão do aluno) e as anotações privadas do personal. Só entram na gestão os vínculos criados pela academia ou com a academia marcada. |
 | Painel e histórico | Menus **Visão geral** (contagens reais) e **Atividade** (quem fez o quê). |
 | Uso da IA | Menu **Uso da IA** (dono e admin): mensagens, tokens, custo estimado e contagem por membro. |
 | Plano da academia | Menu **Plano e cobrança** (dono, admin e gerente veem; só o dono contrata): limites e uso, planos, contratar e cancelar. |

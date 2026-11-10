@@ -6,6 +6,7 @@ import { Button } from '../../components/ui.jsx'
 import DesktopShell from './DesktopShell.jsx'
 import { Activity, AiUsage, Err, Overview, PlanTab, ROLE_LABEL, RANK, SEES, Settings } from '../Gyms.jsx'
 import { Moderation } from '../Library.jsx'
+import { GymAgenda, GymWorkouts, OpsSummary, StudentsPanel, TeamPanel } from './GymOps.jsx'
 import {
   acceptOrgInvite, cancelPendingInvite, changeOrgRole, createOrg, errorText, inviteOrgMember, orgContexts, orgMembers, removeOrgMember
 } from '../api.js'
@@ -13,11 +14,14 @@ import { formatDate } from '../brand.js'
 
 const STAFF = ['GYM_OWNER', 'GYM_ADMIN', 'GYM_MANAGER']
 const SECTIONS = [
-  ['geral', 'Visão geral', 'dashboard'], ['membros', 'Membros', 'members'], ['configuracoes', 'Configurações', 'settings'],
+  ['geral', 'Visão geral', 'dashboard'], ['alunos', 'Alunos', 'students'], ['equipe', 'Equipe', 'team'], ['agenda', 'Agenda', 'schedule'], ['treinos', 'Treinos', 'workouts'],
+  ['membros', 'Membros e convites', 'members'], ['configuracoes', 'Configurações', 'settings'],
   ['atividade', 'Atividade', 'activity'], ['ia', 'Uso da IA', 'ai'], ['plano', 'Plano e cobrança', 'plan'], ['moderacao', 'Moderação da biblioteca', 'moderation']
 ]
 // A moderação é do dono e do administrador (a mesma regra do servidor).
-const sees = (role, key) => key === 'moderation' ? ['GYM_OWNER', 'GYM_ADMIN'].includes(role) : SEES[role].includes(key)
+// Alunos, equipe, agenda e treinos são da gestão (dono, administrador e gerente), como a lista de membros.
+const OPS = ['students', 'team', 'schedule', 'workouts']
+const sees = (role, key) => key === 'moderation' ? ['GYM_OWNER', 'GYM_ADMIN'].includes(role) : OPS.includes(key) ? STAFF.includes(role) : SEES[role].includes(key)
 
 /* ------------------------------- lista e criação ------------------------------- */
 
@@ -132,7 +136,11 @@ function GymLayout() {
   const key = current[2]
   const navItems = [...visible.map(([k, label]) => ({ to: `/academia/${id}/${k}`, label })), { to: '/academia', label: '← Trocar de academia', end: true }]
   return <DesktopShell role="Portal da academia" nav={navItems} context={{ title: ctx.name, sub: ROLE_LABEL[ctx.role] }} title={current[1]} sub={ctx.name}>
-    {key === 'dashboard' && <Overview id={id} />}
+    {key === 'dashboard' && <><OpsSummary id={id} /><Overview id={id} /></>}
+    {key === 'students' && <StudentsPanel id={id} />}
+    {key === 'team' && <TeamPanel id={id} />}
+    {key === 'schedule' && <GymAgenda id={id} />}
+    {key === 'workouts' && <GymWorkouts id={id} />}
     {key === 'members' && <MembersTable id={id} role={ctx.role} />}
     {key === 'settings' && <Settings id={id} onSaved={() => setStamp(x => x + 1)} />}
     {key === 'activity' && <Activity id={id} />}

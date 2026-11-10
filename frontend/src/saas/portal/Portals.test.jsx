@@ -28,7 +28,7 @@ vi.mock('../api.js', () => ({
   registerAccount: vi.fn(), orgContexts: vi.fn(), createOrg: vi.fn(), acceptOrgInvite: vi.fn(), orgMembers: vi.fn(), inviteOrgMember: vi.fn(),
   changeOrgRole: vi.fn(), removeOrgMember: vi.fn(), cancelPendingInvite: vi.fn(), orgDashboard: vi.fn(), orgSettings: vi.fn(), saveOrgSettings: vi.fn(),
   orgActivity: vi.fn(), orgAiUsage: vi.fn(), orgBilling: vi.fn(), startOrgCheckout: vi.fn(), cancelOrgSubscription: vi.fn(), aiContext: vi.fn(), setAiContext: vi.fn(),
-  leaveOrg: vi.fn(), moderationQueue: vi.fn(), moderationQueuePlatform: vi.fn(), moderateItem: vi.fn(), adminGyms: vi.fn(),
+  leaveOrg: vi.fn(), moderationQueue: vi.fn(), moderationQueuePlatform: vi.fn(), moderateItem: vi.fn(), adminGyms: vi.fn(), gymRoster: vi.fn(), assignGymTrainer: vi.fn(), gymSchedule: vi.fn(), gymWorkouts: vi.fn(), communityItems: vi.fn(),
   trainerProfile: vi.fn(), saveTrainerProfile: vi.fn(), trainerLinks: vi.fn(), trainerAssignments: vi.fn(), inviteStudent: vi.fn(), requestTrainer: vi.fn(),
   answerLink: vi.fn(), endLink: vi.fn(), assignWorkout: vi.fn(), assignSuggestion: vi.fn(), answerAssignment: vi.fn(), assignmentComments: vi.fn(),
   addAssignmentComment: vi.fn(), sharedWithMe: vi.fn(), shareCategories: vi.fn(), readStudentData: vi.fn(),
@@ -55,6 +55,12 @@ const type = async (el, v) => { await act(async () => { Object.getOwnPropertyDes
 beforeEach(() => {
   vi.clearAllMocks()
   st.user = { id: 'u1', name: 'Ana', admin: false }
+  api.gymRoster.mockResolvedValue({ summary: { students: 2, withoutTrainer: 1, withTrainer: 1, waitingStudent: 0, trainers: 1, activeLinks: 1, sessionsNext7Days: 3, doneLast30: 5, missedLast30: 1 },
+    students: [{ userId: 's1', name: 'Bia', email: 'bia@x.com', since: '2026-11-01T00:00:00Z', trainer: null, nextSession: null, doneLast30: 0, missedLast30: 0 }],
+    team: [{ userId: 't1', name: 'Prof. Ana', email: 'ana@x.com', role: 'PERSONAL_TRAINER', students: 1, pending: 0, sessionsNext7Days: 3, doneLast30: 5, missedLast30: 1, workoutsSentLast30: 2 }] })
+  api.communityItems.mockResolvedValue([])
+  api.gymWorkouts.mockResolvedValue([])
+  api.gymSchedule.mockResolvedValue([])
   api.orgContexts.mockResolvedValue({ personal: {}, gyms: [
     { id: 'g1', name: 'Alfa', role: 'GYM_OWNER', status: 'ACTIVE' }, { id: 'g2', name: 'Beta', role: 'GYM_MANAGER', status: 'ACTIVE' },
     { id: 'g3', name: 'Gama', role: 'STUDENT', status: 'ACTIVE' }, { id: 'g4', name: 'Delta', role: 'GYM_ADMIN', status: 'INVITED' }
@@ -105,7 +111,7 @@ describe('portais: cada função na sua tela', () => {
     api.inviteOrgMember.mockResolvedValue({})
     api.cancelPendingInvite.mockResolvedValue({})
     await mount('/academia/g1/membros', <GymPortal />)
-    expect(navText()).toEqual(expect.arrayContaining(['Visão geral', 'Membros', 'Configurações', 'Atividade', 'Uso da IA', 'Plano e cobrança', 'Moderação da biblioteca']))
+    expect(navText()).toEqual(expect.arrayContaining(['Visão geral', 'Alunos', 'Equipe', 'Agenda', 'Treinos', 'Membros e convites', 'Configurações', 'Atividade', 'Uso da IA', 'Plano e cobrança', 'Moderação da biblioteca']))
     expect(host.querySelector('table.dk-table')).toBeTruthy()
     expect(host.textContent).toContain('Bia')
     expect(host.textContent).toContain('Aguardando cadastro')
@@ -116,10 +122,26 @@ describe('portais: cada função na sua tela', () => {
     expect(api.cancelPendingInvite).toHaveBeenCalledWith('g1', 'p1')
   })
 
+  it('academia: números da operação na visão geral e vínculo aluno-personal na aba Alunos', async () => {
+    api.assignGymTrainer.mockResolvedValue({ status: 'PENDING' })
+    api.orgDashboard.mockResolvedValue({ members: { active: 5, invited: 0 }, students: { active: 2, joinedLast30Days: 1 }, professionals: { active: 1 } })
+    await mount('/academia/g1/geral', <GymPortal />)
+    expect(host.textContent).toContain('Alunos sem personal'); expect(host.textContent).toContain('Treinos nos próximos 7 dias')
+    act(() => root.unmount()); host.remove()
+    await mount('/academia/g1/alunos', <GymPortal />)
+    expect(host.textContent).toContain('Bia')
+    const sel = host.querySelector('select[aria-label="Personal de Bia"]')
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, 't1'); sel.dispatchEvent(new Event('change', { bubbles: true })) }); await flush()
+    expect(api.assignGymTrainer).toHaveBeenCalledWith('g1', 's1', 't1')
+    act(() => root.unmount()); host.remove()
+    await mount('/academia/g1/equipe', <GymPortal />)
+    expect(host.textContent).toContain('Prof. Ana'); expect(host.textContent).toContain('Treinos enviados (30d)')
+  })
+
   it('o gerente vê menos seções: sem configurações nem moderação', async () => {
     await mount('/academia/g2/geral', <GymPortal />)
     const items = navText()
-    expect(items).toEqual(expect.arrayContaining(['Visão geral', 'Membros', 'Atividade', 'Plano e cobrança']))
+    expect(items).toEqual(expect.arrayContaining(['Visão geral', 'Alunos', 'Equipe', 'Agenda', 'Treinos', 'Membros e convites', 'Atividade', 'Plano e cobrança']))
     expect(items).not.toContain('Configurações')
     expect(items).not.toContain('Moderação da biblioteca')
   })
