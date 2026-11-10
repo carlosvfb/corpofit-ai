@@ -209,6 +209,7 @@ Verificação do RLS em produção (somente leitura): conectado como o dono do b
 
 ## 16. Recepção, mensalidades, aparelhos, acesso, Google e foto (2026-11-10 a 12)
 - **Entrar com o Google** (`api/google-auth.js`): fluxo OAuth com `state` em cookie, e-mail verificado pelo Google (conta existente com o mesmo e-mail é vinculada e perde a senha, contra pré-sequestro), foto do Google baixada e guardada como avatar. Entrar pelo Google conta como e-mail confirmado e vincula matrículas e convites (`markVerifiedByProvider`). Foto de perfil por upload em Ajustes (`api/avatar.js`).
+- **Armazenamento das fotos:** ficam no PostgreSQL em base64 (a Vercel não tem disco), no máximo 80 KB cada (uma foto de 256 px pesa 15 a 30 KB), uma linha por pessoa, lida só quando a foto é pedida. 10 mil usuários com foto ficam em torno de 0,3 a 0,8 GB; se isso virar problema, o próximo passo é Vercel Blob ou outro armazenamento de objetos.
 - **E-mail:** `api/saas/mailer.js` via Resend (HTML com a marca, motivo da recusa nos logs, `/api/health` mostra `mail`). Cadastro por e-mail envia o código de confirmação na hora.
 - **Papéis novos:** Professor (INSTRUCTOR) e Recepção (RECEPTIONIST) com permissões próprias (`rbac.js`); o professor trabalha pelo portal do personal com vínculo aceito pelo aluno.
 - **Banco** (`20261112100000_gym_roles`, `20261112110000_gym_front_desk`): GymStudent, GymPlan, GymCharge, GymEquipment, GymDevice, GymAccessEvent, com RLS por academia e leitura do próprio aluno; `PendingInvite.autoAccept` faz a matrícula virar ativa ao confirmar o e-mail.

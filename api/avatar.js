@@ -4,7 +4,8 @@
 import path from 'node:path';
 import fs from './store/fs.js';
 
-export const MAX_AVATAR = 200 * 1024;
+// Pequeno de propósito: a foto fica no PostgreSQL (em base64, +33%). Uma foto de perfil de 256 px pesa 15 a 30 KB.
+export const MAX_AVATAR = 80 * 1024;
 
 export function sniff(buf) {
   if (!Buffer.isBuffer(buf) || buf.length < 12) return null;

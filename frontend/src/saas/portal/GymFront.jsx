@@ -117,7 +117,9 @@ function WebcamCapture({ onPhoto, onClose }) {
     const v = video.current; if (!v?.videoWidth) return
     const side = Math.min(v.videoWidth, v.videoHeight), c = document.createElement('canvas'); c.width = c.height = 320
     c.getContext('2d').drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side) / 2, side, side, 0, 0, 320, 320)
-    onPhoto(c.toDataURL('image/jpeg', 0.85))
+    let out = c.toDataURL('image/jpeg', 0.8)
+    for (const q of [0.65, 0.5, 0.4]) { if (out.length * 0.75 <= 70 * 1024) break; out = c.toDataURL('image/jpeg', q) }
+    onPhoto(out)
   }
   return <div style={{ marginTop: 8 }}>
     <Err>{err}</Err>

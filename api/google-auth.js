@@ -45,7 +45,7 @@ export async function downloadPicture(url, fetcher = fetch) {
   try {
     const u = new URL(url);
     if (u.protocol !== 'https:' || !/(^|\.)googleusercontent\.com$/.test(u.hostname)) return null;
-    const big = url.replace(/=s\d+(-c)?$/, '=s256-c');
+    const big = url.replace(/=s\d+(-c)?$/, '=s192-c');
     const r = await fetcher(big, { signal: AbortSignal.timeout(8_000) });
     if (!r.ok) return null;
     const buf = Buffer.from(await r.arrayBuffer());
