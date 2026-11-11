@@ -73,4 +73,4 @@ Limites por plano (mensagens por mês e por minuto, tamanho da mensagem) **não*
 
 ## Testes
 
-`TEST_DATABASE_URL` (padrão `postgresql://corpofitai:corpofitai@localhost:5432/corpofitai_test`): cada arquivo de teste usa o seu próprio *schema* nesse banco.
+`TEST_DATABASE_URL` (padrão `postgresql://corpofitai:corpofitai@localhost:5433/corpofitai_test`): cada arquivo de teste usa o seu próprio *schema* nesse banco.

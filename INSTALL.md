@@ -24,13 +24,13 @@ Para o modo SaaS preencha a seção "CorpoFit AI" ([ENVIRONMENT.md](ENVIRONMENT.
 
 - **Docker:** `docker compose -f docker-compose.corpofitai.yml up -d db` (veja [DOCKER.md](DOCKER.md)).
 - **Instalado:** crie banco e usuário e ajuste `DATABASE_URL`.
-- **Sem Docker nem Postgres (só desenvolvimento):** `cd api && npm run db:dev` (porta 5432, usuário/senha `corpofitai`, bancos `corpofitai` e `corpofitai_test`; dados em `api/.devdb/`).
+- **Sem Docker nem Postgres (só desenvolvimento):** `cd api && npm run db:dev` (porta 5433, usuário/senha `corpofitai`, bancos `corpofitai` e `corpofitai_test`; dados em `api/.devdb/`).
 
 ## 4. Migrações
 
 ```bash
 cd api
-DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5432/corpofitai?schema=public npx prisma migrate deploy
+DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5433/corpofitai?schema=public npx prisma migrate deploy
 ```
 
 (Em produção o `docker-entrypoint.sh` da API roda isso sozinho quando `SAAS_MODE=1`.) A API também cria/atualiza as linhas de `Plan` ao iniciar, a partir de `api/saas/plans.js`.
@@ -45,7 +45,7 @@ API (porta 3000) e app (porta 5173, com proxy de `/api`):
 
 ```bash
 cd api && SAAS_MODE=1 PASSWORD_LOGIN=1 DATA_DIR=./.data ORIGIN=http://localhost:5173 RP_ID=localhost \
-  DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5432/corpofitai node server.js
+  DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5433/corpofitai node server.js
 cd frontend && API_ORIGIN=http://localhost:5173 npm run dev
 ```
 
@@ -67,7 +67,7 @@ cd api && npm test
 cd frontend && npm test && node scripts/check-locales.mjs && node scripts/check-source-strings.mjs --strict && npm run build
 ```
 
-Alguns testes originais do openGym falham no **Windows** por razões do sistema (permissões `chmod`, processo auxiliar, finais de linha): são os mesmos antes e depois das mudanças do CorpoFit AI (ver IMPLEMENTATION_STATUS.md). Os testes do SaaS (`api/test/saas-*.test.js`) usam um banco `corpofitai_test` em `localhost:5432` (ou `TEST_DATABASE_URL`); sem o banco são **pulados**.
+Alguns testes originais do openGym falham no **Windows** por razões do sistema (permissões `chmod`, processo auxiliar, finais de linha): são os mesmos antes e depois das mudanças do CorpoFit AI (ver IMPLEMENTATION_STATUS.md). Os testes do SaaS (`api/test/saas-*.test.js`) usam um banco `corpofitai_test` em `localhost:5433` (ou `TEST_DATABASE_URL`); sem o banco são **pulados**.
 
 ## Atualizar
 

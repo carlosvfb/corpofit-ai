@@ -34,9 +34,9 @@ Em modo SaaS (`SAAS_MODE=1`, padrão na Vercel) o servidor ganha planos, Asaas e
 npm ci && (cd api && npm ci --omit=optional) && (cd frontend && npm ci)
 cp .env.example .env                      # veja a seção Vercel/CorpoFit AI
 (cd api && npm run db:dev)                # PostgreSQL embutido (outro terminal)
-cd api && DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5432/corpofitai npx prisma migrate deploy
+cd api && DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5433/corpofitai npx prisma migrate deploy
 # a API exatamente como roda na Vercel, atrás de um servidor local:
-cd api && APP_SECRET=$(openssl rand -base64 48) DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5432/corpofitai   ORIGIN=http://localhost:5173 RP_ID=localhost PORT=3000 npm run dev:serverless
+cd api && APP_SECRET=$(openssl rand -base64 48) DATABASE_URL=postgresql://corpofitai:corpofitai@localhost:5433/corpofitai   ORIGIN=http://localhost:5173 RP_ID=localhost PORT=3000 npm run dev:serverless
 # em outro terminal:
 cd frontend && API_ORIGIN=http://localhost:5173 npm run dev      # http://localhost:5173
 ```

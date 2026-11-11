@@ -1,5 +1,5 @@
 /* Apoio dos testes do CorpoFit AI SaaS (api/saas). Usam um PostgreSQL de verdade (banco `corpofitai_test`,
-   por padrão em localhost:5432; `npm run db:dev` sobe um embutido) e mocks do Asaas e da IA.
+   por padrão em localhost:5433; `npm run db:dev` sobe um embutido) e mocks do Asaas e da IA.
    Sem o banco, os testes que dependem dele são PULADOS, para que `npm test` siga verde em máquinas
    sem Postgres. A suíte do openGym original não depende disto. */
 import { execSync } from 'node:child_process';
@@ -11,7 +11,7 @@ import { test } from 'node:test';
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Cada arquivo de teste roda em seu próprio processo (e `node --test` roda vários ao mesmo tempo),
 // então cada um usa o seu schema no mesmo banco: nada de um interfere no outro.
-const BASE_DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://corpofitai:corpofitai@localhost:5432/corpofitai_test';
+const BASE_DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://corpofitai:corpofitai@localhost:5433/corpofitai_test';
 const schemaName = 'ff_' + path.basename(process.argv[1] || 'test').replace(/\.[a-z]+$/i, '').replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
 export const TEST_DB_URL = `${BASE_DB_URL.split('?')[0]}?schema=${schemaName}`;
 
