@@ -3658,4 +3658,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "Без обладнання: лише вага тіла, три тренування.",
   "Four days built around glutes, with legs and upper body in between.": "Чотири дні з акцентом на сідниці, а між ними ноги та верх тіла.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "Оберіть до 3. Перша обрана ціль — головна.",
+  "Main goal": "Головна ціль",
 }

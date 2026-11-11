@@ -42,6 +42,7 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 
 ## 3. IA (CorpoFit AI)
 - **Onde:** botão **Conversar com a CorpoFit AI** no cartão "Seu plano" da tela inicial (ou Plano → *Coach*).
+- **Objetivos:** na primeira conversa a IA pergunta "Para que você treina?" e dá para escolher **até 3 objetivos** (força, ganho de músculo, condicionamento geral, perda de gordura, resistência). O primeiro que você marca é o principal; a IA monta o plano em volta dele e usa os outros para ajustar faixas de repetição, cardio e finalizadores. Quem já tinha um objetivo só continua como estava e pode mudar em Coach → editar respostas.
 - Na primeira vez pede seu consentimento sobre o que a IA pode ler. Limite de mensagens por mês conforme o plano.
 - **Usar a orientação de uma academia:** dentro da academia, marque "Usar a orientação desta academia na minha IA".
 

@@ -3661,4 +3661,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "Sin equipamiento: solo tu peso corporal, tres sesiones.",
   "Four days built around glutes, with legs and upper body in between.": "Cuatro días centrados en los glúteos, con piernas y tren superior entre medias.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "Elige hasta 3. La primera que elijas es tu objetivo principal.",
+  "Main goal": "Objetivo principal",
 }

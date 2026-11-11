@@ -3716,4 +3716,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "بدون معدات: وزن جسمك فقط، ثلاث جلسات.",
   "Four days built around glutes, with legs and upper body in between.": "أربعة أيام تركز على الأرداف، مع الساقين والجزء العلوي بينها.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "اختر حتى 3. الأول الذي تختاره هو الهدف الرئيسي.",
+  "Main goal": "الهدف الرئيسي",
 }

@@ -3708,4 +3708,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "Ingen utrustning: bara kroppsvikt, tre pass.",
   "Four days built around glutes, with legs and upper body in between.": "Fyra dagar kring skinkorna, med ben och överkropp emellan.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "Välj upp till 3. Det första du väljer är huvudmålet.",
+  "Main goal": "Huvudmål",
 }

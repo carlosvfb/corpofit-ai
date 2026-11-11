@@ -593,9 +593,21 @@ describe('CoachIntake — the editor behind ?edit=1', () => {
     expect(eyebrow()).toBe('Your goal')
   })
 
+  it('takes up to three goals, the first picked is the main one, and saves them all', () => {
+    editing(PROFILE)
+    mount(); walkTo('Your goal')
+    tap('.ob-choice', 'Get stronger')   // off
+    tap('.ob-choice', 'Build muscle'); tap('.ob-choice', 'Lose fat'); tap('.ob-choice', 'Endurance'); tap('.ob-choice', 'General fitness')
+    expect([...host.querySelectorAll('.ob-choice.on')].length).toBe(3)   // the fourth is ignored
+    walkTo('Almost there'); cont()
+    expect(mocks.S.coach.profile.goals).toEqual(['muscle', 'fatloss', 'endurance'])
+    expect(mocks.S.coach.profile.goal).toBe('muscle')
+  })
+
   it('saves without asking for a plan, and never opens a second conversation', () => {
     editing(PROFILE)
     mount(); walkTo('Your goal')
+    tap('.ob-choice', 'Get stronger')   // the old goal comes off, then the new one goes on
     tap('.ob-choice', 'Endurance')
     walkTo('Almost there'); cont()
 

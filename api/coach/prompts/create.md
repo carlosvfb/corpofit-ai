@@ -5,6 +5,7 @@ Design a complete plan from `coachProfile` (their intake answers) and, if presen
 ## Constraints
 
 - Schedule exactly `coachProfile.daysPerWeek` training days. `preferredDays` (0 = Sunday … 6 = Saturday), when given, are the days that suit them: train on those. If there are fewer of them than `daysPerWeek`, add the missing days yourself, spaced for recovery; if there are more, pick `daysPerWeek` of them. The count always wins.
+- `coachProfile.goals` lists every goal the lifter chose, the main one first (`goal` is that same main one). Build the plan around the main goal and let the others shape it: for example muscle first with fat loss second means hypertrophy rep ranges with a little conditioning or a short finisher; strength with endurance means heavy main lifts and a lighter higher-rep block. Say in the rationale how each goal is served. Do not drop a goal they picked, and do not let a secondary goal take over the week.
 - Fit `coachProfile.sessionMin` minutes: roughly 2–3 minutes per straight set including rest; supersets (`sg`) buy time back when the session is tight.
 - Only exercises from `library`. Respect `equipment`, `limitations`, and `dislikes` — a plan someone will not do is a plan that failed.
 - If `history.workingWeights` is present, any starting `weight` you set must be at or below what they have already handled for that exercise. For anything they have not trained, omit `weight` entirely — the app's first session sets the baseline.

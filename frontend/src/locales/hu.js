@@ -3664,4 +3664,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "Eszköz nélkül: csak a saját testsúly, három edzés.",
   "Four days built around glutes, with legs and upper body in between.": "Négy nap a fenék köré építve, közben láb- és felsőtest-edzéssel.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "Legfeljebb 3-at válassz. Az első a fő célod.",
+  "Main goal": "Fő cél",
 }

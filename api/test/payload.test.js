@@ -428,3 +428,18 @@ test('the app\'s active equipment profile stands in when the Coach was told no e
   S.coach.profile.equipment = ['barbell'];
   assert.deepEqual(payload.build(S, { handle: handleFor('u1'), kind: 'create' }).coachProfile.equipment, ['barbell']);
 });
+
+test('the Coach gets every goal the lifter picked, main one first; an old profile with one goal still works', () => {
+  const S = sampleState();
+  S.coach = { ...(S.coach || {}), profile: { goal: 'muscle', goals: ['muscle', 'fatloss', 'muscle', 'endurance', 7, '', 'a', 'b', 'c'], daysPerWeek: 3 } };
+  const p = payload.build(S, { handle: handleFor('u1'), kind: 'create' }).coachProfile;
+  assert.deepEqual(p.goals.slice(0, 3), ['muscle', 'fatloss', 'endurance']);
+  assert.ok(p.goals.length <= 5);
+  assert.equal(p.goal, 'muscle');
+  S.coach.profile = { goal: 'strength', daysPerWeek: 3 };
+  const old = payload.build(S, { handle: handleFor('u1'), kind: 'create' }).coachProfile;
+  assert.deepEqual(old.goals, []);
+  assert.equal(old.goal, 'strength');
+  S.coach.profile = { goals: ['endurance', 'general'], daysPerWeek: 3 };
+  assert.equal(payload.build(S, { handle: handleFor('u1'), kind: 'create' }).coachProfile.goal, 'endurance');
+});

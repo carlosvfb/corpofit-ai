@@ -103,7 +103,9 @@ function cleanProfile(profile) {
   const days = Array.isArray(profile.preferredDays) ? profile.preferredDays : [];
   const equipment = Array.isArray(profile.equipment) ? profile.equipment : [];
   return {
-    goal: word(profile.goal, PROFILE_WORD_MAX),
+    // `goals`: everything the lifter chose, main one first; `goal` stays the main one for anything that reads a single goal.
+    goals: [...new Set((Array.isArray(profile.goals) ? profile.goals : []).filter(g => typeof g === 'string' && g).map(g => word(g, PROFILE_WORD_MAX)))].slice(0, 5),
+    goal: word(profile.goal || (Array.isArray(profile.goals) ? profile.goals[0] : ''), PROFILE_WORD_MAX),
     experience: word(profile.experience, PROFILE_WORD_MAX),
     daysPerWeek: count(profile.daysPerWeek, 1, 7),
     // Weekdays 0-6, each once: seven entries is the whole week, so anything past that is noise.
@@ -429,7 +431,7 @@ function aggregates(S, workouts) {
  *  be able to refer to, so they ride in the library slice whatever the cap or the filter. */
 // What a person said they want more of: the note or refine text and the profile's free fields.
 export const REVIEW_FRESH = 24;
-const focusTexts = (profile, said) => [said, profile?.goal, profile?.likes, profile?.notes].filter(x => typeof x === 'string' && x);
+const focusTexts = (profile, said) => [said, profile?.goal, ...(Array.isArray(profile?.goals) ? profile.goals : []), profile?.likes, profile?.notes].filter(x => typeof x === 'string' && x);
 
 function trainedIds(S, workouts) {
   const ids = new Set();

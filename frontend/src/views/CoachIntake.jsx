@@ -31,6 +31,7 @@ import '../coach.css'
 // so check-source-strings sees every key, as CATEGORY_TEXT in lib/coach.js does. When the screen
 // passed these to t() as variables the checker could not see them, and the eight details had no
 // translation in any pack.
+const MAX_GOALS = 3
 const GOALS = [
   ['strength', () => [t('Get stronger'), t('Heavier lifts, lower reps.')], 'barbell'],
   ['muscle', () => [t('Build muscle'), t('Volume and progression.')], 'arm'],
@@ -75,12 +76,15 @@ export default function CoachIntake() {
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [p, setP] = useState(() => ({
-    goal: null, experience: null, daysPerWeek: 3, preferredDays: defaultTrainingDays(3),
+    goal: null, goals: [], experience: null, daysPerWeek: 3, preferredDays: defaultTrainingDays(3),
     // A home gym already set up under Settings → Equipment is the best first guess here.
     sessionMin: 60, equipment: (activeProfile(S)?.equipment || []).filter(e => EQUIPMENT.includes(e)), limitations: '', likes: '', dislikes: '', notes: '',
     ...(S.coach?.profile || {})
   }))
   const set = patch => setP(v => ({ ...v, ...patch }))
+  // Up to three goals; the first one picked is the main one, and `goal` keeps holding it for everything that reads a single goal.
+  const goals = Array.isArray(p.goals) && p.goals.length ? p.goals : (p.goal ? [p.goal] : [])
+  const toggleGoal = v => { const next = goals.includes(v) ? goals.filter(g => g !== v) : goals.length >= MAX_GOALS ? goals : [...goals, v]; set({ goals: next, goal: next[0] || null }) }
 
   const gate = useCoachGate()
   useEffect(() => { if (gate.known && !gate.ok) nav('/home', { replace: true }) }, [gate.known, gate.ok])
@@ -88,7 +92,7 @@ export default function CoachIntake() {
 
   const key = STEPS[step]
   const last = step === STEPS.length - 1
-  const canNext = key === 'goal' ? !!p.goal : key === 'experience' ? !!p.experience : key === 'length' ? p.sessionMin >= 10 : true
+  const canNext = key === 'goal' ? goals.length > 0 : key === 'experience' ? !!p.experience : key === 'length' ? p.sessionMin >= 10 : true
   const optional = ['equipment', 'limits', 'extras'].includes(key)
 
   const next = () => (last ? finish() : setStep(step + 1))
@@ -167,8 +171,9 @@ export default function CoachIntake() {
         <h1 className="ob-h">{t('What are you training for?')}</h1>
         <p className="ob-p">{t('The Coach builds the whole plan around this.')}</p>
         <div className="ob-choices">
-          {GOALS.map(([v, text, icon]) => { const [title, sub] = text(); return <Choice key={v} on={p.goal === v} icon={icon} title={title} sub={sub} onClick={() => set({ goal: v })} /> })}
+          {GOALS.map(([v, text, icon]) => { const [title, sub] = text(); return <Choice key={v} on={goals.includes(v)} icon={icon} title={title} sub={goals.includes(v) && goals.length > 1 ? (goals[0] === v ? t('Main goal') : sub) : sub} onClick={() => toggleGoal(v)} /> })}
         </div>
+        <p className="ob-p">{t('Pick up to 3. The first one you pick is the main goal.')}</p>
       </>}
 
       {key === 'experience' && <>
@@ -251,7 +256,8 @@ export default function CoachIntake() {
         {last ? (editing ? t('Save') : t('Build my plan')) : t('Continue')}
       </Button>
     </div>}
-    {(key === 'goal' || key === 'experience') && !canNext && <div className="ob-hint">{t('Pick one to continue.')}</div>}
+    {key === 'experience' && !canNext && <div className="ob-hint">{t('Pick one to continue.')}</div>}
+    {key === 'goal' && !canNext && <div className="ob-hint">{t('Pick one to continue.')}</div>}
   </div>
 }
 

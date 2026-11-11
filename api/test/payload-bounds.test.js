@@ -61,7 +61,7 @@ test('a profile of the wrong shape reads as absent instead of crashing or leakin
     intake: { goal: { $x: 1 }, experience: 7, daysPerWeek: 'many', preferredDays: 'mon', sessionMin: '', equipment: 'dumbbell', limitations: { a: 1 }, likes: ['x'], dislikes: 3, notes: null }
   });
   assert.deepEqual(p.coachProfile, {
-    goal: null, experience: null, daysPerWeek: null, preferredDays: [], sessionMin: null,
+    goals: [], goal: null, experience: null, daysPerWeek: null, preferredDays: [], sessionMin: null,
     equipment: [], limitations: '', likes: '', dislikes: '', notes: ''
   });
   // A bare-string equipment used to reach librarySlice's .map and throw; now it is no filter.
@@ -80,7 +80,7 @@ test('weekdays are read as weekdays: nothing becomes Sunday, and zero days or mi
 
 test('a real intake passes through unchanged', () => {
   const intake = {
-    goal: 'muscle', experience: 'returning', daysPerWeek: 4, preferredDays: [1, 2, 4, 5], sessionMin: 75,
+    goals: ['muscle', 'fatloss'], goal: 'muscle', experience: 'returning', daysPerWeek: 4, preferredDays: [1, 2, 4, 5], sessionMin: 75,
     equipment: ['dumbbell', 'barbell'], limitations: 'Left shoulder clicks overhead.', likes: 'deadlifts', dislikes: 'lunges', notes: 'Arms by spring.'
   };
   const p = payload.build(sampleState(), { handle: 'h'.repeat(16), kind: 'create', intake });

@@ -3661,4 +3661,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "장비 없이: 맨몸 운동만, 세 번의 세션.",
   "Four days built around glutes, with legs and upper body in between.": "둔근 중심의 4일 루틴, 사이에 하체와 상체를 넣었어요.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "최대 3개까지 고르세요. 처음 고른 것이 주요 목표입니다.",
+  "Main goal": "주요 목표",
 }

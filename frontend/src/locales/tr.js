@@ -3661,4 +3661,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "Ekipmansız: yalnızca vücut ağırlığın, üç antrenman.",
   "Four days built around glutes, with legs and upper body in between.": "Kalça odaklı dört gün; arada bacak ve üst vücut var.",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "En fazla 3 seçin. İlk seçtiğiniz ana hedeftir.",
+  "Main goal": "Ana hedef",
 }

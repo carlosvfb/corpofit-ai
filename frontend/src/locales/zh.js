@@ -3661,4 +3661,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "无需器械：只用自身体重，三次训练。",
   "Four days built around glutes, with legs and upper body in between.": "四天以臀部为核心，中间穿插腿部和上半身。",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "最多选 3 个。第一个选的是主要目标。",
+  "Main goal": "主要目标",
 }

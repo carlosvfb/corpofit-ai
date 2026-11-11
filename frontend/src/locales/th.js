@@ -3672,4 +3672,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "ไม่ต้องใช้อุปกรณ์: ใช้น้ำหนักตัวเอง สามเซสชัน",
   "Four days built around glutes, with legs and upper body in between.": "สี่วันที่เน้นสะโพก โดยมีขาและร่างกายส่วนบนแทรกอยู่ระหว่างกัน",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "เลือกได้สูงสุด 3 ข้อ ข้อแรกที่เลือกคือเป้าหมายหลัก",
+  "Main goal": "เป้าหมายหลัก",
 }

@@ -3740,4 +3740,6 @@ export default {
   "No equipment needed: your body weight, three sessions.": "কোনো সরঞ্জাম ছাড়া: শুধু নিজের শরীরের ওজন, তিনটি সেশন।",
   "Four days built around glutes, with legs and upper body in between.": "নিতম্বকে কেন্দ্র করে চার দিন, মাঝে পা ও শরীরের উপরের অংশ।",
   "CorpoFit AI": "CorpoFit AI",
+  "Pick up to 3. The first one you pick is the main goal.": "সর্বোচ্চ ৩টি বেছে নিন। প্রথমটি আপনার প্রধান লক্ষ্য।",
+  "Main goal": "প্রধান লক্ষ্য",
 }
