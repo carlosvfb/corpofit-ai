@@ -405,6 +405,8 @@ model Assignment {
   target    String           @default("")
   status    AssignmentStatus @default(ASSIGNED)
   revision  Int              @default(1)
+  /// Até quando a ficha vale (revisão). Null = sem prazo.
+  reviewAt  DateTime?
   history   Json             @default("[]")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -414,6 +416,7 @@ model Assignment {
 
   @@index([studentId, createdAt])
   @@index([trainerId, createdAt])
+  @@index([reviewAt])
 }
 
 model AssignmentComment {

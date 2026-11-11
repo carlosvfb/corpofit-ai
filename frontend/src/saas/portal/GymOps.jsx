@@ -34,6 +34,7 @@ export function OpsSummary({ id }) {
   return <div style={{ marginBottom: 16 }}>
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       <Tile label="Alunos sem personal" value={s.withoutTrainer} hint="Vincule na aba Alunos" warn />
+      <Tile label="Fichas vencidas" value={s.plansExpired ?? 0} hint={s.plansExpiring ? `${s.plansExpiring} vencem em 3 dias` : undefined} warn />
       <Tile label="Alunos com personal" value={s.withTrainer} hint={s.waitingStudent ? `${s.waitingStudent} aguardando aceitar` : undefined} />
       <Tile label="Personais na equipe" value={s.trainers} />
       <Tile label="Treinos nos próximos 7 dias" value={s.sessionsNext7Days} />
@@ -69,7 +70,7 @@ export function StudentsPanel({ id }) {
     {!data && !err && <div className="muted">Carregando…</div>}
     {data && <div className="card" style={{ padding: 0, overflow: 'auto' }}>
       <table className="dk-table">
-        <thead><tr><th>Aluno</th><th>E-mail</th><th>Personal responsável</th><th>Próximo treino</th><th>Feitos (30d)</th><th>Faltas (30d)</th><th>Desde</th></tr></thead>
+        <thead><tr><th>Aluno</th><th>E-mail</th><th>Personal responsável</th><th>Ficha de treino</th><th>Próximo treino</th><th>Feitos (30d)</th><th>Faltas (30d)</th><th>Desde</th></tr></thead>
         <tbody>
           {rows.map(s => <tr key={s.userId}>
             <td><b>{s.name || '–'}</b></td><td>{s.email || '–'}</td>
@@ -80,11 +81,12 @@ export function StudentsPanel({ id }) {
               </select>
               {s.trainer && <div className="muted small">{LINK[s.trainer.status]}</div>}
             </td>
+            <td>{s.planReview ? <>{s.planReview.title}<div className="small" style={{ color: s.planReview.state === 'expired' ? 'var(--red, #ff453a)' : undefined }}>{s.planReview.state === 'expired' ? 'Venceu em ' : 'Vale até '}{new Date(s.planReview.reviewAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</div></> : <span className="muted">{s.trainer ? 'Sem prazo' : '–'}</span>}</td>
             <td>{s.nextSession ? <>{s.nextSession.title}<div className="muted small">{formatDateTime(s.nextSession.startsAt)}</div></> : <span className="muted">–</span>}</td>
             <td>{s.doneLast30}</td><td style={{ color: s.missedLast30 > 1 ? 'var(--red, #ff453a)' : undefined }}>{s.missedLast30}</td>
             <td>{formatDate(s.since)}</td>
           </tr>)}
-          {rows.length === 0 && <tr><td colSpan={7} className="dim">Nenhum aluno. Convide em “Membros”.</td></tr>}
+          {rows.length === 0 && <tr><td colSpan={8} className="dim">Nenhum aluno. Convide em “Membros”.</td></tr>}
         </tbody>
       </table>
     </div>}

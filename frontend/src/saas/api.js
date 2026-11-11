@@ -47,7 +47,7 @@ export const requestTrainer = email => post('/api/trainer/links', { email, as: '
 export const answerLink = (id, accept) => put('/api/trainer/links', { id, accept })
 export const endLink = id => api('/api/trainer/links' + qs('id', id), { method: 'DELETE' })
 export const trainerAssignments = linkId => api('/api/trainer/assignments' + (linkId ? qs('link', linkId) : ''))
-export const assignWorkout = (linkId, title, note, bundle) => post('/api/trainer/assignments', { linkId, title, note, bundle })
+export const assignWorkout = (linkId, title, note, bundle, reviewWeeks) => post('/api/trainer/assignments', { linkId, title, note, bundle, ...(reviewWeeks ? { reviewWeeks } : {}) })
 export const answerAssignment = (id, status) => put('/api/trainer/assignments', { id, status })
 export const assignmentComments = id => api('/api/trainer/comments' + qs('assignment', id))
 export const addAssignmentComment = (assignmentId, body) => post('/api/trainer/comments', { assignmentId, body })

@@ -143,8 +143,16 @@ export function cleanBundle(b) {
 
 const asg = (a, withBundle = true) => ({
   id: a.id, linkId: a.linkId, trainerId: a.trainerId, studentId: a.studentId, title: a.title, note: a.note, status: a.status, revision: a.revision,
-  kind: a.kind, target: a.target, createdAt: a.createdAt, updatedAt: a.updatedAt, ...(withBundle ? { bundle: a.bundle } : {})
+  kind: a.kind, target: a.target, createdAt: a.createdAt, updatedAt: a.updatedAt, reviewAt: a.reviewAt ?? null, ...(withBundle ? { bundle: a.bundle } : {})
 });
+
+/** Semanas até a revisão da ficha (1 a 26), ou null para sem prazo. Lança se vier algo que não seja isso. */
+export function reviewDate(weeks, from = new Date()) {
+  if (weeks === undefined || weeks === null || weeks === '' || weeks === 0) return null;
+  const n = Number(weeks);
+  if (!Number.isInteger(n) || n < 1 || n > 26) throw new SaasError(400, 'O prazo da ficha deve ficar entre 1 e 26 semanas.', 'invalid-review');
+  return new Date(from.getTime() + n * 7 * 86_400_000);
+}
 
 export async function assign(user, linkId, input) {
   const title = clean(input?.title, 80);
@@ -153,13 +161,14 @@ export async function assign(user, linkId, input) {
   const note = clean(input?.note, 1000);
   const kind = input?.kind === 'SUGGESTION' ? 'SUGGESTION' : 'ASSIGNMENT';
   const target = kind === 'SUGGESTION' ? clean(input?.target, 80) : '';
+  const reviewAt = kind === 'SUGGESTION' ? null : reviewDate(input?.reviewWeeks);
   return withContext({ userId: user.id }, async tx => {
     const l = await loadLink(tx, user, linkId);
     if (l.trainerId !== user.id) throw FORBIDDEN();
     if (l.status !== 'ACTIVE') throw new SaasError(409, 'O vínculo não está ativo.', 'link-not-active');
     // Sugerir mudanças numa rotina do aluno exige a permissão dele (ROUTINES = SUGGEST), conferida agora.
     if (kind === 'SUGGESTION' && (await levelFor(tx, l.studentId, user.id, 'ROUTINES')) !== 'SUGGEST') throw new SaasError(403, 'O aluno não permitiu sugestões nas rotinas dele.', 'suggest-not-allowed');
-    const a = await tx.assignment.create({ data: { linkId: l.id, trainerId: l.trainerId, studentId: l.studentId, title, note, bundle, kind, target } });
+    const a = await tx.assignment.create({ data: { linkId: l.id, trainerId: l.trainerId, studentId: l.studentId, title, note, bundle, kind, target, reviewAt } });
     await notify(tx, l.studentId, { kind: kind === 'SUGGESTION' ? 'suggestion' : 'assignment', title: kind === 'SUGGESTION' ? `${user.name || 'Seu personal'} sugeriu uma mudança na rotina${target ? ' “' + target + '”' : ''}` : `${user.name || 'Seu personal'} enviou um treino: ${title}`, body: 'Veja em Ajustes > Meu personal.', link: '/meu-personal', dedupeKey: `assignment:${a.id}` });
     return asg(a);
   });
@@ -176,6 +185,7 @@ export async function updateAssignment(user, id, input) {
     if (input?.title !== undefined) { const t = clean(input.title, 80); if (t.length < 2) throw new SaasError(400, 'Dê um nome ao treino.', 'invalid-title'); next.title = t; }
     if (input?.note !== undefined) next.note = clean(input.note, 1000);
     if (input?.bundle !== undefined) next.bundle = cleanBundle(input.bundle);
+    if (input?.reviewWeeks !== undefined) next.reviewAt = reviewDate(input.reviewWeeks);
     if (!Object.keys(next).length) return asg(a);
     const history = [...(Array.isArray(a.history) ? a.history : []), { at: new Date().toISOString(), by: user.id, revision: a.revision, title: a.title, note: a.note, bundle: a.bundle }].slice(-MAX_HISTORY);
     const u = await tx.assignment.update({ where: { id: a.id }, data: { ...next, revision: a.revision + 1, history, status: next.bundle ? 'ASSIGNED' : a.status } });

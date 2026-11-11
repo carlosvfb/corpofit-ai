@@ -14,6 +14,7 @@
  * model verbatim for the one repair round (FR-48) — and a list of six problems produces a
  * better second attempt than the first of them does.
  */
+import { directionOf, gateErrors } from './attendance.js';
 import { libraryHas, libraryName, equipmentAllows, isDumbbellLift } from './library.js';
 
 // A catalogue exercise the person's equipment does not reach, and that was not in the library
@@ -568,6 +569,8 @@ export function validateReview(data, plan, ctx = {}) {
         break;
       }
     }
+    // Mais difícil, mais fácil ou igual: calculado aqui (para números) ou declarado pelo modelo (troca de exercício).
+    out.direction = directionOf(out, c.direction);
     changes.push(out);
   });
 
@@ -661,6 +664,8 @@ export function validateReview(data, plan, ctx = {}) {
     errors.push(`the plan would end up with more than the ${MAX_ROUTINES} routines allowed`);
   }
 
+  // A frequência do aluno decide se o treino pode ficar mais difícil (attendance.js); o veredito vem do servidor, não do modelo.
+  errors.push(...gateErrors(ctx.attendance, kept));
   if (errors.length) return fail([...errors, ...dropped]);
 
   // Everything that was proposed turned out to duplicate an exercise or restate the plan. With
@@ -685,6 +690,7 @@ export function validateReview(data, plan, ctx = {}) {
         sessions: isInt(data.evidence?.sessions, 0, 10000) ? data.evidence.sessions : null
       },
       changes: kept,
+      ...(ctx.attendance ? { attendance: { verdict: ctx.attendance.verdict, reason: ctx.attendance.reason } } : {}),
       notes: (Array.isArray(data.notes) ? data.notes : []).filter(isStr).slice(0, 6).map(n => clampStr(n, 600))
     }
   };

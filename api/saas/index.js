@@ -19,6 +19,7 @@ import { cancelSubscription } from './asaas/cancel.js';
 import { PLANS } from './plans.js';
 import { sendMail } from './mailer.js';
 import { markVerifiedByProvider } from './org/verify.js';
+import { runReviewNotices } from './org/review-notices.js';
 
 export async function createSaas({ json, readBody, readSession, requireAdmin, findUser, cfgStore, jobs, asaasClient, readState }) {
   if (!env().DATABASE_URL) throw new Error('SAAS_MODE=1 exige DATABASE_URL (PostgreSQL).');
@@ -99,5 +100,8 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
   /** Entrada pelo Google (e-mail verificado pelo provedor): marca como confirmado e vincula matrículas e convites. */
   const onGoogleSignIn = user => markVerifiedByProvider(user).catch(err => logError(db, 'google-verify', err));
 
-  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail, onGoogleSignIn };
+  /** Tarefas diárias do SaaS (chamadas pelo cron): avisos de ficha a vencer e vencida. Falha não derruba o cron. */
+  const dailyJobs = () => runReviewNotices().catch(err => logError(db, 'review-notices', err));
+
+  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail, onGoogleSignIn, dailyJobs };
 }

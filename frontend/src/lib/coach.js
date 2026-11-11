@@ -660,6 +660,11 @@ export function applyChangeSet(s, proposal, acceptedIds) {
     notes: proposal.notes || [], decisions: [...applied, ...rejected]
   })
   coachOf(s).lastReview = { at: Date.now() }
+  // Fase do treino: o que a frequência permitiu. Evoluir (algo ficou mais difícil) sobe a fase e marca o dia, o que segura a
+  // próxima evolução por algumas semanas; recomeçar volta uma fase. O servidor lê isto para calcular o veredito (attendance.js).
+  const phase = coachOf(s).phase || { level: 1 }
+  if (proposal.attendance?.verdict === 'reset') coachOf(s).phase = { ...phase, level: Math.max(1, (phase.level || 1) - 1), lastAdvanceOn: todayISO(), lastResetOn: todayISO() }
+  else if (changes.some(c => c.direction === 'harder')) coachOf(s).phase = { ...phase, level: (phase.level || 1) + 1, lastAdvanceOn: todayISO() }
   return { applied: applied.length, rejected: rejected.length, logId }
 }
 

@@ -28,7 +28,7 @@ const { todayISO } = await import('./format.js')
 const EX = EXERCISES[0].id
 const chat = content => ({ status: 200, body: { choices: [{ finish_reason: 'stop', message: { content } }] } })
 const REVIEW = { coach_contract: 1, summary: 'One tweak.', evidence: { from: '2026-10-01', to: '2026-10-15', sessions: 1 },
-  changes: [{ id: 'c1', type: 'sets', target: { routineId: 'r1', exId: EX }, after: 4, why: 'every set was clean' }] }
+  changes: [{ id: 'c1', type: 'sets', target: { routineId: 'r1', exId: EX }, after: 2, why: 'every set was clean' }] }
 const NOCHANGE = { coach_contract: 1, nochange: true, reading: 'Too early to judge.' }
 
 const at = (d, h = 18, m = 0) => new Date(2026, 9, d, h, m)         // October 2026, the phone's own clock

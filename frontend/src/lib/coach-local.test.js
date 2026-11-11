@@ -40,7 +40,7 @@ const state = () => ({
 })
 const chat = content => ({ status: 200, body: { choices: [{ finish_reason: 'stop', message: { content } }] } })
 const review = { coach_contract: 1, summary: 'One tweak.', evidence: { from: '2026-08-01', to: '2026-08-20', sessions: 1 },
-  changes: [{ id: 'c1', type: 'sets', target: { routineId: 'r1', exId: EX }, after: 4, why: 'every set was clean' }] }
+  changes: [{ id: 'c1', type: 'sets', target: { routineId: 'r1', exId: EX }, after: 2, why: 'one set is plenty for now' }] }
 
 async function settle() {
   for (let i = 0; i < 200; i++) {
@@ -77,7 +77,7 @@ describe('the Coach on a phone with its own key', () => {
     const marked = markStale(s.pending, S)
     expect(marked.changes[0].status).not.toBe('stale')
     applyChangeSet(S, marked, ['c1'])
-    expect(S.routines[0].ex[0].sets).toBe(4)
+    expect(S.routines[0].ex[0].sets).toBe(2)
     expect(S.coach.snapshots).toHaveLength(1)
   })
 

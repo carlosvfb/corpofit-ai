@@ -8,6 +8,7 @@ import { withContext } from './context.js';
 import { notify } from './notify.js';
 import { levelFor } from './privacy.js';
 import { project } from './projection.js';
+import { reviewState } from './review-notices.js';
 
 const NOT_FOUND = () => new SaasError(404, 'Não encontrado.', 'not-found');
 const FORBIDDEN = () => new SaasError(403, 'Você não tem permissão para isso.', 'forbidden');
@@ -201,9 +202,10 @@ export async function trainerOverview(user, readState, now = new Date()) {
     const links = await tx.trainerStudent.findMany({ where: { trainerId: user.id, status: 'ACTIVE' } });
     const sessions = await tx.trainingSession.findMany({ where: { trainerId: user.id, startsAt: { gte: new Date(now.getTime() - 30 * 86_400_000) } }, orderBy: { startsAt: 'asc' } });
     const assigned = await tx.assignment.findMany({ where: { trainerId: user.id, status: 'ASSIGNED' }, select: { linkId: true } });
+    const reviews = await tx.assignment.findMany({ where: { trainerId: user.id, kind: 'ASSIGNMENT', status: { in: ['ASSIGNED', 'IMPORTED'] }, reviewAt: { not: null } }, orderBy: { reviewAt: 'asc' }, select: { linkId: true, title: true, reviewAt: true } });
     const cats = {};
     for (const l of links) for (const c of ['ACTIVITY', 'WORKOUTS']) cats[l.id + c] = await levelFor(tx, l.studentId, user.id, c);
-    return { links, sessions, assigned, cats };
+    return { links, sessions, assigned, reviews, cats };
   });
   const names = await nameMap(base.links);
   const out = [];
@@ -226,11 +228,14 @@ export async function trainerOverview(user, readState, now = new Date()) {
     if (cat && (since === null || since >= 7)) flags.push(since === null ? 'no-workouts' : 'inactive');
     if (missed >= 2) flags.push('missed');
     if (toMark > 0) flags.push('to-mark');
+    const rv = base.reviews.find(x => x.linkId === l.id) || null; // a ficha que vence primeiro
+    const rvState = rv ? reviewState(rv.reviewAt, now) : null;
+    if (rvState === 'expired') flags.push('plan-expired'); else if (rvState === 'soon') flags.push('plan-expiring');
     out.push({
       linkId: l.id, studentId: l.studentId, name: names.get(l.studentId) || null, shares: cat, lastWorkoutDay: activity?.lastWorkoutDay ?? null, daysSinceLastWorkout: since,
       workoutsLast4Weeks: activity?.perWeek?.length ? activity.perWeek.slice(-4).reduce((n, w) => n + w.workouts, 0) : null,
       nextSession: next && { id: next.id, title: next.title, startsAt: next.startsAt, status: next.status }, awaitingConfirmation: waiting, sessionsToMark: toMark, missedLast30Days: missed,
-      pendingAssignments: base.assigned.filter(a => a.linkId === l.id).length, flags
+      pendingAssignments: base.assigned.filter(a => a.linkId === l.id).length, planReview: rv ? { title: rv.title, reviewAt: rv.reviewAt, state: rvState } : null, flags
     });
   }
   return out.sort((a, b) => b.flags.length - a.flags.length || (a.name || '').localeCompare(b.name || ''));

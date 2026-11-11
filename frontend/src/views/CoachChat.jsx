@@ -42,6 +42,7 @@ import LineChart from '../components/LineChart.jsx'
 import { Button, Check, Switch, Section, Row, SelectRow } from '../components/ui.jsx'
 import '../coach.css'
 import { AiUsageLine } from '../saas/PlanCard.jsx'
+import TrainingEvolution from '../saas/TrainingEvolution.jsx'
 
 export default function CoachChat() {
   const nav = useNavigate()
@@ -242,6 +243,7 @@ export default function CoachChat() {
           ? <DebriefCard p={pending} S={S} update={update} toast={toast} refresh={refresh} />
           : <ReviewCard p={pending} S={S} update={update} toast={toast} refresh={refresh} />)}
 
+      {idle && !busy && <TrainingEvolution S={S} onReview={askReview} />}
       <div ref={endRef} />
     </div>
 

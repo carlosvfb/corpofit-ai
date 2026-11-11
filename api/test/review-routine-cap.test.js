@@ -56,7 +56,7 @@ const ANSWER = JSON.stringify({
   evidence: { from: '2026-07-20', to: '2026-09-24', sessions: 23 },
   changes: [{
     id: 'c1',
-    type: 'swap-exercise',
+    type: 'swap-exercise', direction: 'same',
     target: { routineId: 'mumgkckgrla1g', exId: '0591' },
     before: '0591',
     after: { id: '0194' },

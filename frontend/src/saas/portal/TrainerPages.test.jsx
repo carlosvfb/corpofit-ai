@@ -108,7 +108,8 @@ describe('portal do personal: alunos, agenda, ficha e montador', () => {
     expect(host.textContent).toContain('1.')
     await act(async () => { btn('Enviar ao aluno').click() }); await flush()
     expect(api.assignWorkout).toHaveBeenCalledTimes(1)
-    const [linkId, title, , bundle] = api.assignWorkout.mock.calls[0]
+    const [linkId, title, , bundle, reviewWeeks] = api.assignWorkout.mock.calls[0]
+    expect(reviewWeeks).toBe(6)   // a ficha nova nasce com prazo de 6 semanas
     expect(linkId).toBe('l1'); expect(title).toBe('Treino A')
     expect(bundle.routines).toHaveLength(1); expect(bundle.routines[0].ex[0].id).toBe('0025')
     expect(onDone).toHaveBeenCalled()

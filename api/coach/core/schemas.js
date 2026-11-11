@@ -35,6 +35,8 @@ export const REVIEW_SCHEMA = {
           },
           before: ANY,
           after: ANY,
+          // Para troca de exercício: o novo é mais difícil, mais fácil ou igual ao que sai.
+          direction: { type: 'string', enum: ['harder', 'easier', 'same'] },
           why: STR
         },
         required: ['type', 'why']

@@ -3222,6 +3222,7 @@ const routes = {
     if (!secret || (req.headers.authorization || '') !== 'Bearer ' + secret) return json(res, 401, { error: 'unauthorized' });
     reminderTick();
     cadenceOnce(cadenceDeps);
+    if (saas) await saas.dailyJobs();
     if (AUDIT_ON) compactAudit();
     // Pushes sent by the tick are finished before the answer (and before the data is written back).
     const c = context();

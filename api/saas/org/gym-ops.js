@@ -7,6 +7,7 @@ import { SaasError } from '../errors.js';
 import { withContext } from './context.js';
 import { notify } from './notify.js';
 import { requirePermission } from './service.js';
+import { reviewState } from './review-notices.js';
 
 const DAY = 86_400_000;
 const TRAINER_ROLES = ['PERSONAL_TRAINER', 'INSTRUCTOR', 'GYM_MANAGER', 'GYM_ADMIN', 'GYM_OWNER'];
@@ -21,8 +22,9 @@ export async function roster(user, tenantId, now = new Date()) {
     const links = await tx.trainerStudent.findMany({ where: { tenantId, status: { in: ['ACTIVE', 'PENDING'] } } });
     const since = new Date(now.getTime() - 30 * DAY);
     const sessions = links.length ? await tx.trainingSession.findMany({ where: { linkId: { in: links.map(l => l.id) }, startsAt: { gte: since } }, orderBy: { startsAt: 'asc' } }) : [];
+    const reviews = links.length ? await tx.assignment.findMany({ where: { linkId: { in: links.map(l => l.id) }, kind: 'ASSIGNMENT', status: { in: ['ASSIGNED', 'IMPORTED'] }, reviewAt: { not: null } }, orderBy: { reviewAt: 'asc' }, select: { linkId: true, title: true, reviewAt: true } }) : [];
     const sent = links.length ? await tx.assignment.groupBy({ by: ['linkId'], where: { linkId: { in: links.map(l => l.id) }, createdAt: { gte: since } }, _count: { _all: true } }) : [];
-    return { members, links, sessions, sent };
+    return { members, links, sessions, sent, reviews };
   });
   const names = await nameMap([...raw.members.map(m => m.userId), ...raw.links.flatMap(l => [l.trainerId, l.studentId])]);
   const who = id => ({ name: names.get(id)?.name ?? null, email: names.get(id)?.email ?? null });
@@ -37,6 +39,7 @@ export async function roster(user, tenantId, now = new Date()) {
       userId: m.userId, ...who(m.userId), since: m.createdAt,
       trainer: link ? { userId: link.trainerId, name: who(link.trainerId).name, linkId: link.id, status: link.status } : null,
       nextSession: next ? { title: next.title, startsAt: next.startsAt, status: next.status } : null,
+      planReview: (() => { const rv = link ? raw.reviews.find(x => x.linkId === link.id) : null; return rv ? { title: rv.title, reviewAt: rv.reviewAt, state: reviewState(rv.reviewAt, now) } : null; })(),
       doneLast30: mine.filter(s => s.status === 'DONE').length, missedLast30: mine.filter(s => s.status === 'MISSED').length
     };
   }).sort((a, b) => (a.trainer ? 1 : 0) - (b.trainer ? 1 : 0) || (a.name || '').localeCompare(b.name || ''));
@@ -59,6 +62,7 @@ export async function roster(user, tenantId, now = new Date()) {
     summary: {
       students: students.length, withoutTrainer: students.filter(s => !s.trainer).length, withTrainer: students.filter(s => s.trainer?.status === 'ACTIVE').length,
       waitingStudent: raw.links.filter(l => l.status === 'PENDING').length, trainers: team.length, activeLinks: active.length,
+      plansExpired: students.filter(s => s.planReview?.state === 'expired').length, plansExpiring: students.filter(s => s.planReview?.state === 'soon').length,
       sessionsNext7Days: raw.sessions.filter(s => isOpen(s.status) && s.startsAt >= now && s.startsAt <= week).length,
       doneLast30: raw.sessions.filter(s => s.status === 'DONE').length, missedLast30: raw.sessions.filter(s => s.status === 'MISSED').length
     },

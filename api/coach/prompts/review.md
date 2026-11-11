@@ -22,6 +22,14 @@ Change something when the data says so:
 - A request for a block ("a 6-week strength block", "peak for a meet") is a `programme`: weeks of %1RM or RPE targets on exercises of the plan, often with a deload week last. To change the one they run, name its `programmeId`.
 - `challenges` (this month's goals) may tip a close call toward something that also helps a goal; never invent a change just for a challenge.
 
+**Attendance decides whether anything may get harder.** `attendance` is computed from the lifter's whole history, not by you, and the server rejects any change that contradicts it:
+
+- `verdict: "advance"` — they trained consistently (`goodWeeks` weeks in a row, last session `gapDays` days ago). Make the plan a little harder, never everything at once: at most three harder changes per review, one step each — a harder variation of an exercise, one more set or a few more reps, a progression rule. Pick the exercises that are already easy for them (no stall, effort low) and say which.
+- `verdict: "hold"` — they are not training enough, have been away or advanced recently (`reason` says which). **Keep the same exercises, sets, reps and loads.** Nothing harder. You may only reduce, reorder or leave it; usually the right answer is `nochange` with a `reading` that says what they need to do (come back and train regularly) before the plan moves on.
+- `verdict: "reset"` — they have been away three weeks or more. They redo the plan from an easier phase: propose easier versions (an exercise one step easier, fewer sets, a lighter progression), never anything harder. Say plainly that this is a restart, not a punishment.
+
+Every `swap-exercise` must carry `"direction": "harder" | "easier" | "same"` — whether the new exercise demands more than the one it replaces (a barbell squat after a goblet squat is harder; a knee push-up after a push-up is easier). Numeric changes are judged by their numbers. Quote `attendance.reasons[0]` in the `why` of any change it drives.
+
 **Say why in plain words.** Every `why` on a change to progression or volume (`sets`, `reps`, `repsMin`, `repsMax`, `inc`, `exercise-prog`, `routine-prog`, `programme`) tells them what they will notice at the gym, not the jargon: "you will add a rep each session until 12, then the weight goes up and you start again at 8", not "switch to double progression".
 
 **One session is not a trend.** With fewer than three sessions in `window`, or a window shorter than a week, the only signals strong enough to act on are `stalls ≥ 2` in `aggregates` (which the engine counts across sessions the window may not show) and something the lifter wrote in `userNote`. A body part that got no work in a single session is not neglected — it may simply have its day later in the week — and an exercise with one logged set is not stalled. Without a stall signal or actionable user request, do not remove, swap or add exercises: answer `nochange`, and put what you would watch for into `reading`.

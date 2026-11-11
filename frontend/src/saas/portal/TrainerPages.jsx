@@ -27,7 +27,9 @@ const Page = ({ title, note, back, action, children }) => <div className="page">
   {children}
 </div>
 const STATUS = { ASSIGNED: 'Novo', IMPORTED: 'Adicionado pelo aluno', DECLINED: 'Recusado', ARCHIVED: 'Arquivado' }
-const FLAG = { inactive: 'Está sem treinar', 'no-workouts': 'Ainda não treinou', missed: 'Faltou 2+ vezes', 'to-mark': 'Registrar presença' }
+const FLAG = { inactive: 'Está sem treinar', 'no-workouts': 'Ainda não treinou', missed: 'Faltou 2+ vezes', 'to-mark': 'Registrar presença', 'plan-expired': 'Ficha vencida', 'plan-expiring': 'Ficha vence em breve' }
+const dm = d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+const WEEKS = [2, 4, 6, 8, 12]
 
 /* ------------------------------ montador de treino ------------------------------ */
 
@@ -48,6 +50,8 @@ export function WorkoutBuilder({ link, initial, onDone, onCancel }) {
   const S = useStore(s => s.S)
   const [title, setTitle] = useState(initial?.title || '')
   const [note, setNote] = useState(initial?.note || '')
+  // Prazo da ficha: novo treino começa com 6 semanas; ao editar, o prazo atual fica como está até você mudar.
+  const [weeks, setWeeks] = useState(initial ? (initial.reviewAt ? 'keep' : '') : '6')
   const [items, setItems] = useState(() => { try { return initial ? readRoutineBundle(initial.bundle, S?.unit || 'kg').routines[0].ex : [] } catch { return [] } })
   const [err, setErr] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -62,8 +66,8 @@ export function WorkoutBuilder({ link, initial, onDone, onCancel }) {
     setErr(null); setBusy(true)
     try {
       const bundle = routineLinkBundle(S, { ...pseudo, name: title.trim() }, { weights: true })
-      if (initial) await updateAssignment(initial.id, { title: title.trim(), note, bundle })
-      else await assignWorkout(link.id, title.trim(), note, bundle)
+      if (initial) await updateAssignment(initial.id, { title: title.trim(), note, bundle, ...(weeks === 'keep' ? {} : { reviewWeeks: weeks ? Number(weeks) : null }) })
+      else await assignWorkout(link.id, title.trim(), note, bundle, weeks ? Number(weeks) : undefined)
       onDone?.()
     } catch (e) { setErr(errorText(e, 'Não foi possível enviar o treino.')) } finally { setBusy(false) }
   }
@@ -85,6 +89,13 @@ export function WorkoutBuilder({ link, initial, onDone, onCancel }) {
       </span>
     </div>)}
     <div style={{ marginTop: 12 }}><Button variant="tinted" onClick={add}>Adicionar exercício</Button></div>
+    <label className="small muted" htmlFor="wb-weeks" style={{ display: 'block', marginTop: 12 }}>Revisar esta ficha em</label>
+    <select id="wb-weeks" className="input" value={weeks} onChange={e => setWeeks(e.target.value)}>
+      {initial?.reviewAt && <option value="keep">Manter o prazo atual (até {dm(initial.reviewAt)})</option>}
+      <option value="">Sem prazo</option>
+      {WEEKS.map(w => <option key={w} value={w}>{w} semanas</option>)}
+    </select>
+    <div className="dim small" style={{ marginTop: 4 }}>Perto da data e quando vence, você e o aluno recebem um aviso. A academia também vê as fichas vencidas.</div>
     <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
       <Button variant="primary" disabled={busy || title.trim().length < 2 || items.length === 0} onClick={send}>{initial ? 'Salvar nova versão' : 'Enviar ao aluno'}</Button>
       <Button variant="tinted" onClick={onCancel}>Cancelar</Button>
@@ -126,6 +137,7 @@ export function StudentsHome() {
       {r.flags.length > 0 && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '4px 0' }}>{r.flags.map(f => <span key={f} className="small" style={{ padding: '2px 8px', borderRadius: 10, background: 'rgba(255,69,58,.15)', color: 'var(--red)' }}>{FLAG[f]}</span>)}</div>}
       <div className="small">{r.shares ? (r.lastWorkoutDay ? `Último treino: ${new Date(r.lastWorkoutDay + 'T12:00:00').toLocaleDateString('pt-BR')} (há ${r.daysSinceLastWorkout} ${r.daysSinceLastWorkout === 1 ? 'dia' : 'dias'})` : 'Ainda não registrou treinos') : <span className="muted">Frequência não compartilhada pelo aluno</span>}</div>
       {r.workoutsLast4Weeks !== null && <div className="muted small">{r.workoutsLast4Weeks} treinos nas últimas 4 semanas</div>}
+      {r.planReview && <div className="small">Ficha “{r.planReview.title}”: {r.planReview.state === 'expired' ? <b style={{ color: 'var(--red, #ff453a)' }}>venceu em {dm(r.planReview.reviewAt)}</b> : <>vale até {dm(r.planReview.reviewAt)}</>}</div>}
       <div className="small">{r.nextSession ? `Próximo: ${r.nextSession.title}, ${when(r.nextSession.startsAt)}${r.nextSession.status === 'PLANNED' ? ' (aguardando confirmação)' : ''}` : <span className="muted">Nenhum treino marcado</span>}</div>
       {r.pendingAssignments > 0 && <div className="muted small">{r.pendingAssignments} treino(s) enviado(s) ainda não adicionado(s) pelo aluno</div>}
     </button>)}
@@ -202,6 +214,7 @@ function TabTreinos({ link }) {
       <div style={{ fontWeight: 700 }}>{a.title}</div>
       <div className="muted small">{a.kind === 'SUGGESTION' ? 'Sugestão' + (a.target ? ' para “' + a.target + '”' : '') + ' · ' : ''}{STATUS[a.status]} · versão {a.revision} · {formatDateTime(a.createdAt)}</div>
       {a.note && <div className="small" style={{ margin: '4px 0', overflowWrap: 'anywhere' }}>{a.note}</div>}
+      {a.reviewAt && a.kind !== 'SUGGESTION' && ['ASSIGNED', 'IMPORTED'].includes(a.status) && <div className="small" style={{ color: new Date(a.reviewAt) < new Date() ? 'var(--red, #ff453a)' : undefined }}>{new Date(a.reviewAt) < new Date() ? 'Ficha vencida em ' : 'Revisar até '}{dm(a.reviewAt)}</div>}
       {a.kind !== 'SUGGESTION' && ['ASSIGNED', 'IMPORTED'].includes(a.status) && <div style={{ marginTop: 6 }}><Button variant="tinted" onClick={() => setBuilding(a)}>Editar treino</Button></div>}
       <Comments assignmentId={a.id} />
     </div>)}

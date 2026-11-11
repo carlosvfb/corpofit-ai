@@ -234,6 +234,7 @@ function StudentSide({ links, assignments, reload }) {
         </div>}
         {got.map(a => <div key={a.id} style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--sep, rgba(128,128,128,.25))' }}>
           <div style={{ fontWeight: 600 }}>{a.title}</div>
+          {a.reviewAt && a.kind !== 'SUGGESTION' && ['ASSIGNED', 'IMPORTED'].includes(a.status) && <div className="small">Treino válido até {new Date(a.reviewAt).toLocaleDateString('pt-BR')}{new Date(a.reviewAt) < new Date() ? ' (venceu: seu personal vai enviar o próximo)' : ''}</div>}
           <div className="muted small">{a.kind === 'SUGGESTION' ? 'Sugestão' + (a.target ? ' para “' + a.target + '”' : '') + ' · ' : ''}{STATUS[a.status]} · versão {a.revision} · {formatDateTime(a.createdAt)}</div>
           {a.note && <div className="small" style={{ margin: '4px 0', overflowWrap: 'anywhere' }}>{a.note}</div>}
           {a.status === 'ASSIGNED' && <div style={{ display: 'flex', gap: 6, margin: '6px 0' }}>

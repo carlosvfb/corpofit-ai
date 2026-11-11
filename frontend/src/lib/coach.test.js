@@ -363,6 +363,26 @@ describe('applying changes', () => {
   })
 })
 
+describe('the phase of the training follows what was accepted', () => {
+  it('a harder change moves the phase up and stamps the day, which holds the next advance for a few weeks', () => {
+    const s = JSON.parse(JSON.stringify(state()))
+    applyChangeSet(s, proposal([change({ id: 'c1', type: 'sets', after: 4, direction: 'harder' })], { attendance: { verdict: 'advance', reason: 'consistent' } }), ['c1'])
+    expect(s.coach.phase.level).toBe(2)
+    expect(s.coach.phase.lastAdvanceOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+  it('an easier change does not advance; a restart after a long absence moves the phase back, never below one', () => {
+    const s = JSON.parse(JSON.stringify(state()))
+    applyChangeSet(s, proposal([change({ id: 'c1', type: 'sets', after: 2, direction: 'easier' })], { attendance: { verdict: 'hold', reason: 'low-attendance' } }), ['c1'])
+    expect(s.coach.phase).toBeUndefined()
+    s.coach.phase = { level: 3, lastAdvanceOn: '2026-01-01' }
+    applyChangeSet(s, proposal([change({ id: 'c1', type: 'sets', after: 2, direction: 'easier' })], { attendance: { verdict: 'reset', reason: 'long-absence' } }), ['c1'])
+    expect(s.coach.phase.level).toBe(2); expect(s.coach.phase.lastResetOn).toBeTruthy()
+    const t = JSON.parse(JSON.stringify(state())); t.coach.phase = { level: 1 }
+    applyChangeSet(t, proposal([change({ id: 'c1', type: 'sets', after: 2, direction: 'easier' })], { attendance: { verdict: 'reset' } }), ['c1'])
+    expect(t.coach.phase.level).toBe(1)
+  })
+})
+
 describe('accepting a subset', () => {
   it('applies only what was accepted and records the rest as declined', () => {
     const s = JSON.parse(JSON.stringify(state()))

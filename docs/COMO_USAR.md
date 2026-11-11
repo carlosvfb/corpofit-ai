@@ -43,6 +43,11 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 ## 3. IA (CorpoFit AI)
 - **Onde:** botão **Conversar com a CorpoFit AI** no cartão "Seu plano" da tela inicial (ou Plano → *Coach*).
 - **Objetivos:** na primeira conversa a IA pergunta "Para que você treina?" e dá para escolher **até 3 objetivos** (força, ganho de músculo, condicionamento geral, perda de gordura, resistência). O primeiro que você marca é o principal; a IA monta o plano em volta dele e usa os outros para ajustar faixas de repetição, cardio e finalizadores. Quem já tinha um objetivo só continua como estava e pode mudar em Coach → editar respostas.
+- **Evolução do treino pela frequência:** na tela da IA aparece o cartão **Evolução do treino**. Só a sua frequência decide:
+  - **Pronto para evoluir:** treinou bem por 2 semanas seguidas (pelo menos 80% dos dias do plano), a última sessão foi há no máximo 4 dias e a última evolução foi há 3 semanas ou mais. Então a IA pode deixar o treino um pouco mais difícil, no máximo 3 mudanças por revisão, uma etapa de cada vez.
+  - **Mantendo o treino:** faltou, treinou pouco, está há 8 a 20 dias sem ir ou evoluiu há pouco. Os exercícios, séries e cargas ficam iguais até haver semanas boas de novo.
+  - **Recomeçar mais leve:** 21 dias ou mais sem treinar. A IA só propõe versões mais fáceis para você refazer o treino de uma fase anterior.
+  O servidor rejeita qualquer proposta da IA que contrarie isso (o veredito é calculado do seu histórico, não pelo modelo). A revisão automática semanal (Coach → agenda de revisões) segue as mesmas regras.
 - Na primeira vez pede seu consentimento sobre o que a IA pode ler. Limite de mensagens por mês conforme o plano.
 - **Usar a orientação de uma academia:** dentro da academia, marque "Usar a orientação desta academia na minha IA".
 
@@ -84,6 +89,7 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
 - **Abas (barra de baixo):** Alunos, Agenda, Exercícios (catálogo completo, com busca por nome em português), Biblioteca e Perfil (inclui "Treinos enviados").
 - **Alunos:** cada aluno aparece com o último treino, quantos treinos fez nas últimas 4 semanas, o próximo treino marcado e **sinais de atenção** (sem treinar há 7+ dias, faltou 2+ vezes, presença a registrar). Quem precisa de você aparece primeiro. A frequência só aparece se o aluno compartilhou.
 - **Ficha do aluno** (toque no nome): abas **Treinos**, **Agenda**, **Progresso**, **Notas** e **Acesso**.
+  - **Prazo da ficha:** ao enviar ou editar um treino, escolha **Revisar esta ficha em** 2, 4, 6, 8 ou 12 semanas (novo treino começa com 6). Três dias antes e quando vence, você e o aluno recebem um aviso no app (uma vez por versão). A lista de alunos mostra **Ficha vence em breve / Ficha vencida**, e o painel da academia mostra as fichas vencidas por aluno.
   - **Treinos → Montar novo treino:** busque exercícios pelo nome, defina séries, repetições (ou segundos, ou minutos no cardio), carga e descanso, reordene e envie. Cada aluno recebe o treino que você montou para ele; **Editar treino** cria uma nova versão (a anterior fica no histórico) e avisa o aluno.
   - **Agenda → Marcar treino:** dia e horário exatos, duração, local, treino previsto e recado; dá para repetir toda semana (até 12 semanas). O sistema não deixa marcar dois alunos no mesmo horário. O aluno recebe um aviso e **confirma ou recusa**; remarcar volta a pedir confirmação. Depois do horário você registra **Treino feito** ou **Faltou**. Cancelar avisa a outra pessoa e, em séries, pergunta se cancela os próximos.
   - **Progresso:** treinos feitos, séries e cargas, peso, medidas, observações, só o que o aluno liberou. Cada leitura fica registrada para o aluno.
