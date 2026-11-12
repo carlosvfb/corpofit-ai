@@ -30,8 +30,10 @@ vi.mock('../lib/coach-api.js', () => ({
   isDeclined: e => e?.code === 'declined',
 }))
 vi.mock('../coach.css', () => ({}))
+vi.mock('../sheets.jsx', () => ({ exercisePicker: vi.fn() }))
 
 const api = await import('../lib/coach-api.js')
+const sheets = await import('../sheets.jsx')
 const { default: WorkoutCoachSheet, AdaptProposal } = await import('./WorkoutCoachSheet.jsx')
 
 const BENCH = '0025', CURL = '0294'
@@ -71,6 +73,27 @@ describe('Ask the Coach mid-workout', () => {
     act(() => { [...host.querySelectorAll('.adapt-reasons button')].find(b => b.textContent.includes('Short on time')).click() })
     await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent.includes('Ask the Coach')).click() })
     expect(api.requestAdapt).toHaveBeenCalledWith({ entry: 1, reason: 'short', text: '' })
+  })
+
+  it('"Change this exercise": the lifter can pick the one they want, and it travels with the request as a swap', async () => {
+    render(<WorkoutCoachSheet entryIdx={1} close={() => {}} />)
+    act(() => { [...host.querySelectorAll('.adapt-reasons button')].find(b => b.textContent.includes('Change this exercise')).click() })
+    const pick = [...host.querySelectorAll('.adapt-want button')].find(b => b.textContent.includes('Pick the exercise I want'))
+    act(() => { pick.click() })
+    expect(sheets.exercisePicker).toHaveBeenCalledTimes(1)
+    act(() => { sheets.exercisePicker.mock.calls[0][0]({ id: BENCH, n: 'barbell bench press' }) })
+    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent.includes('Ask the Coach')).click() })
+    expect(api.requestAdapt).toHaveBeenCalledWith({ entry: 1, reason: 'swap', text: `id ${BENCH} (barbell bench press)` })
+  })
+
+  it('without picking anything, the words typed go as they are', async () => {
+    render(<WorkoutCoachSheet entryIdx={1} close={() => {}} />)
+    act(() => { [...host.querySelectorAll('.adapt-reasons button')].find(b => b.textContent.includes('Change this exercise')).click() })
+    const input = host.querySelector('.adapt-text input, input.adapt-text')
+    expect(input.placeholder).toContain('What do you want instead?')
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'something with cables'); input.dispatchEvent(new Event('input', { bubbles: true })) })
+    await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent.includes('Ask the Coach')).click() })
+    expect(api.requestAdapt).toHaveBeenLastCalledWith({ entry: 1, reason: 'swap', text: 'something with cables' })
   })
 
   it('applies only the ticked cards, to this workout, and says so', () => {

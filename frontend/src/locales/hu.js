@@ -3666,4 +3666,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "Legfeljebb 3-at válassz. Az első a fő célod.",
   "Main goal": "Fő cél",
+  "Change this exercise": "Gyakorlat cseréje",
+  "What do you want instead? A name, equipment or a movement (optional)": "Mit szeretnél helyette? Egy nevet, eszközt vagy mozgást (nem kötelező)",
+  "Pick the exercise I want": "A kívánt gyakorlat kiválasztása",
 }

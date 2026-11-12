@@ -31,6 +31,7 @@ import RecoveryHint from '../components/RecoveryHint.jsx'
 import { ChallengesCard } from '../components/Challenges.jsx'
 import { isOn } from '../lib/modules.js'
 import { PlanCard } from '../saas/PlanCard.jsx'
+import { EvolutionBanner } from '../saas/TrainingEvolution.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -132,6 +133,7 @@ export default function Home() {
     </div>
 
     <PlanCard />
+    <EvolutionBanner S={S} onOpen={() => nav('/coach')} />
 
     <div className="card">
       {/* A running programme (lib/programmes.js) wrote this week's plan: where it stands, one tap from its screen. */}

@@ -3667,4 +3667,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "Выберите до 3. Первая выбранная цель — главная.",
   "Main goal": "Главная цель",
+  "Change this exercise": "Заменить это упражнение",
+  "What do you want instead? A name, equipment or a movement (optional)": "Что вы хотите вместо него? Название, оборудование или движение (необязательно)",
+  "Pick the exercise I want": "Выбрать нужное упражнение",
 }

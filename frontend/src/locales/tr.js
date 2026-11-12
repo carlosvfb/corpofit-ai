@@ -3663,4 +3663,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "En fazla 3 seçin. İlk seçtiğiniz ana hedeftir.",
   "Main goal": "Ana hedef",
+  "Change this exercise": "Bu egzersizi değiştir",
+  "What do you want instead? A name, equipment or a movement (optional)": "Bunun yerine ne istiyorsunuz? Bir ad, ekipman veya hareket (isteğe bağlı)",
+  "Pick the exercise I want": "İstediğim egzersizi seç",
 }

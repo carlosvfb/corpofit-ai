@@ -11,7 +11,7 @@
  * and appearance settings, and every other profile's everything.
  */
 import { glyphStr } from './glyphs.js';
-import { attendance } from './attendance.js';
+import { attendanceFor } from './attendance.js';
 import { LIBRARY, LIB_BY_ID, libraryHas, libraryName, librarySlice, swapSlice, isStretch, MAX_LIBRARY, ownsNoDumbbells } from './library.js';
 import { muscleLoad, gymOf, challengesOf } from './context.js';
 
@@ -602,7 +602,7 @@ export function workoutMeta(S, workoutId) {
  */
 export const TASKS = ['create', 'review', 'debrief', 'ask', 'adapt'];
 // Why someone asks the Coach about an exercise in the middle of a workout (the `adapt` job).
-export const ADAPT_REASONS = ['pain', 'busy', 'short', 'great', 'tired', 'other'];
+export const ADAPT_REASONS = ['pain', 'busy', 'short', 'great', 'tired', 'swap', 'other'];
 export const ADAPT_RECENT = 3;
 
 export function build(S, opts = {}) {
@@ -722,7 +722,7 @@ export function build(S, opts = {}) {
     const recent = (S.workouts || []).filter(w => w && w.d).slice(-ADAPT_RECENT);
     p.window = { workouts: recent.map(compactWorkout) };
     p.library = swapSlice(S, p.coachProfile?.equipment?.length ? p.coachProfile.equipment : (p.gym?.equipment || []), entry?.id, {
-      keep: (today?.entries || []).map(en => en.id), max: 36
+      keep: (today?.entries || []).map(en => en.id), max: 36, said: opts.note
     });
   } else if (opts.kind === 'review') {
     const workouts = reviewWindow(S, coach.lastReview?.at);
@@ -735,13 +735,7 @@ export function build(S, opts = {}) {
     p.aggregates = aggregates(S, workouts);
     // O veredito de frequência (attendance.js) sai da história inteira, não só da janela, e é ele que o validador usa para barrar
     // mudanças mais difíceis. O modelo o recebe para saber o que pode propor, mas não o decide.
-    const plannedDays = Object.keys(S.week || {}).filter(k => S.week[k]?.length).length;
-    p.attendance = attendance({
-      workoutDays: (S.workouts || []).map(w => w && w.d).filter(Boolean),
-      targetPerWeek: p.coachProfile?.daysPerWeek || plannedDays || 3,
-      today: iso(new Date(now)),
-      lastAdvanceOn: typeof coach.phase?.lastAdvanceOn === 'string' ? coach.phase.lastAdvanceOn.slice(0, 10) : null
-    });
+    p.attendance = attendanceFor({ ...S, coach: { ...coach, profile: profile && typeof profile === 'object' ? profile : coach.profile } }, iso(new Date(now)));
     p.bodyweight = { goal: num(S.targetW) ?? null, ...dailyOf(S), series: weighIns(S, p.window.from, null) };
     if (opts.note) p.userNote = String(opts.note).slice(0, MAX_NOTE_CHARS);
     if (opts.cohort) p.cohort = cleanCohort(opts.cohort);

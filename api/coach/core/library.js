@@ -219,7 +219,23 @@ export function librarySlice(S, equipment, { keep = [], max = MAX_LIBRARY, focus
    part, each walked in the deterministic stride above and across every kind of equipment the
    person has, then the exercises already in the session (`keep`, so a change can name them).
    Small on purpose: a swap picks one of a few dozen, and the answer has to arrive mid-set. */
-export function swapSlice(S, equipment, exId, { keep = [], max = 36 } = {}) {
+/** Exercises the lifter asked for in their own words: an `id <id>` the app adds when they pick one, or words of the note found in a name
+ *  or in the equipment. Best effort (the catalogue names are English); the model translates the rest from what it is shown. */
+export function namedBy(said, exId, limit = 8) {
+  const text = String(said || '').toLowerCase();
+  if (!text.trim()) return [];
+  const out = [];
+  const add = e => { if (e && e.id !== exId && !isStretch(e) && !out.some(x => x.id === e.id)) out.push(e); };
+  for (const m of text.matchAll(/\bid[ =:]?([0-9a-z_-]{2,40})\b/g)) add(LIB_BY_ID.get(m[1]));
+  const words = [...new Set(text.replace(/[^\p{L}\p{N} ]/gu, ' ').split(/\s+/).filter(w => w.length >= 4))].slice(0, 8);
+  if (words.length) {
+    const scored = LIBRARY.map(e => { const hay = (e.n + ' ' + (e.eq || '')).toLowerCase(); return [words.filter(w => hay.includes(w)).length, e]; }).filter(([n]) => n > 0).sort((a, b) => b[0] - a[0]);
+    for (const [, e] of scored) { if (out.length >= limit) break; add(e); }
+  }
+  return out.slice(0, limit);
+}
+
+export function swapSlice(S, equipment, exId, { keep = [], max = 36, said = '' } = {}) {
   const focus = LIB_BY_ID.get(exId);
   const wanted = (equipment || []).map(x => String(x).toLowerCase());
   const noDumbbells = ownsNoDumbbells(S);
@@ -228,6 +244,8 @@ export function swapSlice(S, equipment, exId, { keep = [], max = 36 } = {}) {
   const taken = new Set();
   const add = e => { if (e && !taken.has(e.id) && out.length < max) { taken.add(e.id); out.push(e); } };
   for (const id of keep) add(LIB_BY_ID.get(id));
+  // O que o aluno pediu entra primeiro, mesmo fora do equipamento do perfil: foi ele quem escolheu.
+  for (const e of namedBy(said, exId)) add(e);
   if (focus) {
     const same = LIBRARY.filter(e => e.tg === focus.tg && fits(e));
     // Spread over the kinds of equipment, so the slice is not twelve cable variations of one press.

@@ -3663,4 +3663,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "최대 3개까지 고르세요. 처음 고른 것이 주요 목표입니다.",
   "Main goal": "주요 목표",
+  "Change this exercise": "이 운동 바꾸기",
+  "What do you want instead? A name, equipment or a movement (optional)": "대신 무엇을 원하세요? 이름, 기구 또는 동작 (선택)",
+  "Pick the exercise I want": "원하는 운동 고르기",
 }

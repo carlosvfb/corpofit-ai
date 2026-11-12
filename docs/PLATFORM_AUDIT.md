@@ -225,3 +225,9 @@ Verificação do RLS em produção (somente leitura): conectado como o dono do b
 - **App:** cartão "Evolução do treino" na tela da IA, com as últimas 6 semanas.
 - **Testes:** `attendance.test.js` (10), `saas-review.test.js` (4), `TrainingEvolution.test.jsx` (3), testes de fase em `coach.test.js`. Ajustei dois fixtures do Coach que propunham algo mais difícil sem histórico.
 - **Limite honesto:** quais exercícios são "mais difíceis" é julgamento do modelo (declarado em `direction`); o código garante só QUANDO pode evoluir e quantas mudanças. A troca automática por data de uma ficha por outra (item 3 do plano) não foi feita.
+
+## 18. Aviso de evolução e troca de exercício pela IA (2026-11-11)
+- **Aviso:** `api/coach/evolution.js`, chamado no cron diário (`/api/cron/tick`): para quem tem consentimento e rotinas, avisa quando o veredito de frequência é evoluir ou recomeçar (notificação no app deduplicada por episódio e push só quando o aviso é novo). "Manter" nunca avisa. Sem SaaS não há como deduplicar, então não há push. Cartão na tela inicial (`EvolutionBanner`). `attendanceFor(S, today)` é a conta única (payload, aviso e tela).
+- **Troca de exercício pelo aluno** (adapt): novo motivo `swap` ("Trocar este exercício") com escolha do exercício no catálogo ou texto livre. O servidor coloca primeiro nos candidatos o que o aluno nomeou (`namedBy` em `library.js`: `id <id>` enviado pelo app e palavras do pedido contra os nomes do catálogo, mesmo fora do equipamento do perfil) e o prompt manda responder com `swap`, nunca `skip`. 3 textos novos nos 19 idiomas.
+- **Limite:** os nomes do catálogo no servidor são em inglês; palavras em português só acham candidatos por coincidência (o modelo traduz o que ele vê). Escolher no catálogo é o caminho exato.
+- **Testes:** `evolution-notice.test.js` (3), casos novos em `coach-adapt.test.js` e `WorkoutCoachSheet.test.jsx`.

@@ -10,6 +10,7 @@ const payloadLib = await import('../coach/core/payload.js');
 const { runPipeline } = await import('../coach/core/pipeline.js');
 const { validateAdapt, validateReview } = await import('../coach/core/validate.js');
 const { SCHEMAS } = await import('../coach/core/schemas.js');
+const { PROMPTS: picked_prompts } = await import('../coach/core/prompts.js');
 const { muscleLoad, gymOf, challengesOf } = await import('../coach/core/context.js');
 const { strictSchema } = await import('../coach/core/adapters/openai.js');
 
@@ -230,3 +231,20 @@ test('the system prompt stays a prompt: every task under 20k characters', async 
     assert.ok(buildPromptParts(kind, {}).system.length < 20000, kind);
   }
 });
+
+test('"change this exercise": what the lifter names goes first among the candidates, and a swap to it is accepted', () => {
+  // The app writes `id <id> (<name>)` when they pick an exercise; words of their own reach the catalogue names too.
+  const picked = payloadLib.build(S, { handle: H, kind: 'adapt', now: NOW, today, note: 'id 0289 (dumbbell bench press)', focus: { entry: 0, reason: 'swap' } });
+  assert.equal(picked.focus.reason, 'swap');
+  const ids = picked.library.map(e => e.id);
+  assert.ok(ids.includes('0289'), 'the exercise they picked is offered');
+  assert.ok(ids.indexOf('0289') < ids.indexOf('0294') || ids.indexOf('0294') === -1 || ids.indexOf('0289') < 12, 'and it comes near the front');
+  const asked = payloadLib.build(S, { handle: H, kind: 'adapt', now: NOW, today, note: 'quero algo com dumbbell press', focus: { entry: 0, reason: 'swap' } });
+  assert.ok(asked.library.slice(0, 14).some(e => /dumbbell/.test(e.n) && /press/.test(e.n)), 'words from the note find catalogue names');
+  const ok = validateAdapt({ coach_contract: 1, summary: 'Dumbbell bench instead.', changes: [{ type: 'swap', entry: 0, exId: '0025', to: '0289', why: 'You asked for the dumbbell version.' }] }, picked.today);
+  assert.equal(ok.ok, true, JSON.stringify(ok.errors));
+  assert.deepEqual(ok.proposal.changes.map(c => [c.type, c.to]), [['swap', '0289']]);
+  // The instruction itself: a swap request is answered with a swap, never a skip.
+  assert.match(adaptPromptText(), /never a `skip`/);
+});
+function adaptPromptText() { return picked_prompts.adapt; }

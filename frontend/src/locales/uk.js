@@ -3660,4 +3660,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "Оберіть до 3. Перша обрана ціль — головна.",
   "Main goal": "Головна ціль",
+  "Change this exercise": "Замінити цю вправу",
+  "What do you want instead? A name, equipment or a movement (optional)": "Що ви хочете замість неї? Назва, обладнання або рух (необов’язково)",
+  "Pick the exercise I want": "Обрати потрібну вправу",
 }

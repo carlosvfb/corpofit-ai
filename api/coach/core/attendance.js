@@ -61,6 +61,17 @@ export function attendance({ workoutDays = [], targetPerWeek = 3, today, lastAdv
   return out('advance', 'consistent', [`${goodWeeks} semanas seguidas com pelo menos ${need} treino(s) por semana: pronto para evoluir.`]);
 }
 
+/** O veredito a partir do estado do app (mesma conta em todo lugar: payload da IA, aviso diário e cartão da tela). */
+export function attendanceFor(S, today) {
+  const planned = Object.keys(S?.week || {}).filter(k => S.week[k]?.length).length;
+  return attendance({
+    workoutDays: (S?.workouts || []).map(w => w && w.d).filter(Boolean),
+    targetPerWeek: S?.coach?.profile?.daysPerWeek || planned || 3,
+    today,
+    lastAdvanceOn: typeof S?.coach?.phase?.lastAdvanceOn === 'string' ? S.coach.phase.lastAdvanceOn.slice(0, 10) : null
+  });
+}
+
 /** A mudança deixa o treino mais difícil, mais fácil ou igual? `declared` é o que o modelo disse (só vale para troca de exercício). */
 export function directionOf(change, declared) {
   const { type, before, after } = change || {};

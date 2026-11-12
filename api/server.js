@@ -15,6 +15,7 @@ import webpush from 'web-push';
 import * as coachConfig from './coach/config.js';
 import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
+import { evolutionOnce } from './coach/evolution.js';
 import { startCadence, cadenceOnce } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
@@ -3223,6 +3224,8 @@ const routes = {
     reminderTick();
     cadenceOnce(cadenceDeps);
     if (saas) await saas.dailyJobs();
+    // Avisa quem pode evoluir o treino ou deve recomeçar mais leve (só a frequência decide; ver coach/core/attendance.js).
+    if (saas) await evolutionOnce({ users: () => db.users.filter(u => !u.disabled), skip: uid => !stateSummary(uid)?.consent, readState: uid => coachJobs.readState(uid), notify: (u, n) => saas.notifyUser({ id: u.id, name: u.name, email: u.email }, n), push: (uid, p) => pushSoon(uid, p) });
     if (AUDIT_ON) compactAudit();
     // Pushes sent by the tick are finished before the answer (and before the data is written back).
     const c = context();

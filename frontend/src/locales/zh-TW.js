@@ -3656,4 +3656,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "最多選 3 個。第一個選的是主要目標。",
   "Main goal": "主要目標",
+  "Change this exercise": "更換這個動作",
+  "What do you want instead? A name, equipment or a movement (optional)": "想換成什麼？名稱、器材或動作（選填）",
+  "Pick the exercise I want": "選擇我想要的動作",
 }

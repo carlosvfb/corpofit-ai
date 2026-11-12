@@ -1,6 +1,6 @@
 // Evolução do treino pela frequência: mostra se o treino pode ficar mais difícil, deve ser mantido ou recomeçar.
 // É o mesmo cálculo que o servidor usa para barrar a IA (api/coach/core/attendance.js): só a frequência decide.
-import { attendance } from '../../../api/coach/core/attendance.js'
+import { attendanceFor } from '../../../api/coach/core/attendance.js'
 import { Button } from '../components/ui.jsx'
 import { todayISO } from '../lib/format.js'
 
@@ -14,11 +14,7 @@ const BUTTON = { advance: 'Pedir à IA para evoluir o treino', hold: 'Pedir uma 
 export default function TrainingEvolution({ S, onReview, disabled }) {
   const workouts = (S?.workouts || []).filter(w => w && w.d)
   if (workouts.length === 0 && !(S?.routines || []).length) return null
-  const planned = Object.keys(S?.week || {}).filter(k => S.week[k]?.length).length
-  const a = attendance({
-    workoutDays: workouts.map(w => w.d), targetPerWeek: S?.coach?.profile?.daysPerWeek || planned || 3,
-    today: todayISO(), lastAdvanceOn: S?.coach?.phase?.lastAdvanceOn || null
-  })
+  const a = attendanceFor(S, todayISO())
   const c = COPY[a.verdict]
   return <div className="card" style={{ margin: '10px 0' }} data-evolution={a.verdict}>
     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -34,4 +30,17 @@ export default function TrainingEvolution({ S, onReview, disabled }) {
     </div>}
     {onReview && <Button variant={a.verdict === 'advance' ? 'primary' : 'tinted'} size="sm" disabled={disabled} onClick={onReview}>{BUTTON[a.verdict]}</Button>}
   </div>
+}
+
+/** Na tela inicial: só aparece quando há algo a fazer (evoluir ou recomeçar). "Manter" não avisa. */
+export function EvolutionBanner({ S, onOpen }) {
+  if (!S?.coach?.consent?.agreedAt || !(S.routines || []).some(r => r && (r.ex || []).length)) return null
+  const a = attendanceFor(S, todayISO())
+  if (a.verdict === 'hold') return null
+  const c = COPY[a.verdict]
+  return <button type="button" className="card" onClick={onOpen} data-evolution-banner={a.verdict} style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', textAlign: 'start', margin: '10px 0', color: 'inherit' }}>
+    <span aria-hidden="true" style={{ fontSize: 22 }}>{c.icon}</span>
+    <span style={{ flex: 1 }}><b style={{ color: c.color }}>{c.title}</b><span className="small" style={{ display: 'block' }}>{a.reasons[0]}</span></span>
+    <span aria-hidden="true">›</span>
+  </button>
 }

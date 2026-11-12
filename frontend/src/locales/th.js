@@ -3674,4 +3674,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "เลือกได้สูงสุด 3 ข้อ ข้อแรกที่เลือกคือเป้าหมายหลัก",
   "Main goal": "เป้าหมายหลัก",
+  "Change this exercise": "เปลี่ยนท่านี้",
+  "What do you want instead? A name, equipment or a movement (optional)": "อยากได้อะไรแทน? ชื่อท่า อุปกรณ์ หรือการเคลื่อนไหว (ไม่บังคับ)",
+  "Pick the exercise I want": "เลือกท่าที่ฉันต้องการ",
 }

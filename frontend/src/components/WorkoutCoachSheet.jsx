@@ -13,17 +13,19 @@ import { fmtRest } from '../lib/duration.js'
 import { exTitle, appendLog } from '../lib/coach.js'
 import { useCoachStatus, requestAdapt, resolvePending, jobErrorText, isDeclined } from '../lib/coach-api.js'
 import { adaptFor, markAdaptStale, applyAdapt, adaptLogEntry } from '../lib/coach-adapt.js'
+import { exercisePicker } from '../sheets.jsx'
 import Icon from './Icon.jsx'
 import { Button, Check, TextField } from './ui.jsx'
 import '../coach.css'
 
-export const ADAPT_REASONS = ['pain', 'busy', 'short', 'great', 'tired', 'other']
+export const ADAPT_REASONS = ['pain', 'busy', 'short', 'great', 'tired', 'swap', 'other']
 const REASON = {
   pain: () => ['warning', t('It hurts')],
   busy: () => ['clock', t('Machine’s taken')],
   short: () => ['timer', t('Short on time')],
   great: () => ['bolt', t('Feeling great')],
   tired: () => ['moon', t('Running on empty')],
+  swap: () => ['swap', t('Change this exercise')],
   other: () => ['chat', t('Something else')],
 }
 
@@ -113,6 +115,7 @@ export default function WorkoutCoachSheet({ entryIdx, close }) {
   const { job, pending, last, lastError, refresh } = useCoachStatus(true)
   const [reason, setReason] = useState(null)
   const [text, setText] = useState('')
+  const [want, setWant] = useState(null) // an exercise the lifter picked themselves for 'Change this exercise'
   const [sent, setSent] = useState(null)        // the job this sheet started
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -126,7 +129,9 @@ export default function WorkoutCoachSheet({ entryIdx, close }) {
     if (!reason || busy) return
     setBusy(true); setError(null)
     try {
-      const r = await requestAdapt({ entry: entryIdx, reason, text })
+      // The picked exercise travels in the note as its id (and name), which the server puts first among the candidates.
+      const said = [text.trim(), reason === 'swap' && want ? `id ${want.id} (${want.n})` : ''].filter(Boolean).join(' ')
+      const r = await requestAdapt({ entry: entryIdx, reason, text: said })
       setSent(r?.job?.id || 'started')
       refresh()
     } catch (e) {
@@ -161,7 +166,11 @@ export default function WorkoutCoachSheet({ entryIdx, close }) {
               </button>
             })}
           </div>
-          <TextField className="adapt-text" value={text} maxLength={400} placeholder={reason === 'pain' ? t('Where, and what movement hurts? (optional)') : t('Anything else? (optional)')}
+          {reason === 'swap' && <div className="adapt-want" style={{ margin: '8px 0' }}>
+            <Button icon="search" onClick={() => exercisePicker(ex => setWant(ex), { title: t('Pick the exercise I want') })}>{want ? exTitle(want.id) : t('Pick the exercise I want')}</Button>
+            {want && <button type="button" className="chip" style={{ marginInlineStart: 8 }} onClick={() => setWant(null)} aria-label={t('Cancel')}>×</button>}
+          </div>}
+          <TextField className="adapt-text" value={text} maxLength={380} placeholder={reason === 'pain' ? t('Where, and what movement hurts? (optional)') : reason === 'swap' ? t('What do you want instead? A name, equipment or a movement (optional)') : t('Anything else? (optional)')}
             onChange={e => setText(e.target.value)} />
           {error && <p className="small" style={{ color: 'var(--red)' }}>{error}</p>}
           <div className="pcard-ft" style={{ paddingInline: 0 }}>

@@ -47,7 +47,9 @@ Uma mesma conta pode ter várias funções (aluno, personal, gestor de academia,
   - **Pronto para evoluir:** treinou bem por 2 semanas seguidas (pelo menos 80% dos dias do plano), a última sessão foi há no máximo 4 dias e a última evolução foi há 3 semanas ou mais. Então a IA pode deixar o treino um pouco mais difícil, no máximo 3 mudanças por revisão, uma etapa de cada vez.
   - **Mantendo o treino:** faltou, treinou pouco, está há 8 a 20 dias sem ir ou evoluiu há pouco. Os exercícios, séries e cargas ficam iguais até haver semanas boas de novo.
   - **Recomeçar mais leve:** 21 dias ou mais sem treinar. A IA só propõe versões mais fáceis para você refazer o treino de uma fase anterior.
+  **Aviso:** todo dia o servidor confere a frequência de quem usa a IA. Quando o treino pode **evoluir** ou deve **recomeçar mais leve**, você recebe uma notificação no app (e um push, se ligado) e um cartão na tela inicial. Um aviso por situação: se nada mudar, ele não repete; "manter" nunca avisa.
   O servidor rejeita qualquer proposta da IA que contrarie isso (o veredito é calculado do seu histórico, não pelo modelo). A revisão automática semanal (Coach → agenda de revisões) segue as mesmas regras.
+- **Trocar um exercício durante o treino:** no treino em andamento, toque no exercício → **Perguntar à IA** → **Trocar este exercício**. Você pode **escolher o exercício que quer** no catálogo ou escrever o que prefere (um nome, um aparelho, um movimento, "sem impacto no joelho"). A IA responde com a **troca**, não com a exclusão: ela usa o exercício que você escolheu ou o mais parecido e explica o motivo. Nada muda até você aplicar, e as séries já feitas ficam como estão.
 - Na primeira vez pede seu consentimento sobre o que a IA pode ler. Limite de mensagens por mês conforme o plano.
 - **Usar a orientação de uma academia:** dentro da academia, marque "Usar a orientação desta academia na minha IA".
 

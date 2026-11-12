@@ -3663,4 +3663,7 @@ export default {
   "CorpoFit AI": "CorpoFit AI",
   "Pick up to 3. The first one you pick is the main goal.": "अधिकतम 3 चुनें। पहला आपका मुख्य लक्ष्य है।",
   "Main goal": "मुख्य लक्ष्य",
+  "Change this exercise": "यह अभ्यास बदलें",
+  "What do you want instead? A name, equipment or a movement (optional)": "इसकी जगह क्या चाहिए? नाम, उपकरण या गति (वैकल्पिक)",
+  "Pick the exercise I want": "मेरा चाहा हुआ अभ्यास चुनें",
 }

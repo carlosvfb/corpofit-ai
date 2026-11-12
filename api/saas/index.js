@@ -100,8 +100,17 @@ export async function createSaas({ json, readBody, readSession, requireAdmin, fi
   /** Entrada pelo Google (e-mail verificado pelo provedor): marca como confirmado e vincula matrículas e convites. */
   const onGoogleSignIn = user => markVerifiedByProvider(user).catch(err => logError(db, 'google-verify', err));
 
+  /** Aviso no app para um usuário (deduplicado pela chave). Devolve true se criou um aviso novo. */
+  const notifyUser = async (user, n) => {
+    try {
+      await ensureUser({ id: user.id, name: user.name, email: user.email });
+      const r = await db.notification.createMany({ data: [{ userId: user.id, kind: String(n.kind).slice(0, 40), title: String(n.title).slice(0, 120), body: String(n.body || '').slice(0, 300), link: String(n.link || '').slice(0, 120), dedupeKey: String(n.dedupeKey).slice(0, 160) }], skipDuplicates: true });
+      return r.count > 0;
+    } catch (err) { await logError(db, 'notify-user', err); return false; }
+  };
+
   /** Tarefas diárias do SaaS (chamadas pelo cron): avisos de ficha a vencer e vencida. Falha não derruba o cron. */
   const dailyJobs = () => runReviewNotices().catch(err => logError(db, 'review-notices', err));
 
-  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail, onGoogleSignIn, dailyJobs };
+  return { routes, wrapCoach, cachedBody, onUserDeleted, aiGate, ai, ensureAi, sendMail, onGoogleSignIn, dailyJobs, notifyUser };
 }
