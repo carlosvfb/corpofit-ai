@@ -31,6 +31,8 @@ import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, tn, LANGS, INSTR_LANGS, EXERCISE_NAME_LANGS, baseLang, dateLocale } from '../lib/i18n.js'
 import { effectiveLang } from '../lib/default-lang.js'
 import { DEMO, REPO } from '../lib/demo.js'
+// A versão web do CorpoFit AI não carrega a mídia dos exercícios (VITE_NO_MEDIA=1), então não há atribuição de mídia a mostrar.
+const NO_MEDIA = !!(import.meta.env && String(import.meta.env.VITE_NO_MEDIA) === '1')
 import { MOBILE, isAndroid, shareExport, shareExportBlob, syncReminder } from '../lib/mobile.js'
 import { NUDGE_COPY, NUDGE_TONES, toneOf } from '../lib/nudge.js'
 import { referencedFiles } from '../lib/media-refs.js'
@@ -1119,15 +1121,11 @@ export default function Settings({ page = null, find = null, via = null, entryKe
             (lib/apk-variant.js): which one this is, so nobody has to guess from the file size. */}
         <Row icon="info" iconTint="var(--grey)" title={t('Version')} value={'v' + __APP_VERSION__}
           subtitle={MOBILE && selfUpdate ? t('{0} APK, animations at {1} px', VARIANT_NAMES[APK_VARIANT], BUILTIN_PX) : undefined} />
-        {MOBILE
-          ? selfUpdate && <Row icon="download" iconTint="var(--green)"
-              title={updateInfo?.hasUpdate ? t('Update to openGym v{0}', updateInfo.latestVersion) : t('Check for updates')}
-              subtitle={checking ? t('Checking…') : t('You have v{0}', __APP_VERSION__)}
-              accessory="chevron"
-              onClick={() => (updateInfo?.hasUpdate ? onUpdateRowClick() : checkNow())} />
-          : <Row icon="download" iconTint="var(--green)" title={t('Get the Android app')}
-              subtitle={t('Download the APK from opengym.ch')} accessory="chevron"
-              onClick={() => window.open('https://opengym.ch/#download', '_blank', 'noopener')} />}
+        {MOBILE && selfUpdate && <Row icon="download" iconTint="var(--green)"
+          title={updateInfo?.hasUpdate ? t('Update to openGym v{0}', updateInfo.latestVersion) : t('Check for updates')}
+          subtitle={checking ? t('Checking…') : t('You have v{0}', __APP_VERSION__)}
+          accessory="chevron"
+          onClick={() => (updateInfo?.hasUpdate ? onUpdateRowClick() : checkNow())} />}
       </Section>
       {/* The F-Droid build has no Wear OS link (it would need Google Play services, which F-Droid
           leaves out): said here rather than having a watch that silently never connects. */}
@@ -1147,42 +1145,19 @@ export default function Settings({ page = null, find = null, via = null, entryKe
             onClick={() => (useStore.getState().S.active ? toast(t('Finish your workout first, then the tour is all yours.')) : startTour(null, f))} />
         })}
       </Section>
-      {/* Support: the project's own donation pages, and on the iPhone a straight line to writing a
-          review. Plain links, no pop-up asking for anything (App Store 5.6.1). The Google Play build
-          shows only its rating link: Play's payments policy wants Play billing for anything paid
-          inside an app, donations to a project that isn't a registered charity included, so the
-          coffee links stay on the APK, the iPhone and the web (docs/APP_STORES.md). */}
-      <Section title={t('Support openGym')} footer={play ? undefined : t('openGym is free: no ads, no subscriptions, no tracking. A coffee keeps it that way.')}>
-        {MOBILE && ios && <Row icon="star" iconTint="var(--orange)" title={t('Rate openGym on the App Store')} accessory="chevron"
-          onClick={() => window.open('https://apps.apple.com/app/id6822275400?action=write-review', '_blank', 'noopener')} />}
-        {play && <Row icon="star" iconTint="var(--orange)" title={t('Rate openGym on Google Play')} accessory="chevron"
-          onClick={() => window.open('https://play.google.com/store/apps/details?id=ch.duartesantos.opengym', '_blank', 'noopener')} />}
-        {!play && <>
-          <Row icon="heart" iconTint="var(--pink)" title={t('Buy me a coffee')} subtitle="Buy Me a Coffee" accessory="chevron"
-            onClick={() => window.open('https://buymeacoffee.com/duartesantos', '_blank', 'noopener')} />
-          <Row icon="heart" iconTint="var(--blue)" title="Ko-fi" accessory="chevron"
-            onClick={() => window.open('https://ko-fi.com/opengym', '_blank', 'noopener')} />
-          <Row icon="heart" iconTint="var(--purple)" title="GitHub Sponsors" accessory="chevron"
-            onClick={() => window.open('https://github.com/sponsors/DuarteSantos8', '_blank', 'noopener')} />
-        </>}
-      </Section>
-      {/* "Add to Home screen": not inside the phone app, and not once it is installed. Safari's
-          Share menu only on Apple (an iPad says Macintosh too); Windows and Linux get Chrome's
-          install icon instead of an iPhone tip. */}
-      {!MOBILE && !standalone() && <Section title={t('Tip')}>
-        <Row icon="share" iconTint="var(--blue)"
-          title={IS_ANDROID ? t('In Chrome: ⋮ menu → Add to Home screen') : APPLE_UA ? t('In Safari: Share → Add to Home Screen') : t('In Chrome or Edge: the install icon in the address bar')}
-          subtitle={t('to install openGym as a full-screen app.') + ' ' + (user ? t('Your data syncs with your profile. Sign in anywhere and it’s there.') : t('Guest data stays on this device, so export a backup now and then!'))} />
-      </Section>}
       {/* The version, where the support template tells people to look for it. On the phone
           build there is no address bar and no about box, so without this there is no way to tell
           which build you are running, or whether an update actually installed. */}
       <div className="dim small sp-version">
-        openGym v{__APP_VERSION__} · {t('free & open source (AGPL v3)')}<br />
-        <a href="https://github.com/DuarteSantos8/openGym" target="_blank" rel="noopener">{t('Source code')}</a><br />
-        {/* Attribution the media licence asks for word for word (agreement §8c), so it is not translated */}
-        Exercise media © Aliaksandr Makatserchyk, <a href="https://gymvisual.com/" target="_blank" rel="noopener">Gym visual</a>, gymvisual.com.
-        Media licensed for use in openGym only; see <a href="https://github.com/DuarteSantos8/openGym/blob/main/NOTICE.md" target="_blank" rel="noopener">NOTICE.md</a>
+        CorpoFit AI v{__APP_VERSION__} · {t('free & open source (AGPL v3)')}<br />
+        {/* AGPL: quem usa pela rede pode pedir o código da versão que está rodando, então o link é o do repositório DESTA versão. */}
+        <a href={useStore.getState().config?.saas?.sourceCodeUrl || 'https://github.com/carlosvfb/corpofit-ai'} target="_blank" rel="noopener">{t('Source code')}</a>
+        {!NO_MEDIA && <>
+          <br />
+          {/* Só quando o aplicativo mostra a mídia dos exercícios: a licença pede esta atribuição palavra por palavra (acordo §8c) */}
+          Exercise media © Aliaksandr Makatserchyk, <a href="https://gymvisual.com/" target="_blank" rel="noopener">Gym visual</a>, gymvisual.com.
+          Media licensed for use in openGym only; see <a href="https://github.com/DuarteSantos8/openGym/blob/main/NOTICE.md" target="_blank" rel="noopener">NOTICE.md</a>
+        </>}
       </div>
     </>,
 
@@ -1348,7 +1323,7 @@ function SettingsRoot({ ctx, preview, open, user, sync, home, go, entryKey }) {
             value={t('Admin')} accessory="chevron" onClick={() => nav('/admin', { state: { section: 'coach' } })} className="sp-root-row" />}
         </Section>
       ))}
-      <div className="dim small sp-version">openGym v{__APP_VERSION__}</div>
+      <div className="dim small sp-version">CorpoFit AI v{__APP_VERSION__}</div>
     </>}
   </div>
 }

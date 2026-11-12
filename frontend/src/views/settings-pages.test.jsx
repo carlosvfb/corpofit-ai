@@ -239,10 +239,7 @@ describe('the search lands on a row', () => {
     expect(searchSettings('loop', web, tr).map(h => h.title)).toContain('How you train')
     expect(searchSettings('swipe', web, tr)[0].title).toBe('Swipe actions')
     expect(searchSettings('gesture', web, tr).map(h => h.title)).toEqual(['Swipe actions'])
-    expect(searchSettings('home screen', { ...web, desktopWeb: false }, tr).map(h => h.title)).toEqual(['In Safari: Share → Add to Home Screen'])
-    expect(searchSettings('install', { ...web, androidWeb: true, desktopWeb: false }, tr).map(h => h.title)).toEqual(['In Chrome: ⋮ menu → Add to Home screen'])
     // Windows and Linux are neither: Chrome's install icon, not an iPhone's Share menu (night QA 10-19).
-    expect(searchSettings('install', web, tr).map(h => h.title)).toEqual(['In Chrome or Edge: the install icon in the address bar'])
     expect(searchSettings('backup folder', { ...guestWeb, mobile: true, android: true, autoBackup: true }, tr).map(h => h.title)).toEqual(['Backup folder'])
     expect(searchSettings('backup folder', { ...guestWeb, mobile: true, android: true }, tr)).toEqual([])
   })

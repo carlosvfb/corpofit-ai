@@ -96,12 +96,12 @@ const checkRow = () => [...host.querySelectorAll('.lrow')].find(r => r.textConte
 const webRow = () => [...host.querySelectorAll('.lrow')].find(r => r.textContent.includes('Get the Android app'))
 
 describe('Settings — in-app update check', () => {
-  it('web build: never asks for releases; the Updates section points at the APK instead', async () => {
+  it('web build: never asks for releases and has no link to an Android download', async () => {
     await mount()
     expect(mocks.checkForUpdate).not.toHaveBeenCalled()
     expect(updateRow()).toBeUndefined()
     expect(checkRow()).toBeUndefined()
-    expect(webRow()).toBeTruthy()
+    expect(webRow()).toBeUndefined()   // o CorpoFit AI não oferece download de APK por aqui
   })
 
   it('mobile build on iOS: no check, no row, no section', async () => {
@@ -194,33 +194,20 @@ describe('Settings → About: which APK this is', () => {
   })
 })
 
-// Google Play's payments policy: no links to pay outside Play billing for anything but a
-// registered charity, so the Play build has no coffee links, only its own rating row.
-describe('Settings: support links', () => {
+// O CorpoFit AI não tem links de doação (eram do projeto openGym original) nem a dica de instalação.
+describe('Settings: about', () => {
   const row = text => [...host.querySelectorAll('.lrow')].find(r => r.textContent.includes(text))
-  it('the APK keeps the donation links and has no Play rating row', async () => {
-    mocks.MOBILE = true
-    mocks.android = true
-    await mount()
-    expect(row('Buy me a coffee')).toBeTruthy()
-    expect(row('Ko-fi')).toBeTruthy()
-    expect(row('GitHub Sponsors')).toBeTruthy()
-    expect(row('Rate openGym on Google Play')).toBeUndefined()
-  })
-  it('the Google Play build shows only the rating row', async () => {
-    mocks.MOBILE = true
-    mocks.android = true
-    mocks.channel = 'play'
+  const check = async () => {
     await mount()
     expect(row('Buy me a coffee')).toBeUndefined()
     expect(row('Ko-fi')).toBeUndefined()
     expect(row('GitHub Sponsors')).toBeUndefined()
-    expect(row('Rate openGym on Google Play')).toBeTruthy()
     expect(host.textContent).not.toContain('A coffee keeps it that way')
-  })
-  it('the web keeps the donation links', async () => {
-    await mount()
-    expect(row('Buy me a coffee')).toBeTruthy()
-    expect(row('Rate openGym on Google Play')).toBeUndefined()
-  })
+    expect(host.textContent).not.toContain('Support openGym')
+    expect(host.textContent).toContain('CorpoFit AI')   // o rodapé fica, com a licença e o link do código
+    expect(host.textContent).toContain('Source code')
+  }
+  it('the web has no donation links or support section', check)
+  it('the APK has none either', async () => { mocks.MOBILE = true; mocks.android = true; await check() })
+  it('and neither does the Google Play build', async () => { mocks.MOBILE = true; mocks.android = true; mocks.channel = 'play'; await check() })
 })

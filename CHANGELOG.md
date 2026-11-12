@@ -4,6 +4,10 @@ Newest first. Each release is a `## vX.Y.Z (YYYY-MM-DD)` section, and the releas
 GitHub and GitLab are that section, word for word. New work goes under `## Unreleased` until the
 tag. Write it for the people using the app: what changed for them, short, no em dashes.
 
+## v1.0.0 (2026-11-12)
+
+**CorpoFit AI 1.0.** A versão numerada do CorpoFit AI começa aqui: treinos com IA, academias, personais, recepção, mensalidades, aparelhos, acesso por catraca, entrada com Google e prazo das fichas. Feito a partir do openGym 1.4.4 (AGPL-3.0), com o código-fonte desta versão em https://github.com/carlosvfb/corpofit-ai.
+
 ## v1.4.4 (2026-11-03)
 
 **Modules: as much app as you want.** Settings → Modules switches whole parts of openGym on and
