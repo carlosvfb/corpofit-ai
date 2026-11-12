@@ -52,7 +52,7 @@ public class MainActivity extends BridgeActivity {
 
     // Health Connect's "why does this app ask?" link (the two activity-aliases in the manifest)
     // must show the privacy policy, the same one the Play listing names: opened in the browser.
-    static final String PRIVACY_URL = "https://opengym.ch/privacy";
+    static final String PRIVACY_URL = "https://corpofitai.vercel.app/#/privacidade";
     static boolean isHealthRationale(String action) {
         return "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE".equals(action)
                 || "android.intent.action.VIEW_PERMISSION_USAGE".equals(action);

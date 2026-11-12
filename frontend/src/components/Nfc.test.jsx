@@ -72,7 +72,7 @@ describe('setting up a sticker', () => {
     // Without a membership code there is nothing to check in with: only the start choice shows.
     expect(host.textContent).not.toContain('Just check in')
     await click(button('Write sticker'))
-    expect(writeTag).toHaveBeenCalledWith('https://opengym.ch/nfc?do=start', expect.objectContaining({ alert: expect.any(String) }))
+    expect(writeTag).toHaveBeenCalledWith('https://corpofitai.vercel.app/nfc?do=start', expect.objectContaining({ alert: expect.any(String) }))
     expect(host.textContent).toContain('Sticker ready')
   })
 
@@ -85,7 +85,7 @@ describe('setting up a sticker', () => {
     expect(host.textContent).toContain('Which code')
     await click(button('City'))
     await click(button('Write sticker'))
-    expect(writeTag).toHaveBeenCalledWith('https://opengym.ch/nfc?do=checkin&card=c1', expect.anything())
+    expect(writeTag).toHaveBeenCalledWith('https://corpofitai.vercel.app/nfc?do=checkin&card=c1', expect.anything())
   })
 
   it('a failed write says why and offers to try again; a cancel goes quietly back', async () => {
@@ -104,7 +104,7 @@ describe('setting up a sticker', () => {
     nfcExerciseSheet(EXIDX[EX_B])
     await openSheet()
     await click(button('Write sticker'))
-    expect(writeTag).toHaveBeenCalledWith('https://opengym.ch/nfc?ex=' + EX_B, expect.anything())
+    expect(writeTag).toHaveBeenCalledWith('https://corpofitai.vercel.app/nfc?ex=' + EX_B, expect.anything())
   })
 })
 

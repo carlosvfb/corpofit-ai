@@ -18,7 +18,8 @@
 import { effectiveRoutineIds, effectiveRoutines } from './history.js'
 import { canonicalExId } from './exercises.js'
 
-export const TAG_HOST = 'opengym.ch'
+import { SITE_HOST, LEGACY_HOST } from './site.js'
+export const TAG_HOST = SITE_HOST
 export const TAG_PATH = '/nfc'
 export const SCHEME = 'opengym'
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/
@@ -61,7 +62,7 @@ export function parseTagUrl(raw) {
   const proto = u.protocol.toLowerCase()
   if (proto === 'https:' || proto === 'http:') {
     const host = u.hostname.toLowerCase().replace(/^www\./, '')
-    if (host !== TAG_HOST) return null
+    if (host !== TAG_HOST && host !== LEGACY_HOST) return null   // etiquetas já gravadas com opengym.ch continuam valendo
     if (u.pathname.replace(/\.html$/, '').replace(/\/+$/, '') !== TAG_PATH) return null
     return fromQuery(u.searchParams)
   }

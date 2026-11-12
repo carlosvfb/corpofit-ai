@@ -1,4 +1,4 @@
-// "Share with a friend" (v1.4.4): one routine as a link, https://opengym.ch/r#<payload>.
+// "Share with a friend": one routine as a link, <site>/#/r/<payload> (older links were https://opengym.ch/r#<payload>).
 //
 // The payload is a plan file (lib/plan-share.js buildPlanBundle) holding just that routine, so it
 // carries the same `opengym_plan` format version and the receiving app reads it with the same
@@ -16,12 +16,14 @@
 // Besides the plan file, the bundle carries two things an older app simply ignores: `from`, the
 // sender's name when they chose to add it, and `names`, the English catalogue names of the
 // exercises, so the website can show the routine without the exercise database.
+import { SITE_URL, LEGACY_HOST } from './site.js'
 import { EXIDX, isCustomEx } from './exercises.js'
 import { buildPlanBundle, parsePlan, mergePlan } from './plan-share.js'
 import { t } from './i18n-core.js'
 
 export const LINK_FMT = 1
-export const LINK_BASE = 'https://opengym.ch/r'
+// O link abre o próprio aplicativo web na rota #/r/<rotina>; links antigos (opengym.ch/r#...) continuam valendo ao ler.
+export const LINK_BASE = SITE_URL + '/#/r/'
 // Past this a link starts breaking in chat apps and SMS: the share falls back to a plan file.
 export const MAX_LINK = 2000
 // What a link may hold at all, before and after inflating: far past any real routine.
@@ -155,7 +157,7 @@ export async function decodePayload(payload) {
   return data
 }
 
-export const linkFor = payload => `${LINK_BASE}#${payload}`
+export const linkFor = payload => `${LINK_BASE}${payload}`
 
 /**
  * The link for a routine, or `{ tooLong: true }` when it would pass MAX_LINK (the caller shares a
@@ -189,7 +191,7 @@ export function routinePayloadFromUrl(raw) {
   if (route) return ok(route[1])
   if (proto === 'https:' || proto === 'http:') {
     const host = u.hostname.toLowerCase().replace(/^www\./, '')
-    if (host !== 'opengym.ch') return null
+    if (host !== LEGACY_HOST) return null
     if (u.pathname.replace(/\/index\.html$/, '').replace(/\/+$/, '') !== '/r') return null
     return ok(hash)
   }

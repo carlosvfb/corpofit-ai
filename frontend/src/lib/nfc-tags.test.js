@@ -20,10 +20,10 @@ describe('tagUrl / parseTagUrl', () => {
     ]) expect(parseTagUrl(tagUrl(tag))).toEqual(tag)
   })
 
-  it('writes short https links on opengym.ch', () => {
-    expect(tagUrl({ kind: 'checkin', start: true })).toBe('https://opengym.ch/nfc?do=start')
-    expect(tagUrl({ kind: 'checkin', start: false, card: 'c1' })).toBe('https://opengym.ch/nfc?do=checkin&card=c1')
-    expect(tagUrl({ kind: 'exercise', id: '0025' })).toBe('https://opengym.ch/nfc?ex=0025')
+  it('writes short https links on the CorpoFit AI site', () => {
+    expect(tagUrl({ kind: 'checkin', start: true })).toBe('https://corpofitai.vercel.app/nfc?do=start')
+    expect(tagUrl({ kind: 'checkin', start: false, card: 'c1' })).toBe('https://corpofitai.vercel.app/nfc?do=checkin&card=c1')
+    expect(tagUrl({ kind: 'exercise', id: '0025' })).toBe('https://corpofitai.vercel.app/nfc?ex=0025')
     // NTAG213 holds 137 bytes of NDEF: even a long custom id stays far below.
     expect(tagUrl({ kind: 'exercise', id: 'x'.repeat(64) }).length).toBeLessThan(110)
   })
@@ -33,7 +33,7 @@ describe('tagUrl / parseTagUrl', () => {
     expect(() => tagUrl({ kind: 'exercise', id: '' })).toThrow()
     expect(() => tagUrl({ kind: 'nope' })).toThrow()
     // A card id that is not one is left off, not written.
-    expect(tagUrl({ kind: 'checkin', card: 'a b' })).toBe('https://opengym.ch/nfc?do=checkin')
+    expect(tagUrl({ kind: 'checkin', card: 'a b' })).toBe('https://corpofitai.vercel.app/nfc?do=checkin')
   })
 
   it('reads the opengym:// forms, from opengym.ch/nfc and written by hand', () => {
@@ -47,6 +47,7 @@ describe('tagUrl / parseTagUrl', () => {
   })
 
   it('takes www, a trailing slash and the .html page', () => {
+    expect(parseTagUrl('https://corpofitai.vercel.app/nfc/?do=start')).toEqual({ kind: 'checkin', start: true, card: null })   // o endereço novo
     expect(parseTagUrl('https://www.opengym.ch/nfc/?do=start')).toEqual({ kind: 'checkin', start: true, card: null })
     expect(parseTagUrl('https://opengym.ch/nfc.html?ex=0025')).toEqual({ kind: 'exercise', id: '0025' })
   })

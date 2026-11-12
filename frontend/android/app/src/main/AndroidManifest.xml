@@ -29,7 +29,7 @@
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="https" android:host="opengym.ch" android:pathPrefix="/nfc" />
+                <data android:scheme="https" android:host="corpofitai.vercel.app" android:pathPrefix="/nfc" />
             </intent-filter>
             <!-- A friend's routine link, https://opengym.ch/r#<routine> (components/RoutineShare.jsx):
                  straight into the app instead of the page. Verified once opengym.ch serves
@@ -38,8 +38,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="opengym.ch" android:path="/r" />
-                <data android:scheme="https" android:host="opengym.ch" android:path="/r/" />
+                <data android:scheme="https" android:host="corpofitai.vercel.app" android:path="/r" />
+                <data android:scheme="https" android:host="corpofitai.vercel.app" android:path="/r/" />
             </intent-filter>
             <!-- opengym://nfc?... from opengym.ch/nfc, the page a sticker opens in a browser, and
                  opengym://r#<routine> from opengym.ch/r. -->

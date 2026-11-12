@@ -114,7 +114,7 @@ describe('routine links: size fallback', () => {
   it('a normal routine fits in a link', async () => {
     const link = await routineLink(state(), push, { weights: true })
     expect(link.tooLong).toBeUndefined()
-    expect(link.url.startsWith('https://opengym.ch/r#1.')).toBe(true)
+    expect(link.url.startsWith('https://corpofitai.vercel.app/#/r/1.')).toBe(true)
     expect(link.length).toBeLessThanOrEqual(MAX_LINK)
   })
 
@@ -135,7 +135,7 @@ describe('routine links: reading a link', () => {
   const P = '1.d.q1YqzkxRslIqS8wpTVWqBQA'
   it('finds the payload in every form the link travels in', () => {
     for (const url of [
-      'https://opengym.ch/r#' + P, 'https://opengym.ch/r/#' + P, 'https://www.opengym.ch/r#' + P,
+      'https://corpofitai.vercel.app/#/r/' + P, 'https://opengym.ch/r#' + P, 'https://opengym.ch/r/#' + P, 'https://www.opengym.ch/r#' + P,
       'https://opengym.ch/r/index.html#' + P, 'opengym://r#' + P, 'opengym://r/#' + P, 'OPENGYM://r#' + P,
       'https://gym.example.org/#/r/' + P, 'http://192.168.1.10:8080/#/r/' + P, 'https://opengym.ch/demo/#/r/' + P,
       linkFor(P),

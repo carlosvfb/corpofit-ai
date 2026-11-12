@@ -10,7 +10,7 @@
     <color name="widget_flame">#FFFF9500</color>
     <color name="widget_freeze">#FF32ADE6</color>
 
-    <string name="widget_name">openGym</string>
+    <string name="widget_name">CorpoFit AI</string>
     <string name="widget_desc">Your streak, weight goal, week, next workout, records or volume. You pick.</string>
     <string name="widget_what">What to show</string>
     <string name="widget_beside">And beside it (wide widget)</string>
